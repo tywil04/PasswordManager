@@ -69,8 +69,12 @@ func Post(c *gin.Context) {
 
 	testUser, _ := db.Client.User.Query().Where(user.EmailEQ(input.Email)).First(db.Context)
 	if testUser != nil {
-		c.JSON(400, gin.H{"error": gin.H{"code": "errEmailInUse", "message": "Email is in use."}})
-		return
+		if !testUser.Verified {
+			db.Client.User.DeleteOne(testUser).Exec(db.Context)
+		} else if testUser.Verified {
+			c.JSON(400, gin.H{"error": gin.H{"code": "errEmailInUse", "message": "Email is in use."}})
+			return
+		}
 	}
 
 	salt := cryptography.RandomBytes(16)
