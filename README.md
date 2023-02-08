@@ -60,3 +60,33 @@ if you do not include a required environment variable, things might not work as 
 - `RP_ORIGINS`: This is a comma seperated list of allowed origins. Example value: `http://localhost:8080,https://example.org`.
 
 - `RP_ICON`: This is a URL to the icon for a relying party. This is optional, a blank value can be set.
+
+## Todo
+Stuff that needs to be done
+
+### Frontend
+- [ ] Signin Page
+    - Need to fix email verification code box
+- [ ] Signup Page
+    - Need to fix email verification code box
+- [ ] Home Page
+    - Needs to decrypt password names and display them in a list
+- [ ] Settings Page
+    - Needs to exist
+        - Needs to allow for the registration and revoking on WebAuthn devices
+        - Needs to allow for the registration and removal of TOTP secrets
+        - Needs to allow the user to select accesibility features like a High-Contrast filter.
+
+### Backend
+- [ ] Document API
+- [X] Auth API (/api/v1/auth/*)
+- [ ] WebAuthn API (/api/v1/webauthn/*)
+    - Need to implement the revoking of credentials
+- [ ] TOTP API (/api/v1/totp/*)
+    - Need to implement register endpoint
+    - Need to implement signinChallenge endpoint
+- [X] Email API (/api/v1/email/*)
+- [ ] Passwords API
+    - Need to implement updating passwords
+- [X] Email
+- [X] Email templating
