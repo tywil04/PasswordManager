@@ -1,0 +1,15 @@
+{{template "base.html" .}}
+
+{{define "body" -}}
+    <p style="font-size: 14px; padding: 0; margin: 0; margin-top: 0px; margin-bottom: 7px;">
+        Hello,
+    </p>
+
+    <p style="font-size: 14px; padding: 0; margin: 0; margin-top: 0px; margin-bottom: 20px;">
+        We need to verify that you own this email address. This is too prevent spam bots from mass creating accounts and to ensure that you have access to this email address so we can use it to help verify you.
+    </p>
+
+    <p style="font-size: 28px; font-weight: bolder; flex-grow: 1; padding: 4px 2px; text-align: center; text-decoration: none;">
+        {{.Code}}
+    </p>
+{{end}}

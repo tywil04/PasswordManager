@@ -1,0 +1,15 @@
+{{template "base.html" .}}
+
+{{define "body" -}}
+    <p style="font-size: 14px; padding: 0; margin: 0; margin-top: 0px; margin-bottom: 7px;">
+        Hello,
+    </p>
+
+    <p style="font-size: 14px; padding: 0; margin: 0;">
+        {{ if .Successful }}
+            There was a <b>successful sign in</b> attempt on your account. If this wasn't you then you <b>need to change your password</b>.
+        {{ else }}
+            There has been an <b>unsuccessful sign in</b> attempt on your account. If this wasn't you then you <b>might want to change your password</b>.
+        {{ end }}
+    </p>
+{{end}}
