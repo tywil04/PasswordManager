@@ -9,6 +9,7 @@ import (
 	"PasswordManager/api/lib/cryptography"
 	"PasswordManager/api/lib/db"
 	"PasswordManager/api/lib/smtp"
+	"PasswordManager/api/lib/validations"
 	"PasswordManager/ent/emailchallenge"
 	"PasswordManager/ent/user"
 )
@@ -34,6 +35,11 @@ func Post(c *gin.Context) {
 
 	if input.MasterHash == "" {
 		c.JSON(400, gin.H{"error": gin.H{"code": "errMissingMasterHash", "message": "Required 'masterHash' was not found."}})
+		return
+	}
+
+	if !validations.IsEmailValid(input.Email) {
+		c.JSON(400, gin.H{"error": gin.H{"code": "errInvalidEmail", "message": "Required 'email' is malformed."}})
 		return
 	}
 
