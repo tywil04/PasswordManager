@@ -62,7 +62,7 @@ var (
 		{Name: "username_iv", Type: field.TypeBytes},
 		{Name: "password", Type: field.TypeBytes},
 		{Name: "password_iv", Type: field.TypeBytes},
-		{Name: "emoji", Type: field.TypeString, Nullable: true},
+		{Name: "colour", Type: field.TypeString, Nullable: true},
 	}
 	// PasswordsTable holds the schema information for the "passwords" table.
 	PasswordsTable = &schema.Table{

@@ -22,7 +22,7 @@ func (Password) Fields() []ent.Field {
 		field.Bytes("usernameIv").NotEmpty(),
 		field.Bytes("password").NotEmpty(),
 		field.Bytes("passwordIv").NotEmpty(),
-		field.String("emoji").Optional(),
+		field.String("colour").Optional(),
 	}
 }
 

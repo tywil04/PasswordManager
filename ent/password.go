@@ -28,8 +28,8 @@ type Password struct {
 	Password []byte `json:"password,omitempty"`
 	// PasswordIv holds the value of the "passwordIv" field.
 	PasswordIv []byte `json:"passwordIv,omitempty"`
-	// Emoji holds the value of the "emoji" field.
-	Emoji string `json:"emoji,omitempty"`
+	// Colour holds the value of the "colour" field.
+	Colour string `json:"colour,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the PasswordQuery when eager-loading is set.
 	Edges PasswordEdges `json:"edges"`
@@ -71,7 +71,7 @@ func (*Password) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case password.FieldName, password.FieldNameIv, password.FieldUsername, password.FieldUsernameIv, password.FieldPassword, password.FieldPasswordIv:
 			values[i] = new([]byte)
-		case password.FieldEmoji:
+		case password.FieldColour:
 			values[i] = new(sql.NullString)
 		case password.FieldID:
 			values[i] = new(uuid.UUID)
@@ -132,11 +132,11 @@ func (pa *Password) assignValues(columns []string, values []any) error {
 			} else if value != nil {
 				pa.PasswordIv = *value
 			}
-		case password.FieldEmoji:
+		case password.FieldColour:
 			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field emoji", values[i])
+				return fmt.Errorf("unexpected type %T for field colour", values[i])
 			} else if value.Valid {
-				pa.Emoji = value.String
+				pa.Colour = value.String
 			}
 		}
 	}
@@ -194,8 +194,8 @@ func (pa *Password) String() string {
 	builder.WriteString("passwordIv=")
 	builder.WriteString(fmt.Sprintf("%v", pa.PasswordIv))
 	builder.WriteString(", ")
-	builder.WriteString("emoji=")
-	builder.WriteString(pa.Emoji)
+	builder.WriteString("colour=")
+	builder.WriteString(pa.Colour)
 	builder.WriteByte(')')
 	return builder.String()
 }

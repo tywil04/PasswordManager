@@ -8,7 +8,6 @@ import (
 	"PasswordManager/api/endpoints/auth/signup"
 	"PasswordManager/api/endpoints/auth/test"
 	"PasswordManager/api/endpoints/email"
-	"PasswordManager/api/endpoints/emoji"
 	"PasswordManager/api/endpoints/password"
 	webauthnEndpoints "PasswordManager/api/endpoints/webauthn"
 	"PasswordManager/api/lib/db"
@@ -31,7 +30,6 @@ func Start(router *gin.Engine) {
 	authNotRequired.POST("/api/v1/email/signinChallenge", email.PostSigninEmailChallenge)
 	authNotRequired.GET("/api/v1/webauthn/signinChallenge", webauthnEndpoints.GetSigninChallenge)
 	authNotRequired.POST("/api/v1/webauthn/signinChallenge", webauthnEndpoints.PostSigninChallenge)
-	authNotRequired.GET("/api/v1/emoji", emoji.Get)
 
 	authRequired := router.Group("/")
 	authRequired.Use(middleware.AuthMiddleware())

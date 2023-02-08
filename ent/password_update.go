@@ -66,23 +66,23 @@ func (pu *PasswordUpdate) SetPasswordIv(b []byte) *PasswordUpdate {
 	return pu
 }
 
-// SetEmoji sets the "emoji" field.
-func (pu *PasswordUpdate) SetEmoji(s string) *PasswordUpdate {
-	pu.mutation.SetEmoji(s)
+// SetColour sets the "colour" field.
+func (pu *PasswordUpdate) SetColour(s string) *PasswordUpdate {
+	pu.mutation.SetColour(s)
 	return pu
 }
 
-// SetNillableEmoji sets the "emoji" field if the given value is not nil.
-func (pu *PasswordUpdate) SetNillableEmoji(s *string) *PasswordUpdate {
+// SetNillableColour sets the "colour" field if the given value is not nil.
+func (pu *PasswordUpdate) SetNillableColour(s *string) *PasswordUpdate {
 	if s != nil {
-		pu.SetEmoji(*s)
+		pu.SetColour(*s)
 	}
 	return pu
 }
 
-// ClearEmoji clears the value of the "emoji" field.
-func (pu *PasswordUpdate) ClearEmoji() *PasswordUpdate {
-	pu.mutation.ClearEmoji()
+// ClearColour clears the value of the "colour" field.
+func (pu *PasswordUpdate) ClearColour() *PasswordUpdate {
+	pu.mutation.ClearColour()
 	return pu
 }
 
@@ -264,11 +264,11 @@ func (pu *PasswordUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if value, ok := pu.mutation.PasswordIv(); ok {
 		_spec.SetField(password.FieldPasswordIv, field.TypeBytes, value)
 	}
-	if value, ok := pu.mutation.Emoji(); ok {
-		_spec.SetField(password.FieldEmoji, field.TypeString, value)
+	if value, ok := pu.mutation.Colour(); ok {
+		_spec.SetField(password.FieldColour, field.TypeString, value)
 	}
-	if pu.mutation.EmojiCleared() {
-		_spec.ClearField(password.FieldEmoji, field.TypeString)
+	if pu.mutation.ColourCleared() {
+		_spec.ClearField(password.FieldColour, field.TypeString)
 	}
 	if pu.mutation.AdditionalFieldsCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -434,23 +434,23 @@ func (puo *PasswordUpdateOne) SetPasswordIv(b []byte) *PasswordUpdateOne {
 	return puo
 }
 
-// SetEmoji sets the "emoji" field.
-func (puo *PasswordUpdateOne) SetEmoji(s string) *PasswordUpdateOne {
-	puo.mutation.SetEmoji(s)
+// SetColour sets the "colour" field.
+func (puo *PasswordUpdateOne) SetColour(s string) *PasswordUpdateOne {
+	puo.mutation.SetColour(s)
 	return puo
 }
 
-// SetNillableEmoji sets the "emoji" field if the given value is not nil.
-func (puo *PasswordUpdateOne) SetNillableEmoji(s *string) *PasswordUpdateOne {
+// SetNillableColour sets the "colour" field if the given value is not nil.
+func (puo *PasswordUpdateOne) SetNillableColour(s *string) *PasswordUpdateOne {
 	if s != nil {
-		puo.SetEmoji(*s)
+		puo.SetColour(*s)
 	}
 	return puo
 }
 
-// ClearEmoji clears the value of the "emoji" field.
-func (puo *PasswordUpdateOne) ClearEmoji() *PasswordUpdateOne {
-	puo.mutation.ClearEmoji()
+// ClearColour clears the value of the "colour" field.
+func (puo *PasswordUpdateOne) ClearColour() *PasswordUpdateOne {
+	puo.mutation.ClearColour()
 	return puo
 }
 
@@ -656,11 +656,11 @@ func (puo *PasswordUpdateOne) sqlSave(ctx context.Context) (_node *Password, err
 	if value, ok := puo.mutation.PasswordIv(); ok {
 		_spec.SetField(password.FieldPasswordIv, field.TypeBytes, value)
 	}
-	if value, ok := puo.mutation.Emoji(); ok {
-		_spec.SetField(password.FieldEmoji, field.TypeString, value)
+	if value, ok := puo.mutation.Colour(); ok {
+		_spec.SetField(password.FieldColour, field.TypeString, value)
 	}
-	if puo.mutation.EmojiCleared() {
-		_spec.ClearField(password.FieldEmoji, field.TypeString)
+	if puo.mutation.ColourCleared() {
+		_spec.ClearField(password.FieldColour, field.TypeString)
 	}
 	if puo.mutation.AdditionalFieldsCleared() {
 		edge := &sqlgraph.EdgeSpec{

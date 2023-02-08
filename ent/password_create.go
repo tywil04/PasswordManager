@@ -58,16 +58,16 @@ func (pc *PasswordCreate) SetPasswordIv(b []byte) *PasswordCreate {
 	return pc
 }
 
-// SetEmoji sets the "emoji" field.
-func (pc *PasswordCreate) SetEmoji(s string) *PasswordCreate {
-	pc.mutation.SetEmoji(s)
+// SetColour sets the "colour" field.
+func (pc *PasswordCreate) SetColour(s string) *PasswordCreate {
+	pc.mutation.SetColour(s)
 	return pc
 }
 
-// SetNillableEmoji sets the "emoji" field if the given value is not nil.
-func (pc *PasswordCreate) SetNillableEmoji(s *string) *PasswordCreate {
+// SetNillableColour sets the "colour" field if the given value is not nil.
+func (pc *PasswordCreate) SetNillableColour(s *string) *PasswordCreate {
 	if s != nil {
-		pc.SetEmoji(*s)
+		pc.SetColour(*s)
 	}
 	return pc
 }
@@ -272,9 +272,9 @@ func (pc *PasswordCreate) createSpec() (*Password, *sqlgraph.CreateSpec) {
 		_spec.SetField(password.FieldPasswordIv, field.TypeBytes, value)
 		_node.PasswordIv = value
 	}
-	if value, ok := pc.mutation.Emoji(); ok {
-		_spec.SetField(password.FieldEmoji, field.TypeString, value)
-		_node.Emoji = value
+	if value, ok := pc.mutation.Colour(); ok {
+		_spec.SetField(password.FieldColour, field.TypeString, value)
+		_node.Colour = value
 	}
 	if nodes := pc.mutation.AdditionalFieldsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{

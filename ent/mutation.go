@@ -1123,7 +1123,7 @@ type PasswordMutation struct {
 	usernameIv              *[]byte
 	password                *[]byte
 	passwordIv              *[]byte
-	emoji                   *string
+	colour                  *string
 	clearedFields           map[string]struct{}
 	additionalFields        map[uuid.UUID]struct{}
 	removedadditionalFields map[uuid.UUID]struct{}
@@ -1456,53 +1456,53 @@ func (m *PasswordMutation) ResetPasswordIv() {
 	m.passwordIv = nil
 }
 
-// SetEmoji sets the "emoji" field.
-func (m *PasswordMutation) SetEmoji(s string) {
-	m.emoji = &s
+// SetColour sets the "colour" field.
+func (m *PasswordMutation) SetColour(s string) {
+	m.colour = &s
 }
 
-// Emoji returns the value of the "emoji" field in the mutation.
-func (m *PasswordMutation) Emoji() (r string, exists bool) {
-	v := m.emoji
+// Colour returns the value of the "colour" field in the mutation.
+func (m *PasswordMutation) Colour() (r string, exists bool) {
+	v := m.colour
 	if v == nil {
 		return
 	}
 	return *v, true
 }
 
-// OldEmoji returns the old "emoji" field's value of the Password entity.
+// OldColour returns the old "colour" field's value of the Password entity.
 // If the Password object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *PasswordMutation) OldEmoji(ctx context.Context) (v string, err error) {
+func (m *PasswordMutation) OldColour(ctx context.Context) (v string, err error) {
 	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldEmoji is only allowed on UpdateOne operations")
+		return v, errors.New("OldColour is only allowed on UpdateOne operations")
 	}
 	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldEmoji requires an ID field in the mutation")
+		return v, errors.New("OldColour requires an ID field in the mutation")
 	}
 	oldValue, err := m.oldValue(ctx)
 	if err != nil {
-		return v, fmt.Errorf("querying old value for OldEmoji: %w", err)
+		return v, fmt.Errorf("querying old value for OldColour: %w", err)
 	}
-	return oldValue.Emoji, nil
+	return oldValue.Colour, nil
 }
 
-// ClearEmoji clears the value of the "emoji" field.
-func (m *PasswordMutation) ClearEmoji() {
-	m.emoji = nil
-	m.clearedFields[password.FieldEmoji] = struct{}{}
+// ClearColour clears the value of the "colour" field.
+func (m *PasswordMutation) ClearColour() {
+	m.colour = nil
+	m.clearedFields[password.FieldColour] = struct{}{}
 }
 
-// EmojiCleared returns if the "emoji" field was cleared in this mutation.
-func (m *PasswordMutation) EmojiCleared() bool {
-	_, ok := m.clearedFields[password.FieldEmoji]
+// ColourCleared returns if the "colour" field was cleared in this mutation.
+func (m *PasswordMutation) ColourCleared() bool {
+	_, ok := m.clearedFields[password.FieldColour]
 	return ok
 }
 
-// ResetEmoji resets all changes to the "emoji" field.
-func (m *PasswordMutation) ResetEmoji() {
-	m.emoji = nil
-	delete(m.clearedFields, password.FieldEmoji)
+// ResetColour resets all changes to the "colour" field.
+func (m *PasswordMutation) ResetColour() {
+	m.colour = nil
+	delete(m.clearedFields, password.FieldColour)
 }
 
 // AddAdditionalFieldIDs adds the "additionalFields" edge to the AdditionalField entity by ids.
@@ -1666,8 +1666,8 @@ func (m *PasswordMutation) Fields() []string {
 	if m.passwordIv != nil {
 		fields = append(fields, password.FieldPasswordIv)
 	}
-	if m.emoji != nil {
-		fields = append(fields, password.FieldEmoji)
+	if m.colour != nil {
+		fields = append(fields, password.FieldColour)
 	}
 	return fields
 }
@@ -1689,8 +1689,8 @@ func (m *PasswordMutation) Field(name string) (ent.Value, bool) {
 		return m.Password()
 	case password.FieldPasswordIv:
 		return m.PasswordIv()
-	case password.FieldEmoji:
-		return m.Emoji()
+	case password.FieldColour:
+		return m.Colour()
 	}
 	return nil, false
 }
@@ -1712,8 +1712,8 @@ func (m *PasswordMutation) OldField(ctx context.Context, name string) (ent.Value
 		return m.OldPassword(ctx)
 	case password.FieldPasswordIv:
 		return m.OldPasswordIv(ctx)
-	case password.FieldEmoji:
-		return m.OldEmoji(ctx)
+	case password.FieldColour:
+		return m.OldColour(ctx)
 	}
 	return nil, fmt.Errorf("unknown Password field %s", name)
 }
@@ -1765,12 +1765,12 @@ func (m *PasswordMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetPasswordIv(v)
 		return nil
-	case password.FieldEmoji:
+	case password.FieldColour:
 		v, ok := value.(string)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
-		m.SetEmoji(v)
+		m.SetColour(v)
 		return nil
 	}
 	return fmt.Errorf("unknown Password field %s", name)
@@ -1802,8 +1802,8 @@ func (m *PasswordMutation) AddField(name string, value ent.Value) error {
 // mutation.
 func (m *PasswordMutation) ClearedFields() []string {
 	var fields []string
-	if m.FieldCleared(password.FieldEmoji) {
-		fields = append(fields, password.FieldEmoji)
+	if m.FieldCleared(password.FieldColour) {
+		fields = append(fields, password.FieldColour)
 	}
 	return fields
 }
@@ -1819,8 +1819,8 @@ func (m *PasswordMutation) FieldCleared(name string) bool {
 // error if the field is not defined in the schema.
 func (m *PasswordMutation) ClearField(name string) error {
 	switch name {
-	case password.FieldEmoji:
-		m.ClearEmoji()
+	case password.FieldColour:
+		m.ClearColour()
 		return nil
 	}
 	return fmt.Errorf("unknown Password nullable field %s", name)
@@ -1848,8 +1848,8 @@ func (m *PasswordMutation) ResetField(name string) error {
 	case password.FieldPasswordIv:
 		m.ResetPasswordIv()
 		return nil
-	case password.FieldEmoji:
-		m.ResetEmoji()
+	case password.FieldColour:
+		m.ResetColour()
 		return nil
 	}
 	return fmt.Errorf("unknown Password field %s", name)

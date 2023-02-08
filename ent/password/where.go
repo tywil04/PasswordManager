@@ -85,9 +85,9 @@ func PasswordIv(v []byte) predicate.Password {
 	return predicate.Password(sql.FieldEQ(FieldPasswordIv, v))
 }
 
-// Emoji applies equality check predicate on the "emoji" field. It's identical to EmojiEQ.
-func Emoji(v string) predicate.Password {
-	return predicate.Password(sql.FieldEQ(FieldEmoji, v))
+// Colour applies equality check predicate on the "colour" field. It's identical to ColourEQ.
+func Colour(v string) predicate.Password {
+	return predicate.Password(sql.FieldEQ(FieldColour, v))
 }
 
 // NameEQ applies the EQ predicate on the "name" field.
@@ -330,79 +330,79 @@ func PasswordIvLTE(v []byte) predicate.Password {
 	return predicate.Password(sql.FieldLTE(FieldPasswordIv, v))
 }
 
-// EmojiEQ applies the EQ predicate on the "emoji" field.
-func EmojiEQ(v string) predicate.Password {
-	return predicate.Password(sql.FieldEQ(FieldEmoji, v))
+// ColourEQ applies the EQ predicate on the "colour" field.
+func ColourEQ(v string) predicate.Password {
+	return predicate.Password(sql.FieldEQ(FieldColour, v))
 }
 
-// EmojiNEQ applies the NEQ predicate on the "emoji" field.
-func EmojiNEQ(v string) predicate.Password {
-	return predicate.Password(sql.FieldNEQ(FieldEmoji, v))
+// ColourNEQ applies the NEQ predicate on the "colour" field.
+func ColourNEQ(v string) predicate.Password {
+	return predicate.Password(sql.FieldNEQ(FieldColour, v))
 }
 
-// EmojiIn applies the In predicate on the "emoji" field.
-func EmojiIn(vs ...string) predicate.Password {
-	return predicate.Password(sql.FieldIn(FieldEmoji, vs...))
+// ColourIn applies the In predicate on the "colour" field.
+func ColourIn(vs ...string) predicate.Password {
+	return predicate.Password(sql.FieldIn(FieldColour, vs...))
 }
 
-// EmojiNotIn applies the NotIn predicate on the "emoji" field.
-func EmojiNotIn(vs ...string) predicate.Password {
-	return predicate.Password(sql.FieldNotIn(FieldEmoji, vs...))
+// ColourNotIn applies the NotIn predicate on the "colour" field.
+func ColourNotIn(vs ...string) predicate.Password {
+	return predicate.Password(sql.FieldNotIn(FieldColour, vs...))
 }
 
-// EmojiGT applies the GT predicate on the "emoji" field.
-func EmojiGT(v string) predicate.Password {
-	return predicate.Password(sql.FieldGT(FieldEmoji, v))
+// ColourGT applies the GT predicate on the "colour" field.
+func ColourGT(v string) predicate.Password {
+	return predicate.Password(sql.FieldGT(FieldColour, v))
 }
 
-// EmojiGTE applies the GTE predicate on the "emoji" field.
-func EmojiGTE(v string) predicate.Password {
-	return predicate.Password(sql.FieldGTE(FieldEmoji, v))
+// ColourGTE applies the GTE predicate on the "colour" field.
+func ColourGTE(v string) predicate.Password {
+	return predicate.Password(sql.FieldGTE(FieldColour, v))
 }
 
-// EmojiLT applies the LT predicate on the "emoji" field.
-func EmojiLT(v string) predicate.Password {
-	return predicate.Password(sql.FieldLT(FieldEmoji, v))
+// ColourLT applies the LT predicate on the "colour" field.
+func ColourLT(v string) predicate.Password {
+	return predicate.Password(sql.FieldLT(FieldColour, v))
 }
 
-// EmojiLTE applies the LTE predicate on the "emoji" field.
-func EmojiLTE(v string) predicate.Password {
-	return predicate.Password(sql.FieldLTE(FieldEmoji, v))
+// ColourLTE applies the LTE predicate on the "colour" field.
+func ColourLTE(v string) predicate.Password {
+	return predicate.Password(sql.FieldLTE(FieldColour, v))
 }
 
-// EmojiContains applies the Contains predicate on the "emoji" field.
-func EmojiContains(v string) predicate.Password {
-	return predicate.Password(sql.FieldContains(FieldEmoji, v))
+// ColourContains applies the Contains predicate on the "colour" field.
+func ColourContains(v string) predicate.Password {
+	return predicate.Password(sql.FieldContains(FieldColour, v))
 }
 
-// EmojiHasPrefix applies the HasPrefix predicate on the "emoji" field.
-func EmojiHasPrefix(v string) predicate.Password {
-	return predicate.Password(sql.FieldHasPrefix(FieldEmoji, v))
+// ColourHasPrefix applies the HasPrefix predicate on the "colour" field.
+func ColourHasPrefix(v string) predicate.Password {
+	return predicate.Password(sql.FieldHasPrefix(FieldColour, v))
 }
 
-// EmojiHasSuffix applies the HasSuffix predicate on the "emoji" field.
-func EmojiHasSuffix(v string) predicate.Password {
-	return predicate.Password(sql.FieldHasSuffix(FieldEmoji, v))
+// ColourHasSuffix applies the HasSuffix predicate on the "colour" field.
+func ColourHasSuffix(v string) predicate.Password {
+	return predicate.Password(sql.FieldHasSuffix(FieldColour, v))
 }
 
-// EmojiIsNil applies the IsNil predicate on the "emoji" field.
-func EmojiIsNil() predicate.Password {
-	return predicate.Password(sql.FieldIsNull(FieldEmoji))
+// ColourIsNil applies the IsNil predicate on the "colour" field.
+func ColourIsNil() predicate.Password {
+	return predicate.Password(sql.FieldIsNull(FieldColour))
 }
 
-// EmojiNotNil applies the NotNil predicate on the "emoji" field.
-func EmojiNotNil() predicate.Password {
-	return predicate.Password(sql.FieldNotNull(FieldEmoji))
+// ColourNotNil applies the NotNil predicate on the "colour" field.
+func ColourNotNil() predicate.Password {
+	return predicate.Password(sql.FieldNotNull(FieldColour))
 }
 
-// EmojiEqualFold applies the EqualFold predicate on the "emoji" field.
-func EmojiEqualFold(v string) predicate.Password {
-	return predicate.Password(sql.FieldEqualFold(FieldEmoji, v))
+// ColourEqualFold applies the EqualFold predicate on the "colour" field.
+func ColourEqualFold(v string) predicate.Password {
+	return predicate.Password(sql.FieldEqualFold(FieldColour, v))
 }
 
-// EmojiContainsFold applies the ContainsFold predicate on the "emoji" field.
-func EmojiContainsFold(v string) predicate.Password {
-	return predicate.Password(sql.FieldContainsFold(FieldEmoji, v))
+// ColourContainsFold applies the ContainsFold predicate on the "colour" field.
+func ColourContainsFold(v string) predicate.Password {
+	return predicate.Password(sql.FieldContainsFold(FieldColour, v))
 }
 
 // HasAdditionalFields applies the HasEdge predicate on the "additionalFields" edge.

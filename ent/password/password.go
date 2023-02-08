@@ -23,8 +23,8 @@ const (
 	FieldPassword = "password"
 	// FieldPasswordIv holds the string denoting the passwordiv field in the database.
 	FieldPasswordIv = "password_iv"
-	// FieldEmoji holds the string denoting the emoji field in the database.
-	FieldEmoji = "emoji"
+	// FieldColour holds the string denoting the colour field in the database.
+	FieldColour = "colour"
 	// EdgeAdditionalFields holds the string denoting the additionalfields edge name in mutations.
 	EdgeAdditionalFields = "additionalFields"
 	// EdgeUrls holds the string denoting the urls edge name in mutations.
@@ -56,7 +56,7 @@ var Columns = []string{
 	FieldUsernameIv,
 	FieldPassword,
 	FieldPasswordIv,
-	FieldEmoji,
+	FieldColour,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).

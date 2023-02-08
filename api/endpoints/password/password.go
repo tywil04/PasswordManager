@@ -3,12 +3,12 @@ package password
 import (
 	"encoding/base64"
 	"fmt"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 
 	"PasswordManager/api/lib/db"
-	"PasswordManager/api/lib/emoji"
 	"PasswordManager/ent"
 )
 
@@ -23,7 +23,7 @@ type PostInput struct {
 	UsernameIv       string `form:"usernameIv" json:"usernameIv" xml:"usernameIv"`
 	Password         string `form:"password" json:"password" xml:"password"`
 	PasswordIv       string `form:"passwordIv" json:"passwordIv" xml:"passwordIv"`
-	Emoji            string `form:"emoji" json:"emoji" xml:"emoji"`
+	Colour           string `form:"colour" json:"colour" xml:"colour"`
 	AdditionalFields []struct {
 		Key     string `form:"key" json:"key" xml:"key"`
 		KeyIv   string `form:"keyIv" json:"keyIv" xml:"keyIv"`
@@ -96,7 +96,7 @@ func Get(c *gin.Context) {
 				"usernameIv":       password.UsernameIv,
 				"password":         password.Password,
 				"passwordIv":       password.PasswordIv,
-				"emoji":            password.Emoji,
+				"colour":           password.Colour,
 				"additionalFields": jsonAdditionalFields,
 				"urls":             jsonUrls,
 			}
@@ -154,7 +154,7 @@ func Get(c *gin.Context) {
 			"usernameIv":       password.UsernameIv,
 			"password":         password.Password,
 			"passwordIv":       password.PasswordIv,
-			"emoji":            password.Emoji,
+			"colour":           password.Colour,
 			"additionalFields": jsonAdditionalFields,
 			"urls":             jsonUrls,
 		}
@@ -202,8 +202,8 @@ func Post(c *gin.Context) {
 		return
 	}
 
-	if input.Emoji == "" {
-		c.JSON(400, gin.H{"error": gin.H{"code": "errMissingEmoji", "message": "Required 'emoji' was not found."}})
+	if input.Colour == "" {
+		c.JSON(400, gin.H{"error": gin.H{"code": "errMissingColour", "message": "Required 'colour' was not found."}})
 		return
 	}
 
@@ -243,8 +243,9 @@ func Post(c *gin.Context) {
 		return
 	}
 
-	if !emoji.IsEmoji(input.Emoji) {
-		c.JSON(400, gin.H{"error": gin.H{"code": "errParsingEmoji", "message": "Unable to parse 'emoji', expected unicode emoji."}})
+	_, hexErr := strconv.ParseInt(input.Colour, 16, 64)
+	if hexErr != nil {
+		c.JSON(400, gin.H{"error": gin.H{"code": "errParsingColour", "message": "Unable to parse 'colour', expected hex encoded colour."}})
 		return
 	}
 
@@ -323,7 +324,7 @@ func Post(c *gin.Context) {
 		SetUsernameIv(decodedUsernameIv).
 		SetPassword(decodedPassword).
 		SetPasswordIv(decodedPasswordIv).
-		SetEmoji(input.Emoji).
+		SetColour(input.Colour).
 		AddAdditionalFields(additionalFields...).
 		AddUrls(urls...).
 		Save(db.Context)
