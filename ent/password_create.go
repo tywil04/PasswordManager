@@ -5,6 +5,7 @@ package ent
 import (
 	"PasswordManager/ent/additionalfield"
 	"PasswordManager/ent/password"
+	"PasswordManager/ent/url"
 	"context"
 	"errors"
 	"fmt"
@@ -57,6 +58,20 @@ func (pc *PasswordCreate) SetPasswordIv(b []byte) *PasswordCreate {
 	return pc
 }
 
+// SetEmoji sets the "emoji" field.
+func (pc *PasswordCreate) SetEmoji(s string) *PasswordCreate {
+	pc.mutation.SetEmoji(s)
+	return pc
+}
+
+// SetNillableEmoji sets the "emoji" field if the given value is not nil.
+func (pc *PasswordCreate) SetNillableEmoji(s *string) *PasswordCreate {
+	if s != nil {
+		pc.SetEmoji(*s)
+	}
+	return pc
+}
+
 // SetID sets the "id" field.
 func (pc *PasswordCreate) SetID(u uuid.UUID) *PasswordCreate {
 	pc.mutation.SetID(u)
@@ -84,6 +99,21 @@ func (pc *PasswordCreate) AddAdditionalFields(a ...*AdditionalField) *PasswordCr
 		ids[i] = a[i].ID
 	}
 	return pc.AddAdditionalFieldIDs(ids...)
+}
+
+// AddURLIDs adds the "urls" edge to the Url entity by IDs.
+func (pc *PasswordCreate) AddURLIDs(ids ...uuid.UUID) *PasswordCreate {
+	pc.mutation.AddURLIDs(ids...)
+	return pc
+}
+
+// AddUrls adds the "urls" edges to the Url entity.
+func (pc *PasswordCreate) AddUrls(u ...*Url) *PasswordCreate {
+	ids := make([]uuid.UUID, len(u))
+	for i := range u {
+		ids[i] = u[i].ID
+	}
+	return pc.AddURLIDs(ids...)
 }
 
 // Mutation returns the PasswordMutation object of the builder.
@@ -242,6 +272,10 @@ func (pc *PasswordCreate) createSpec() (*Password, *sqlgraph.CreateSpec) {
 		_spec.SetField(password.FieldPasswordIv, field.TypeBytes, value)
 		_node.PasswordIv = value
 	}
+	if value, ok := pc.mutation.Emoji(); ok {
+		_spec.SetField(password.FieldEmoji, field.TypeString, value)
+		_node.Emoji = value
+	}
 	if nodes := pc.mutation.AdditionalFieldsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
@@ -253,6 +287,25 @@ func (pc *PasswordCreate) createSpec() (*Password, *sqlgraph.CreateSpec) {
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeUUID,
 					Column: additionalfield.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := pc.mutation.UrlsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   password.UrlsTable,
+			Columns: []string{password.UrlsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeUUID,
+					Column: url.FieldID,
 				},
 			},
 		}

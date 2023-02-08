@@ -8,6 +8,7 @@ import (
 	"PasswordManager/ent/password"
 	"PasswordManager/ent/predicate"
 	"PasswordManager/ent/session"
+	"PasswordManager/ent/url"
 	"PasswordManager/ent/user"
 	"PasswordManager/ent/webauthnchallenge"
 	"PasswordManager/ent/webauthncredential"
@@ -36,6 +37,7 @@ const (
 	TypeEmailChallenge     = "EmailChallenge"
 	TypePassword           = "Password"
 	TypeSession            = "Session"
+	TypeURL                = "Url"
 	TypeUser               = "User"
 	TypeWebAuthnChallenge  = "WebAuthnChallenge"
 	TypeWebAuthnCredential = "WebAuthnCredential"
@@ -1121,10 +1123,14 @@ type PasswordMutation struct {
 	usernameIv              *[]byte
 	password                *[]byte
 	passwordIv              *[]byte
+	emoji                   *string
 	clearedFields           map[string]struct{}
 	additionalFields        map[uuid.UUID]struct{}
 	removedadditionalFields map[uuid.UUID]struct{}
 	clearedadditionalFields bool
+	urls                    map[uuid.UUID]struct{}
+	removedurls             map[uuid.UUID]struct{}
+	clearedurls             bool
 	done                    bool
 	oldValue                func(context.Context) (*Password, error)
 	predicates              []predicate.Password
@@ -1450,6 +1456,55 @@ func (m *PasswordMutation) ResetPasswordIv() {
 	m.passwordIv = nil
 }
 
+// SetEmoji sets the "emoji" field.
+func (m *PasswordMutation) SetEmoji(s string) {
+	m.emoji = &s
+}
+
+// Emoji returns the value of the "emoji" field in the mutation.
+func (m *PasswordMutation) Emoji() (r string, exists bool) {
+	v := m.emoji
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldEmoji returns the old "emoji" field's value of the Password entity.
+// If the Password object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PasswordMutation) OldEmoji(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldEmoji is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldEmoji requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldEmoji: %w", err)
+	}
+	return oldValue.Emoji, nil
+}
+
+// ClearEmoji clears the value of the "emoji" field.
+func (m *PasswordMutation) ClearEmoji() {
+	m.emoji = nil
+	m.clearedFields[password.FieldEmoji] = struct{}{}
+}
+
+// EmojiCleared returns if the "emoji" field was cleared in this mutation.
+func (m *PasswordMutation) EmojiCleared() bool {
+	_, ok := m.clearedFields[password.FieldEmoji]
+	return ok
+}
+
+// ResetEmoji resets all changes to the "emoji" field.
+func (m *PasswordMutation) ResetEmoji() {
+	m.emoji = nil
+	delete(m.clearedFields, password.FieldEmoji)
+}
+
 // AddAdditionalFieldIDs adds the "additionalFields" edge to the AdditionalField entity by ids.
 func (m *PasswordMutation) AddAdditionalFieldIDs(ids ...uuid.UUID) {
 	if m.additionalFields == nil {
@@ -1504,6 +1559,60 @@ func (m *PasswordMutation) ResetAdditionalFields() {
 	m.removedadditionalFields = nil
 }
 
+// AddURLIDs adds the "urls" edge to the Url entity by ids.
+func (m *PasswordMutation) AddURLIDs(ids ...uuid.UUID) {
+	if m.urls == nil {
+		m.urls = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		m.urls[ids[i]] = struct{}{}
+	}
+}
+
+// ClearUrls clears the "urls" edge to the Url entity.
+func (m *PasswordMutation) ClearUrls() {
+	m.clearedurls = true
+}
+
+// UrlsCleared reports if the "urls" edge to the Url entity was cleared.
+func (m *PasswordMutation) UrlsCleared() bool {
+	return m.clearedurls
+}
+
+// RemoveURLIDs removes the "urls" edge to the Url entity by IDs.
+func (m *PasswordMutation) RemoveURLIDs(ids ...uuid.UUID) {
+	if m.removedurls == nil {
+		m.removedurls = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		delete(m.urls, ids[i])
+		m.removedurls[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedUrls returns the removed IDs of the "urls" edge to the Url entity.
+func (m *PasswordMutation) RemovedUrlsIDs() (ids []uuid.UUID) {
+	for id := range m.removedurls {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// UrlsIDs returns the "urls" edge IDs in the mutation.
+func (m *PasswordMutation) UrlsIDs() (ids []uuid.UUID) {
+	for id := range m.urls {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetUrls resets all changes to the "urls" edge.
+func (m *PasswordMutation) ResetUrls() {
+	m.urls = nil
+	m.clearedurls = false
+	m.removedurls = nil
+}
+
 // Where appends a list predicates to the PasswordMutation builder.
 func (m *PasswordMutation) Where(ps ...predicate.Password) {
 	m.predicates = append(m.predicates, ps...)
@@ -1538,7 +1647,7 @@ func (m *PasswordMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *PasswordMutation) Fields() []string {
-	fields := make([]string, 0, 6)
+	fields := make([]string, 0, 7)
 	if m.name != nil {
 		fields = append(fields, password.FieldName)
 	}
@@ -1556,6 +1665,9 @@ func (m *PasswordMutation) Fields() []string {
 	}
 	if m.passwordIv != nil {
 		fields = append(fields, password.FieldPasswordIv)
+	}
+	if m.emoji != nil {
+		fields = append(fields, password.FieldEmoji)
 	}
 	return fields
 }
@@ -1577,6 +1689,8 @@ func (m *PasswordMutation) Field(name string) (ent.Value, bool) {
 		return m.Password()
 	case password.FieldPasswordIv:
 		return m.PasswordIv()
+	case password.FieldEmoji:
+		return m.Emoji()
 	}
 	return nil, false
 }
@@ -1598,6 +1712,8 @@ func (m *PasswordMutation) OldField(ctx context.Context, name string) (ent.Value
 		return m.OldPassword(ctx)
 	case password.FieldPasswordIv:
 		return m.OldPasswordIv(ctx)
+	case password.FieldEmoji:
+		return m.OldEmoji(ctx)
 	}
 	return nil, fmt.Errorf("unknown Password field %s", name)
 }
@@ -1649,6 +1765,13 @@ func (m *PasswordMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetPasswordIv(v)
 		return nil
+	case password.FieldEmoji:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetEmoji(v)
+		return nil
 	}
 	return fmt.Errorf("unknown Password field %s", name)
 }
@@ -1678,7 +1801,11 @@ func (m *PasswordMutation) AddField(name string, value ent.Value) error {
 // ClearedFields returns all nullable fields that were cleared during this
 // mutation.
 func (m *PasswordMutation) ClearedFields() []string {
-	return nil
+	var fields []string
+	if m.FieldCleared(password.FieldEmoji) {
+		fields = append(fields, password.FieldEmoji)
+	}
+	return fields
 }
 
 // FieldCleared returns a boolean indicating if a field with the given name was
@@ -1691,6 +1818,11 @@ func (m *PasswordMutation) FieldCleared(name string) bool {
 // ClearField clears the value of the field with the given name. It returns an
 // error if the field is not defined in the schema.
 func (m *PasswordMutation) ClearField(name string) error {
+	switch name {
+	case password.FieldEmoji:
+		m.ClearEmoji()
+		return nil
+	}
 	return fmt.Errorf("unknown Password nullable field %s", name)
 }
 
@@ -1716,15 +1848,21 @@ func (m *PasswordMutation) ResetField(name string) error {
 	case password.FieldPasswordIv:
 		m.ResetPasswordIv()
 		return nil
+	case password.FieldEmoji:
+		m.ResetEmoji()
+		return nil
 	}
 	return fmt.Errorf("unknown Password field %s", name)
 }
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *PasswordMutation) AddedEdges() []string {
-	edges := make([]string, 0, 1)
+	edges := make([]string, 0, 2)
 	if m.additionalFields != nil {
 		edges = append(edges, password.EdgeAdditionalFields)
+	}
+	if m.urls != nil {
+		edges = append(edges, password.EdgeUrls)
 	}
 	return edges
 }
@@ -1739,15 +1877,24 @@ func (m *PasswordMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case password.EdgeUrls:
+		ids := make([]ent.Value, 0, len(m.urls))
+		for id := range m.urls {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *PasswordMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 1)
+	edges := make([]string, 0, 2)
 	if m.removedadditionalFields != nil {
 		edges = append(edges, password.EdgeAdditionalFields)
+	}
+	if m.removedurls != nil {
+		edges = append(edges, password.EdgeUrls)
 	}
 	return edges
 }
@@ -1762,15 +1909,24 @@ func (m *PasswordMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case password.EdgeUrls:
+		ids := make([]ent.Value, 0, len(m.removedurls))
+		for id := range m.removedurls {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *PasswordMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 1)
+	edges := make([]string, 0, 2)
 	if m.clearedadditionalFields {
 		edges = append(edges, password.EdgeAdditionalFields)
+	}
+	if m.clearedurls {
+		edges = append(edges, password.EdgeUrls)
 	}
 	return edges
 }
@@ -1781,6 +1937,8 @@ func (m *PasswordMutation) EdgeCleared(name string) bool {
 	switch name {
 	case password.EdgeAdditionalFields:
 		return m.clearedadditionalFields
+	case password.EdgeUrls:
+		return m.clearedurls
 	}
 	return false
 }
@@ -1799,6 +1957,9 @@ func (m *PasswordMutation) ResetEdge(name string) error {
 	switch name {
 	case password.EdgeAdditionalFields:
 		m.ResetAdditionalFields()
+		return nil
+	case password.EdgeUrls:
+		m.ResetUrls()
 		return nil
 	}
 	return fmt.Errorf("unknown Password edge %s", name)
@@ -2345,6 +2506,459 @@ func (m *SessionMutation) ResetEdge(name string) error {
 		return nil
 	}
 	return fmt.Errorf("unknown Session edge %s", name)
+}
+
+// URLMutation represents an operation that mutates the Url nodes in the graph.
+type URLMutation struct {
+	config
+	op              Op
+	typ             string
+	id              *uuid.UUID
+	url             *[]byte
+	urlIv           *[]byte
+	clearedFields   map[string]struct{}
+	password        *uuid.UUID
+	clearedpassword bool
+	done            bool
+	oldValue        func(context.Context) (*Url, error)
+	predicates      []predicate.Url
+}
+
+var _ ent.Mutation = (*URLMutation)(nil)
+
+// urlOption allows management of the mutation configuration using functional options.
+type urlOption func(*URLMutation)
+
+// newURLMutation creates new mutation for the Url entity.
+func newURLMutation(c config, op Op, opts ...urlOption) *URLMutation {
+	m := &URLMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeURL,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withUrlID sets the ID field of the mutation.
+func withUrlID(id uuid.UUID) urlOption {
+	return func(m *URLMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *Url
+		)
+		m.oldValue = func(ctx context.Context) (*Url, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().Url.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withUrl sets the old Url of the mutation.
+func withUrl(node *Url) urlOption {
+	return func(m *URLMutation) {
+		m.oldValue = func(context.Context) (*Url, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m URLMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m URLMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of Url entities.
+func (m *URLMutation) SetID(id uuid.UUID) {
+	m.id = &id
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *URLMutation) ID() (id uuid.UUID, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *URLMutation) IDs(ctx context.Context) ([]uuid.UUID, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []uuid.UUID{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().Url.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetURL sets the "url" field.
+func (m *URLMutation) SetURL(b []byte) {
+	m.url = &b
+}
+
+// URL returns the value of the "url" field in the mutation.
+func (m *URLMutation) URL() (r []byte, exists bool) {
+	v := m.url
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldURL returns the old "url" field's value of the Url entity.
+// If the Url object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *URLMutation) OldURL(ctx context.Context) (v []byte, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldURL is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldURL requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldURL: %w", err)
+	}
+	return oldValue.URL, nil
+}
+
+// ResetURL resets all changes to the "url" field.
+func (m *URLMutation) ResetURL() {
+	m.url = nil
+}
+
+// SetUrlIv sets the "urlIv" field.
+func (m *URLMutation) SetUrlIv(b []byte) {
+	m.urlIv = &b
+}
+
+// UrlIv returns the value of the "urlIv" field in the mutation.
+func (m *URLMutation) UrlIv() (r []byte, exists bool) {
+	v := m.urlIv
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUrlIv returns the old "urlIv" field's value of the Url entity.
+// If the Url object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *URLMutation) OldUrlIv(ctx context.Context) (v []byte, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUrlIv is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUrlIv requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUrlIv: %w", err)
+	}
+	return oldValue.UrlIv, nil
+}
+
+// ResetUrlIv resets all changes to the "urlIv" field.
+func (m *URLMutation) ResetUrlIv() {
+	m.urlIv = nil
+}
+
+// SetPasswordID sets the "password" edge to the Password entity by id.
+func (m *URLMutation) SetPasswordID(id uuid.UUID) {
+	m.password = &id
+}
+
+// ClearPassword clears the "password" edge to the Password entity.
+func (m *URLMutation) ClearPassword() {
+	m.clearedpassword = true
+}
+
+// PasswordCleared reports if the "password" edge to the Password entity was cleared.
+func (m *URLMutation) PasswordCleared() bool {
+	return m.clearedpassword
+}
+
+// PasswordID returns the "password" edge ID in the mutation.
+func (m *URLMutation) PasswordID() (id uuid.UUID, exists bool) {
+	if m.password != nil {
+		return *m.password, true
+	}
+	return
+}
+
+// PasswordIDs returns the "password" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// PasswordID instead. It exists only for internal usage by the builders.
+func (m *URLMutation) PasswordIDs() (ids []uuid.UUID) {
+	if id := m.password; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetPassword resets all changes to the "password" edge.
+func (m *URLMutation) ResetPassword() {
+	m.password = nil
+	m.clearedpassword = false
+}
+
+// Where appends a list predicates to the URLMutation builder.
+func (m *URLMutation) Where(ps ...predicate.Url) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the URLMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *URLMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.Url, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *URLMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *URLMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (Url).
+func (m *URLMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *URLMutation) Fields() []string {
+	fields := make([]string, 0, 2)
+	if m.url != nil {
+		fields = append(fields, url.FieldURL)
+	}
+	if m.urlIv != nil {
+		fields = append(fields, url.FieldUrlIv)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *URLMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case url.FieldURL:
+		return m.URL()
+	case url.FieldUrlIv:
+		return m.UrlIv()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *URLMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case url.FieldURL:
+		return m.OldURL(ctx)
+	case url.FieldUrlIv:
+		return m.OldUrlIv(ctx)
+	}
+	return nil, fmt.Errorf("unknown Url field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *URLMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case url.FieldURL:
+		v, ok := value.([]byte)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetURL(v)
+		return nil
+	case url.FieldUrlIv:
+		v, ok := value.([]byte)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUrlIv(v)
+		return nil
+	}
+	return fmt.Errorf("unknown Url field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *URLMutation) AddedFields() []string {
+	return nil
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *URLMutation) AddedField(name string) (ent.Value, bool) {
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *URLMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	}
+	return fmt.Errorf("unknown Url numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *URLMutation) ClearedFields() []string {
+	return nil
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *URLMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *URLMutation) ClearField(name string) error {
+	return fmt.Errorf("unknown Url nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *URLMutation) ResetField(name string) error {
+	switch name {
+	case url.FieldURL:
+		m.ResetURL()
+		return nil
+	case url.FieldUrlIv:
+		m.ResetUrlIv()
+		return nil
+	}
+	return fmt.Errorf("unknown Url field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *URLMutation) AddedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.password != nil {
+		edges = append(edges, url.EdgePassword)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *URLMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case url.EdgePassword:
+		if id := m.password; id != nil {
+			return []ent.Value{*id}
+		}
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *URLMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 1)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *URLMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *URLMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.clearedpassword {
+		edges = append(edges, url.EdgePassword)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *URLMutation) EdgeCleared(name string) bool {
+	switch name {
+	case url.EdgePassword:
+		return m.clearedpassword
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *URLMutation) ClearEdge(name string) error {
+	switch name {
+	case url.EdgePassword:
+		m.ClearPassword()
+		return nil
+	}
+	return fmt.Errorf("unknown Url unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *URLMutation) ResetEdge(name string) error {
+	switch name {
+	case url.EdgePassword:
+		m.ResetPassword()
+		return nil
+	}
+	return fmt.Errorf("unknown Url edge %s", name)
 }
 
 // UserMutation represents an operation that mutates the User nodes in the graph.

@@ -14,6 +14,7 @@ import (
 	"PasswordManager/ent/emailchallenge"
 	"PasswordManager/ent/password"
 	"PasswordManager/ent/session"
+	"PasswordManager/ent/url"
 	"PasswordManager/ent/user"
 	"PasswordManager/ent/webauthnchallenge"
 	"PasswordManager/ent/webauthncredential"
@@ -37,6 +38,8 @@ type Client struct {
 	Password *PasswordClient
 	// Session is the client for interacting with the Session builders.
 	Session *SessionClient
+	// Url is the client for interacting with the Url builders.
+	Url *URLClient
 	// User is the client for interacting with the User builders.
 	User *UserClient
 	// WebAuthnChallenge is the client for interacting with the WebAuthnChallenge builders.
@@ -60,6 +63,7 @@ func (c *Client) init() {
 	c.EmailChallenge = NewEmailChallengeClient(c.config)
 	c.Password = NewPasswordClient(c.config)
 	c.Session = NewSessionClient(c.config)
+	c.Url = NewURLClient(c.config)
 	c.User = NewUserClient(c.config)
 	c.WebAuthnChallenge = NewWebAuthnChallengeClient(c.config)
 	c.WebAuthnCredential = NewWebAuthnCredentialClient(c.config)
@@ -100,6 +104,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		EmailChallenge:     NewEmailChallengeClient(cfg),
 		Password:           NewPasswordClient(cfg),
 		Session:            NewSessionClient(cfg),
+		Url:                NewURLClient(cfg),
 		User:               NewUserClient(cfg),
 		WebAuthnChallenge:  NewWebAuthnChallengeClient(cfg),
 		WebAuthnCredential: NewWebAuthnCredentialClient(cfg),
@@ -126,6 +131,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		EmailChallenge:     NewEmailChallengeClient(cfg),
 		Password:           NewPasswordClient(cfg),
 		Session:            NewSessionClient(cfg),
+		Url:                NewURLClient(cfg),
 		User:               NewUserClient(cfg),
 		WebAuthnChallenge:  NewWebAuthnChallengeClient(cfg),
 		WebAuthnCredential: NewWebAuthnCredentialClient(cfg),
@@ -162,6 +168,7 @@ func (c *Client) Use(hooks ...Hook) {
 	c.EmailChallenge.Use(hooks...)
 	c.Password.Use(hooks...)
 	c.Session.Use(hooks...)
+	c.Url.Use(hooks...)
 	c.User.Use(hooks...)
 	c.WebAuthnChallenge.Use(hooks...)
 	c.WebAuthnCredential.Use(hooks...)
@@ -174,6 +181,7 @@ func (c *Client) Intercept(interceptors ...Interceptor) {
 	c.EmailChallenge.Intercept(interceptors...)
 	c.Password.Intercept(interceptors...)
 	c.Session.Intercept(interceptors...)
+	c.Url.Intercept(interceptors...)
 	c.User.Intercept(interceptors...)
 	c.WebAuthnChallenge.Intercept(interceptors...)
 	c.WebAuthnCredential.Intercept(interceptors...)
@@ -190,6 +198,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.Password.mutate(ctx, m)
 	case *SessionMutation:
 		return c.Session.mutate(ctx, m)
+	case *URLMutation:
+		return c.Url.mutate(ctx, m)
 	case *UserMutation:
 		return c.User.mutate(ctx, m)
 	case *WebAuthnChallengeMutation:
@@ -578,6 +588,22 @@ func (c *PasswordClient) QueryAdditionalFields(pa *Password) *AdditionalFieldQue
 	return query
 }
 
+// QueryUrls queries the urls edge of a Password.
+func (c *PasswordClient) QueryUrls(pa *Password) *URLQuery {
+	query := (&URLClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := pa.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(password.Table, password.FieldID, id),
+			sqlgraph.To(url.Table, url.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, password.UrlsTable, password.UrlsColumn),
+		)
+		fromV = sqlgraph.Neighbors(pa.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
 func (c *PasswordClient) Hooks() []Hook {
 	return c.hooks.Password
@@ -734,6 +760,140 @@ func (c *SessionClient) mutate(ctx context.Context, m *SessionMutation) (Value, 
 		return (&SessionDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
 		return nil, fmt.Errorf("ent: unknown Session mutation op: %q", m.Op())
+	}
+}
+
+// URLClient is a client for the Url schema.
+type URLClient struct {
+	config
+}
+
+// NewURLClient returns a client for the Url from the given config.
+func NewURLClient(c config) *URLClient {
+	return &URLClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `url.Hooks(f(g(h())))`.
+func (c *URLClient) Use(hooks ...Hook) {
+	c.hooks.Url = append(c.hooks.Url, hooks...)
+}
+
+// Use adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `url.Intercept(f(g(h())))`.
+func (c *URLClient) Intercept(interceptors ...Interceptor) {
+	c.inters.Url = append(c.inters.Url, interceptors...)
+}
+
+// Create returns a builder for creating a Url entity.
+func (c *URLClient) Create() *URLCreate {
+	mutation := newURLMutation(c.config, OpCreate)
+	return &URLCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of Url entities.
+func (c *URLClient) CreateBulk(builders ...*URLCreate) *URLCreateBulk {
+	return &URLCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for Url.
+func (c *URLClient) Update() *URLUpdate {
+	mutation := newURLMutation(c.config, OpUpdate)
+	return &URLUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *URLClient) UpdateOne(u *Url) *URLUpdateOne {
+	mutation := newURLMutation(c.config, OpUpdateOne, withUrl(u))
+	return &URLUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *URLClient) UpdateOneID(id uuid.UUID) *URLUpdateOne {
+	mutation := newURLMutation(c.config, OpUpdateOne, withUrlID(id))
+	return &URLUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for Url.
+func (c *URLClient) Delete() *URLDelete {
+	mutation := newURLMutation(c.config, OpDelete)
+	return &URLDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *URLClient) DeleteOne(u *Url) *URLDeleteOne {
+	return c.DeleteOneID(u.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *URLClient) DeleteOneID(id uuid.UUID) *URLDeleteOne {
+	builder := c.Delete().Where(url.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &URLDeleteOne{builder}
+}
+
+// Query returns a query builder for Url.
+func (c *URLClient) Query() *URLQuery {
+	return &URLQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeURL},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a Url entity by its id.
+func (c *URLClient) Get(ctx context.Context, id uuid.UUID) (*Url, error) {
+	return c.Query().Where(url.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *URLClient) GetX(ctx context.Context, id uuid.UUID) *Url {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryPassword queries the password edge of a Url.
+func (c *URLClient) QueryPassword(u *Url) *PasswordQuery {
+	query := (&PasswordClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := u.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(url.Table, url.FieldID, id),
+			sqlgraph.To(password.Table, password.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, url.PasswordTable, url.PasswordColumn),
+		)
+		fromV = sqlgraph.Neighbors(u.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *URLClient) Hooks() []Hook {
+	return c.hooks.Url
+}
+
+// Interceptors returns the client interceptors.
+func (c *URLClient) Interceptors() []Interceptor {
+	return c.inters.Url
+}
+
+func (c *URLClient) mutate(ctx context.Context, m *URLMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&URLCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&URLUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&URLUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&URLDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown Url mutation op: %q", m.Op())
 	}
 }
 

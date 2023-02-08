@@ -62,6 +62,7 @@ var (
 		{Name: "username_iv", Type: field.TypeBytes},
 		{Name: "password", Type: field.TypeBytes},
 		{Name: "password_iv", Type: field.TypeBytes},
+		{Name: "emoji", Type: field.TypeString, Nullable: true},
 	}
 	// PasswordsTable holds the schema information for the "passwords" table.
 	PasswordsTable = &schema.Table{
@@ -87,6 +88,27 @@ var (
 				Symbol:     "sessions_users_sessions",
 				Columns:    []*schema.Column{SessionsColumns[4]},
 				RefColumns: []*schema.Column{UsersColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+		},
+	}
+	// UrlsColumns holds the columns for the "urls" table.
+	UrlsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "url", Type: field.TypeBytes},
+		{Name: "url_iv", Type: field.TypeBytes},
+		{Name: "password_urls", Type: field.TypeUUID, Nullable: true},
+	}
+	// UrlsTable holds the schema information for the "urls" table.
+	UrlsTable = &schema.Table{
+		Name:       "urls",
+		Columns:    UrlsColumns,
+		PrimaryKey: []*schema.Column{UrlsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "urls_passwords_urls",
+				Columns:    []*schema.Column{UrlsColumns[3]},
+				RefColumns: []*schema.Column{PasswordsColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
 		},
@@ -173,6 +195,7 @@ var (
 		EmailChallengesTable,
 		PasswordsTable,
 		SessionsTable,
+		UrlsTable,
 		UsersTable,
 		WebAuthnChallengesTable,
 		WebAuthnCredentialsTable,
@@ -183,6 +206,7 @@ func init() {
 	AdditionalFieldsTable.ForeignKeys[0].RefTable = PasswordsTable
 	EmailChallengesTable.ForeignKeys[0].RefTable = UsersTable
 	SessionsTable.ForeignKeys[0].RefTable = UsersTable
+	UrlsTable.ForeignKeys[0].RefTable = PasswordsTable
 	WebAuthnChallengesTable.ForeignKeys[0].RefTable = UsersTable
 	WebAuthnCredentialsTable.ForeignKeys[0].RefTable = UsersTable
 }

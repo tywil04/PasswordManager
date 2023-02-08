@@ -6,6 +6,7 @@ import (
 	"PasswordManager/ent/additionalfield"
 	"PasswordManager/ent/password"
 	"PasswordManager/ent/predicate"
+	"PasswordManager/ent/url"
 	"context"
 	"errors"
 	"fmt"
@@ -65,6 +66,26 @@ func (pu *PasswordUpdate) SetPasswordIv(b []byte) *PasswordUpdate {
 	return pu
 }
 
+// SetEmoji sets the "emoji" field.
+func (pu *PasswordUpdate) SetEmoji(s string) *PasswordUpdate {
+	pu.mutation.SetEmoji(s)
+	return pu
+}
+
+// SetNillableEmoji sets the "emoji" field if the given value is not nil.
+func (pu *PasswordUpdate) SetNillableEmoji(s *string) *PasswordUpdate {
+	if s != nil {
+		pu.SetEmoji(*s)
+	}
+	return pu
+}
+
+// ClearEmoji clears the value of the "emoji" field.
+func (pu *PasswordUpdate) ClearEmoji() *PasswordUpdate {
+	pu.mutation.ClearEmoji()
+	return pu
+}
+
 // AddAdditionalFieldIDs adds the "additionalFields" edge to the AdditionalField entity by IDs.
 func (pu *PasswordUpdate) AddAdditionalFieldIDs(ids ...uuid.UUID) *PasswordUpdate {
 	pu.mutation.AddAdditionalFieldIDs(ids...)
@@ -78,6 +99,21 @@ func (pu *PasswordUpdate) AddAdditionalFields(a ...*AdditionalField) *PasswordUp
 		ids[i] = a[i].ID
 	}
 	return pu.AddAdditionalFieldIDs(ids...)
+}
+
+// AddURLIDs adds the "urls" edge to the Url entity by IDs.
+func (pu *PasswordUpdate) AddURLIDs(ids ...uuid.UUID) *PasswordUpdate {
+	pu.mutation.AddURLIDs(ids...)
+	return pu
+}
+
+// AddUrls adds the "urls" edges to the Url entity.
+func (pu *PasswordUpdate) AddUrls(u ...*Url) *PasswordUpdate {
+	ids := make([]uuid.UUID, len(u))
+	for i := range u {
+		ids[i] = u[i].ID
+	}
+	return pu.AddURLIDs(ids...)
 }
 
 // Mutation returns the PasswordMutation object of the builder.
@@ -104,6 +140,27 @@ func (pu *PasswordUpdate) RemoveAdditionalFields(a ...*AdditionalField) *Passwor
 		ids[i] = a[i].ID
 	}
 	return pu.RemoveAdditionalFieldIDs(ids...)
+}
+
+// ClearUrls clears all "urls" edges to the Url entity.
+func (pu *PasswordUpdate) ClearUrls() *PasswordUpdate {
+	pu.mutation.ClearUrls()
+	return pu
+}
+
+// RemoveURLIDs removes the "urls" edge to Url entities by IDs.
+func (pu *PasswordUpdate) RemoveURLIDs(ids ...uuid.UUID) *PasswordUpdate {
+	pu.mutation.RemoveURLIDs(ids...)
+	return pu
+}
+
+// RemoveUrls removes "urls" edges to Url entities.
+func (pu *PasswordUpdate) RemoveUrls(u ...*Url) *PasswordUpdate {
+	ids := make([]uuid.UUID, len(u))
+	for i := range u {
+		ids[i] = u[i].ID
+	}
+	return pu.RemoveURLIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -207,6 +264,12 @@ func (pu *PasswordUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if value, ok := pu.mutation.PasswordIv(); ok {
 		_spec.SetField(password.FieldPasswordIv, field.TypeBytes, value)
 	}
+	if value, ok := pu.mutation.Emoji(); ok {
+		_spec.SetField(password.FieldEmoji, field.TypeString, value)
+	}
+	if pu.mutation.EmojiCleared() {
+		_spec.ClearField(password.FieldEmoji, field.TypeString)
+	}
 	if pu.mutation.AdditionalFieldsCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
@@ -253,6 +316,60 @@ func (pu *PasswordUpdate) sqlSave(ctx context.Context) (n int, err error) {
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeUUID,
 					Column: additionalfield.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if pu.mutation.UrlsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   password.UrlsTable,
+			Columns: []string{password.UrlsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeUUID,
+					Column: url.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := pu.mutation.RemovedUrlsIDs(); len(nodes) > 0 && !pu.mutation.UrlsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   password.UrlsTable,
+			Columns: []string{password.UrlsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeUUID,
+					Column: url.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := pu.mutation.UrlsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   password.UrlsTable,
+			Columns: []string{password.UrlsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeUUID,
+					Column: url.FieldID,
 				},
 			},
 		}
@@ -317,6 +434,26 @@ func (puo *PasswordUpdateOne) SetPasswordIv(b []byte) *PasswordUpdateOne {
 	return puo
 }
 
+// SetEmoji sets the "emoji" field.
+func (puo *PasswordUpdateOne) SetEmoji(s string) *PasswordUpdateOne {
+	puo.mutation.SetEmoji(s)
+	return puo
+}
+
+// SetNillableEmoji sets the "emoji" field if the given value is not nil.
+func (puo *PasswordUpdateOne) SetNillableEmoji(s *string) *PasswordUpdateOne {
+	if s != nil {
+		puo.SetEmoji(*s)
+	}
+	return puo
+}
+
+// ClearEmoji clears the value of the "emoji" field.
+func (puo *PasswordUpdateOne) ClearEmoji() *PasswordUpdateOne {
+	puo.mutation.ClearEmoji()
+	return puo
+}
+
 // AddAdditionalFieldIDs adds the "additionalFields" edge to the AdditionalField entity by IDs.
 func (puo *PasswordUpdateOne) AddAdditionalFieldIDs(ids ...uuid.UUID) *PasswordUpdateOne {
 	puo.mutation.AddAdditionalFieldIDs(ids...)
@@ -330,6 +467,21 @@ func (puo *PasswordUpdateOne) AddAdditionalFields(a ...*AdditionalField) *Passwo
 		ids[i] = a[i].ID
 	}
 	return puo.AddAdditionalFieldIDs(ids...)
+}
+
+// AddURLIDs adds the "urls" edge to the Url entity by IDs.
+func (puo *PasswordUpdateOne) AddURLIDs(ids ...uuid.UUID) *PasswordUpdateOne {
+	puo.mutation.AddURLIDs(ids...)
+	return puo
+}
+
+// AddUrls adds the "urls" edges to the Url entity.
+func (puo *PasswordUpdateOne) AddUrls(u ...*Url) *PasswordUpdateOne {
+	ids := make([]uuid.UUID, len(u))
+	for i := range u {
+		ids[i] = u[i].ID
+	}
+	return puo.AddURLIDs(ids...)
 }
 
 // Mutation returns the PasswordMutation object of the builder.
@@ -356,6 +508,27 @@ func (puo *PasswordUpdateOne) RemoveAdditionalFields(a ...*AdditionalField) *Pas
 		ids[i] = a[i].ID
 	}
 	return puo.RemoveAdditionalFieldIDs(ids...)
+}
+
+// ClearUrls clears all "urls" edges to the Url entity.
+func (puo *PasswordUpdateOne) ClearUrls() *PasswordUpdateOne {
+	puo.mutation.ClearUrls()
+	return puo
+}
+
+// RemoveURLIDs removes the "urls" edge to Url entities by IDs.
+func (puo *PasswordUpdateOne) RemoveURLIDs(ids ...uuid.UUID) *PasswordUpdateOne {
+	puo.mutation.RemoveURLIDs(ids...)
+	return puo
+}
+
+// RemoveUrls removes "urls" edges to Url entities.
+func (puo *PasswordUpdateOne) RemoveUrls(u ...*Url) *PasswordUpdateOne {
+	ids := make([]uuid.UUID, len(u))
+	for i := range u {
+		ids[i] = u[i].ID
+	}
+	return puo.RemoveURLIDs(ids...)
 }
 
 // Select allows selecting one or more fields (columns) of the returned entity.
@@ -483,6 +656,12 @@ func (puo *PasswordUpdateOne) sqlSave(ctx context.Context) (_node *Password, err
 	if value, ok := puo.mutation.PasswordIv(); ok {
 		_spec.SetField(password.FieldPasswordIv, field.TypeBytes, value)
 	}
+	if value, ok := puo.mutation.Emoji(); ok {
+		_spec.SetField(password.FieldEmoji, field.TypeString, value)
+	}
+	if puo.mutation.EmojiCleared() {
+		_spec.ClearField(password.FieldEmoji, field.TypeString)
+	}
 	if puo.mutation.AdditionalFieldsCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
@@ -529,6 +708,60 @@ func (puo *PasswordUpdateOne) sqlSave(ctx context.Context) (_node *Password, err
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeUUID,
 					Column: additionalfield.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if puo.mutation.UrlsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   password.UrlsTable,
+			Columns: []string{password.UrlsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeUUID,
+					Column: url.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := puo.mutation.RemovedUrlsIDs(); len(nodes) > 0 && !puo.mutation.UrlsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   password.UrlsTable,
+			Columns: []string{password.UrlsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeUUID,
+					Column: url.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := puo.mutation.UrlsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   password.UrlsTable,
+			Columns: []string{password.UrlsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeUUID,
+					Column: url.FieldID,
 				},
 			},
 		}

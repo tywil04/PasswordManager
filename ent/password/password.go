@@ -23,8 +23,12 @@ const (
 	FieldPassword = "password"
 	// FieldPasswordIv holds the string denoting the passwordiv field in the database.
 	FieldPasswordIv = "password_iv"
+	// FieldEmoji holds the string denoting the emoji field in the database.
+	FieldEmoji = "emoji"
 	// EdgeAdditionalFields holds the string denoting the additionalfields edge name in mutations.
 	EdgeAdditionalFields = "additionalFields"
+	// EdgeUrls holds the string denoting the urls edge name in mutations.
+	EdgeUrls = "urls"
 	// Table holds the table name of the password in the database.
 	Table = "passwords"
 	// AdditionalFieldsTable is the table that holds the additionalFields relation/edge.
@@ -34,6 +38,13 @@ const (
 	AdditionalFieldsInverseTable = "additional_fields"
 	// AdditionalFieldsColumn is the table column denoting the additionalFields relation/edge.
 	AdditionalFieldsColumn = "password_additional_fields"
+	// UrlsTable is the table that holds the urls relation/edge.
+	UrlsTable = "urls"
+	// UrlsInverseTable is the table name for the Url entity.
+	// It exists in this package in order to avoid circular dependency with the "url" package.
+	UrlsInverseTable = "urls"
+	// UrlsColumn is the table column denoting the urls relation/edge.
+	UrlsColumn = "password_urls"
 )
 
 // Columns holds all SQL columns for password fields.
@@ -45,6 +56,7 @@ var Columns = []string{
 	FieldUsernameIv,
 	FieldPassword,
 	FieldPasswordIv,
+	FieldEmoji,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).

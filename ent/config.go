@@ -31,6 +31,7 @@ type (
 		EmailChallenge     []ent.Hook
 		Password           []ent.Hook
 		Session            []ent.Hook
+		Url                []ent.Hook
 		User               []ent.Hook
 		WebAuthnChallenge  []ent.Hook
 		WebAuthnCredential []ent.Hook
@@ -40,6 +41,7 @@ type (
 		EmailChallenge     []ent.Interceptor
 		Password           []ent.Interceptor
 		Session            []ent.Interceptor
+		Url                []ent.Interceptor
 		User               []ent.Interceptor
 		WebAuthnChallenge  []ent.Interceptor
 		WebAuthnCredential []ent.Interceptor

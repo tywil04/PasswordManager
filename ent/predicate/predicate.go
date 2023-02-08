@@ -18,6 +18,9 @@ type Password func(*sql.Selector)
 // Session is the predicate function for session builders.
 type Session func(*sql.Selector)
 
+// Url is the predicate function for url builders.
+type Url func(*sql.Selector)
+
 // User is the predicate function for user builders.
 type User func(*sql.Selector)
 

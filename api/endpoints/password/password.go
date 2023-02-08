@@ -8,6 +8,7 @@ import (
 	"github.com/google/uuid"
 
 	"PasswordManager/api/lib/db"
+	"PasswordManager/api/lib/emoji"
 	"PasswordManager/ent"
 )
 
@@ -22,11 +23,16 @@ type PostInput struct {
 	UsernameIv       string `form:"usernameIv" json:"usernameIv" xml:"usernameIv"`
 	Password         string `form:"password" json:"password" xml:"password"`
 	PasswordIv       string `form:"passwordIv" json:"passwordIv" xml:"passwordIv"`
+	Emoji            string `form:"emoji" json:"emoji" xml:"emoji"`
 	AdditionalFields []struct {
 		Key     string `form:"key" json:"key" xml:"key"`
 		KeyIv   string `form:"keyIv" json:"keyIv" xml:"keyIv"`
 		Value   string `form:"value" json:"value" xml:"value"`
 		ValueIv string `form:"valueIv" json:"valueIv" xml:"valueIv"`
+	}
+	Urls []struct {
+		Url   string `form:"url" json:"url" xml:"url"`
+		UrlIv string `form:"urlIv" json:"urlIv" xml:"urlIv"`
 	}
 }
 
@@ -58,6 +64,12 @@ func Get(c *gin.Context) {
 				return
 			}
 
+			urls, uErr := password.QueryUrls().All(db.Context)
+			if uErr != nil {
+				c.JSON(500, gin.H{"error": gin.H{"code": "errUnknown", "message": "An unknown error has occured. Please try again later."}})
+				return
+			}
+
 			jsonAdditionalFields := make([]gin.H, len(additionalFields))
 			for afIndex, additionalField := range additionalFields {
 				jsonAdditionalFields[afIndex] = gin.H{
@@ -65,6 +77,14 @@ func Get(c *gin.Context) {
 					"keyIv":   additionalField.KeyIv,
 					"value":   additionalField.Value,
 					"valueIv": additionalField.ValueIv,
+				}
+			}
+
+			jsonUrls := make([]gin.H, len(urls))
+			for uIndex, url := range urls {
+				jsonUrls[uIndex] = gin.H{
+					"url":   url.URL,
+					"urlIv": url.UrlIv,
 				}
 			}
 
@@ -76,7 +96,9 @@ func Get(c *gin.Context) {
 				"usernameIv":       password.UsernameIv,
 				"password":         password.Password,
 				"passwordIv":       password.PasswordIv,
+				"emoji":            password.Emoji,
 				"additionalFields": jsonAdditionalFields,
+				"urls":             jsonUrls,
 			}
 		}
 
@@ -100,6 +122,12 @@ func Get(c *gin.Context) {
 			return
 		}
 
+		urls, uErr := password.QueryUrls().All(db.Context)
+		if uErr != nil {
+			c.JSON(500, gin.H{"error": gin.H{"code": "errUnknown", "message": "An unknown error has occured. Please try again later."}})
+			return
+		}
+
 		jsonAdditionalFields := make([]gin.H, len(additionalFields))
 		for afIndex, additionalField := range additionalFields {
 			jsonAdditionalFields[afIndex] = gin.H{
@@ -107,6 +135,14 @@ func Get(c *gin.Context) {
 				"keyIv":   additionalField.KeyIv,
 				"value":   additionalField.Value,
 				"valueIv": additionalField.ValueIv,
+			}
+		}
+
+		jsonUrls := make([]gin.H, len(urls))
+		for uIndex, url := range urls {
+			jsonUrls[uIndex] = gin.H{
+				"url":   url.URL,
+				"urlIv": url.UrlIv,
 			}
 		}
 
@@ -118,7 +154,9 @@ func Get(c *gin.Context) {
 			"usernameIv":       password.UsernameIv,
 			"password":         password.Password,
 			"passwordIv":       password.PasswordIv,
+			"emoji":            password.Emoji,
 			"additionalFields": jsonAdditionalFields,
+			"urls":             jsonUrls,
 		}
 
 		c.JSON(200, gin.H{"password": jsonPassword})
@@ -164,6 +202,11 @@ func Post(c *gin.Context) {
 		return
 	}
 
+	if input.Emoji == "" {
+		c.JSON(400, gin.H{"error": gin.H{"code": "errMissingEmoji", "message": "Required 'emoji' was not found."}})
+		return
+	}
+
 	decodedName, dnErr := base64.StdEncoding.DecodeString(input.Name)
 	if dnErr != nil {
 		c.JSON(400, gin.H{"error": gin.H{"code": "errParsingUsername", "message": "Unable to parse 'username', expected base64 encoding."}})
@@ -200,29 +243,34 @@ func Post(c *gin.Context) {
 		return
 	}
 
+	if !emoji.IsEmoji(input.Emoji) {
+		c.JSON(400, gin.H{"error": gin.H{"code": "errParsingEmoji", "message": "Unable to parse 'emoji', expected unicode emoji."}})
+		return
+	}
+
 	additionalFields := make([]*ent.AdditionalField, len(input.AdditionalFields))
 	for index, additionalField := range input.AdditionalFields {
 		decodedKey, dkErr := base64.StdEncoding.DecodeString(additionalField.Key)
 		if dkErr != nil {
-			c.JSON(400, gin.H{"error": gin.H{"code": "errPassingAdditionalFieldKey", "message": "Unable to parse 'additionalField['" + fmt.Sprint(index) + "].key', expected base64 encoding."}})
+			c.JSON(400, gin.H{"error": gin.H{"code": "errPassingAdditionalFieldKey", "message": "Unable to parse 'additionalFields['" + fmt.Sprint(index) + "].key', expected base64 encoding."}})
 			return
 		}
 
 		decodedKeyIv, dkiErr := base64.StdEncoding.DecodeString(additionalField.KeyIv)
 		if dkiErr != nil {
-			c.JSON(400, gin.H{"error": gin.H{"code": "errPassingAdditionalFieldKeyIv", "message": "Unable to parse 'additionalField['" + fmt.Sprint(index) + "].keyIv', expected base64 encoding."}})
+			c.JSON(400, gin.H{"error": gin.H{"code": "errPassingAdditionalFieldKeyIv", "message": "Unable to parse 'additionalFields['" + fmt.Sprint(index) + "].keyIv', expected base64 encoding."}})
 			return
 		}
 
 		decodedValue, dvErr := base64.StdEncoding.DecodeString(additionalField.Value)
 		if dvErr != nil {
-			c.JSON(400, gin.H{"error": gin.H{"code": "errPassingAdditionalFieldValue", "message": "Unable to parse 'additionalField['" + fmt.Sprint(index) + "].value', expected base64 encoding."}})
+			c.JSON(400, gin.H{"error": gin.H{"code": "errPassingAdditionalFieldValue", "message": "Unable to parse 'additionalFields['" + fmt.Sprint(index) + "].value', expected base64 encoding."}})
 			return
 		}
 
 		decodedValueIv, dviErr := base64.StdEncoding.DecodeString(additionalField.ValueIv)
 		if dviErr != nil {
-			c.JSON(400, gin.H{"error": gin.H{"code": "errPassingAdditionalFieldValueIv", "message": "Unable to parse 'additionalField['" + fmt.Sprint(index) + "].valueIv', expected base64 encoding."}})
+			c.JSON(400, gin.H{"error": gin.H{"code": "errPassingAdditionalFieldValueIv", "message": "Unable to parse 'additionalFields['" + fmt.Sprint(index) + "].valueIv', expected base64 encoding."}})
 			return
 		}
 
@@ -241,6 +289,33 @@ func Post(c *gin.Context) {
 		additionalFields[index] = newAdditionalField
 	}
 
+	urls := make([]*ent.Url, len(input.Urls))
+	for index, url := range input.Urls {
+		decodedUrl, duErr := base64.StdEncoding.DecodeString(url.Url)
+		if duErr != nil {
+			c.JSON(400, gin.H{"error": gin.H{"code": "errPassingUrl", "message": "Unable to parse 'urls['" + fmt.Sprint(index) + "].url', expected base64 encoding."}})
+			return
+		}
+
+		decodedUrlIv, duiErr := base64.StdEncoding.DecodeString(url.UrlIv)
+		if duiErr != nil {
+			c.JSON(400, gin.H{"error": gin.H{"code": "errPassingUrlIv", "message": "Unable to parse 'urls['" + fmt.Sprint(index) + "].urlIv', expected base64 encoding."}})
+			return
+		}
+
+		newUrl, nuErr := db.Client.Url.Create().
+			SetURL(decodedUrl).
+			SetUrlIv(decodedUrlIv).
+			Save(db.Context)
+
+		if nuErr != nil {
+			c.JSON(500, gin.H{"error": gin.H{"code": "errUnknown", "message": "An unknown error has occured. Please try again later."}})
+			return
+		}
+
+		urls[index] = newUrl
+	}
+
 	password, passwordErr := db.Client.Password.Create().
 		SetName(decodedName).
 		SetNameIv(decodedNameIv).
@@ -248,7 +323,9 @@ func Post(c *gin.Context) {
 		SetUsernameIv(decodedUsernameIv).
 		SetPassword(decodedPassword).
 		SetPasswordIv(decodedPasswordIv).
+		SetEmoji(input.Emoji).
 		AddAdditionalFields(additionalFields...).
+		AddUrls(urls...).
 		Save(db.Context)
 
 	if passwordErr != nil {

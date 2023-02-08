@@ -22,6 +22,7 @@ func (Password) Fields() []ent.Field {
 		field.Bytes("usernameIv").NotEmpty(),
 		field.Bytes("password").NotEmpty(),
 		field.Bytes("passwordIv").NotEmpty(),
+		field.String("emoji").Optional(),
 	}
 }
 
@@ -29,6 +30,7 @@ func (Password) Fields() []ent.Field {
 func (Password) Edges() []ent.Edge {
 	return []ent.Edge{
 		edge.To("additionalFields", AdditionalField.Type),
+		edge.To("urls", Url.Type),
 	}
 }
 

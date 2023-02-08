@@ -85,6 +85,11 @@ func PasswordIv(v []byte) predicate.Password {
 	return predicate.Password(sql.FieldEQ(FieldPasswordIv, v))
 }
 
+// Emoji applies equality check predicate on the "emoji" field. It's identical to EmojiEQ.
+func Emoji(v string) predicate.Password {
+	return predicate.Password(sql.FieldEQ(FieldEmoji, v))
+}
+
 // NameEQ applies the EQ predicate on the "name" field.
 func NameEQ(v []byte) predicate.Password {
 	return predicate.Password(sql.FieldEQ(FieldName, v))
@@ -325,6 +330,81 @@ func PasswordIvLTE(v []byte) predicate.Password {
 	return predicate.Password(sql.FieldLTE(FieldPasswordIv, v))
 }
 
+// EmojiEQ applies the EQ predicate on the "emoji" field.
+func EmojiEQ(v string) predicate.Password {
+	return predicate.Password(sql.FieldEQ(FieldEmoji, v))
+}
+
+// EmojiNEQ applies the NEQ predicate on the "emoji" field.
+func EmojiNEQ(v string) predicate.Password {
+	return predicate.Password(sql.FieldNEQ(FieldEmoji, v))
+}
+
+// EmojiIn applies the In predicate on the "emoji" field.
+func EmojiIn(vs ...string) predicate.Password {
+	return predicate.Password(sql.FieldIn(FieldEmoji, vs...))
+}
+
+// EmojiNotIn applies the NotIn predicate on the "emoji" field.
+func EmojiNotIn(vs ...string) predicate.Password {
+	return predicate.Password(sql.FieldNotIn(FieldEmoji, vs...))
+}
+
+// EmojiGT applies the GT predicate on the "emoji" field.
+func EmojiGT(v string) predicate.Password {
+	return predicate.Password(sql.FieldGT(FieldEmoji, v))
+}
+
+// EmojiGTE applies the GTE predicate on the "emoji" field.
+func EmojiGTE(v string) predicate.Password {
+	return predicate.Password(sql.FieldGTE(FieldEmoji, v))
+}
+
+// EmojiLT applies the LT predicate on the "emoji" field.
+func EmojiLT(v string) predicate.Password {
+	return predicate.Password(sql.FieldLT(FieldEmoji, v))
+}
+
+// EmojiLTE applies the LTE predicate on the "emoji" field.
+func EmojiLTE(v string) predicate.Password {
+	return predicate.Password(sql.FieldLTE(FieldEmoji, v))
+}
+
+// EmojiContains applies the Contains predicate on the "emoji" field.
+func EmojiContains(v string) predicate.Password {
+	return predicate.Password(sql.FieldContains(FieldEmoji, v))
+}
+
+// EmojiHasPrefix applies the HasPrefix predicate on the "emoji" field.
+func EmojiHasPrefix(v string) predicate.Password {
+	return predicate.Password(sql.FieldHasPrefix(FieldEmoji, v))
+}
+
+// EmojiHasSuffix applies the HasSuffix predicate on the "emoji" field.
+func EmojiHasSuffix(v string) predicate.Password {
+	return predicate.Password(sql.FieldHasSuffix(FieldEmoji, v))
+}
+
+// EmojiIsNil applies the IsNil predicate on the "emoji" field.
+func EmojiIsNil() predicate.Password {
+	return predicate.Password(sql.FieldIsNull(FieldEmoji))
+}
+
+// EmojiNotNil applies the NotNil predicate on the "emoji" field.
+func EmojiNotNil() predicate.Password {
+	return predicate.Password(sql.FieldNotNull(FieldEmoji))
+}
+
+// EmojiEqualFold applies the EqualFold predicate on the "emoji" field.
+func EmojiEqualFold(v string) predicate.Password {
+	return predicate.Password(sql.FieldEqualFold(FieldEmoji, v))
+}
+
+// EmojiContainsFold applies the ContainsFold predicate on the "emoji" field.
+func EmojiContainsFold(v string) predicate.Password {
+	return predicate.Password(sql.FieldContainsFold(FieldEmoji, v))
+}
+
 // HasAdditionalFields applies the HasEdge predicate on the "additionalFields" edge.
 func HasAdditionalFields() predicate.Password {
 	return predicate.Password(func(s *sql.Selector) {
@@ -343,6 +423,33 @@ func HasAdditionalFieldsWith(preds ...predicate.AdditionalField) predicate.Passw
 			sqlgraph.From(Table, FieldID),
 			sqlgraph.To(AdditionalFieldsInverseTable, FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, AdditionalFieldsTable, AdditionalFieldsColumn),
+		)
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasUrls applies the HasEdge predicate on the "urls" edge.
+func HasUrls() predicate.Password {
+	return predicate.Password(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, UrlsTable, UrlsColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasUrlsWith applies the HasEdge predicate on the "urls" edge with a given conditions (other predicates).
+func HasUrlsWith(preds ...predicate.Url) predicate.Password {
+	return predicate.Password(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(UrlsInverseTable, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, UrlsTable, UrlsColumn),
 		)
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {

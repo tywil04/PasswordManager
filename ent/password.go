@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"strings"
 
+	"entgo.io/ent/dialect/sql"
 	"github.com/google/uuid"
 )
 
@@ -27,6 +28,8 @@ type Password struct {
 	Password []byte `json:"password,omitempty"`
 	// PasswordIv holds the value of the "passwordIv" field.
 	PasswordIv []byte `json:"passwordIv,omitempty"`
+	// Emoji holds the value of the "emoji" field.
+	Emoji string `json:"emoji,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the PasswordQuery when eager-loading is set.
 	Edges PasswordEdges `json:"edges"`
@@ -36,9 +39,11 @@ type Password struct {
 type PasswordEdges struct {
 	// AdditionalFields holds the value of the additionalFields edge.
 	AdditionalFields []*AdditionalField `json:"additionalFields,omitempty"`
+	// Urls holds the value of the urls edge.
+	Urls []*Url `json:"urls,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [1]bool
+	loadedTypes [2]bool
 }
 
 // AdditionalFieldsOrErr returns the AdditionalFields value or an error if the edge
@@ -50,6 +55,15 @@ func (e PasswordEdges) AdditionalFieldsOrErr() ([]*AdditionalField, error) {
 	return nil, &NotLoadedError{edge: "additionalFields"}
 }
 
+// UrlsOrErr returns the Urls value or an error if the edge
+// was not loaded in eager-loading.
+func (e PasswordEdges) UrlsOrErr() ([]*Url, error) {
+	if e.loadedTypes[1] {
+		return e.Urls, nil
+	}
+	return nil, &NotLoadedError{edge: "urls"}
+}
+
 // scanValues returns the types for scanning values from sql.Rows.
 func (*Password) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
@@ -57,6 +71,8 @@ func (*Password) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case password.FieldName, password.FieldNameIv, password.FieldUsername, password.FieldUsernameIv, password.FieldPassword, password.FieldPasswordIv:
 			values[i] = new([]byte)
+		case password.FieldEmoji:
+			values[i] = new(sql.NullString)
 		case password.FieldID:
 			values[i] = new(uuid.UUID)
 		default:
@@ -116,6 +132,12 @@ func (pa *Password) assignValues(columns []string, values []any) error {
 			} else if value != nil {
 				pa.PasswordIv = *value
 			}
+		case password.FieldEmoji:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field emoji", values[i])
+			} else if value.Valid {
+				pa.Emoji = value.String
+			}
 		}
 	}
 	return nil
@@ -124,6 +146,11 @@ func (pa *Password) assignValues(columns []string, values []any) error {
 // QueryAdditionalFields queries the "additionalFields" edge of the Password entity.
 func (pa *Password) QueryAdditionalFields() *AdditionalFieldQuery {
 	return NewPasswordClient(pa.config).QueryAdditionalFields(pa)
+}
+
+// QueryUrls queries the "urls" edge of the Password entity.
+func (pa *Password) QueryUrls() *URLQuery {
+	return NewPasswordClient(pa.config).QueryUrls(pa)
 }
 
 // Update returns a builder for updating this Password.
@@ -166,6 +193,9 @@ func (pa *Password) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("passwordIv=")
 	builder.WriteString(fmt.Sprintf("%v", pa.PasswordIv))
+	builder.WriteString(", ")
+	builder.WriteString("emoji=")
+	builder.WriteString(pa.Emoji)
 	builder.WriteByte(')')
 	return builder.String()
 }

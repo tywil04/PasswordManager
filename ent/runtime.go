@@ -8,6 +8,7 @@ import (
 	"PasswordManager/ent/password"
 	"PasswordManager/ent/schema"
 	"PasswordManager/ent/session"
+	"PasswordManager/ent/url"
 	"PasswordManager/ent/user"
 	"PasswordManager/ent/webauthnchallenge"
 	"PasswordManager/ent/webauthncredential"
@@ -96,6 +97,20 @@ func init() {
 	sessionDescID := sessionFields[0].Descriptor()
 	// session.DefaultID holds the default value on creation for the id field.
 	session.DefaultID = sessionDescID.Default.(func() uuid.UUID)
+	urlFields := schema.Url{}.Fields()
+	_ = urlFields
+	// urlDescURL is the schema descriptor for url field.
+	urlDescURL := urlFields[1].Descriptor()
+	// url.URLValidator is a validator for the "url" field. It is called by the builders before save.
+	url.URLValidator = urlDescURL.Validators[0].(func([]byte) error)
+	// urlDescUrlIv is the schema descriptor for urlIv field.
+	urlDescUrlIv := urlFields[2].Descriptor()
+	// url.UrlIvValidator is a validator for the "urlIv" field. It is called by the builders before save.
+	url.UrlIvValidator = urlDescUrlIv.Validators[0].(func([]byte) error)
+	// urlDescID is the schema descriptor for id field.
+	urlDescID := urlFields[0].Descriptor()
+	// url.DefaultID holds the default value on creation for the id field.
+	url.DefaultID = urlDescID.Default.(func() uuid.UUID)
 	userFields := schema.User{}.Fields()
 	_ = userFields
 	// userDescEmail is the schema descriptor for email field.
