@@ -9,8 +9,8 @@ import (
 
 type Emoji struct {
 	Emoji string `form:"emoji" json:"emoji" xml:"emoji"`
-	//Group string `form:"group" json:"group" xml:"group"`
-	Slug string `form:"slug" json:"slug" xml:"slug"`
+	Group string `form:"group" json:"group" xml:"group"`
+	Slug  string `form:"slug" json:"slug" xml:"slug"`
 }
 
 //go:embed emojis.json
@@ -30,8 +30,8 @@ func init() {
 	for key, value := range parsedEmojis {
 		Emojis[index] = Emoji{
 			Emoji: key,
-			//Group: value["group"],
-			Slug: value["slug"],
+			Group: value["group"],
+			Slug:  value["slug"],
 		}
 		EmojisMap[key] = true
 		index++
