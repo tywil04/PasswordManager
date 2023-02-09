@@ -1,19 +1,18 @@
 <script>
     import { goto } from '$app/navigation';
     
-    let variant = "default"
     let submit = false
     let href = ""
     let classList = ""
     let onClick = () => {}
-    export { variant, submit, href, classList as class, onClick }
+    export { submit, href, classList as class, onClick }
 
     if (href !== "") {
         onClick = () => goto(href)
     }
 </script>
 
-<button class={classList} class:accent={variant === "accent"} class:default={variant === "default"} on:click={onClick} type={submit ? "submit": "button"}><slot/></button>
+<button class={classList} on:click={onClick} type={submit ? "submit": "button"}><slot/></button>
 
 <style lang="postcss">
     button {

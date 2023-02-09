@@ -11,7 +11,7 @@ export async function load() {
         method: "GET",
         headers: {
             "Content-type": "application/json",
-            "Authorization": storage.getAuthToken(),
+            "Authorization": await storage.getAuthToken(),
         }
     })).json()
 

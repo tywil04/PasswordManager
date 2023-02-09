@@ -12,6 +12,7 @@
     import TextInput from "$lib/components/inputs/TextInput.svelte"
 
     let additionalFields = []
+    let urls = []
 
     let submitError
 
@@ -21,37 +22,39 @@
         const name = data.get("name")
         const username = data.get("username")
         const password = data.get("password")
+        const colour = data.get("colour")
         
         if (!username || !password)
             cancel()
 
-        const databaseKey = storage.getDatabaseKey()
-        const authToken = storage.getAuthToken()
-        const importedDatabaseKey = await cryptography.importDatabaseKey(databaseKey)
+        const databaseKey = await storage.getDatabaseKey()
+        const authToken = await storage.getAuthToken()
 
-        const encryptedName = await cryptography.encrypt(importedDatabaseKey, utils.stringToArrayBuffer(name))
-        const encryptedUsername = await cryptography.encrypt(importedDatabaseKey, utils.stringToArrayBuffer(username))
-        const encryptedPassword = await cryptography.encrypt(importedDatabaseKey, utils.stringToArrayBuffer(password))
+        const encryptedName = await cryptography.encrypt(databaseKey, utils.stringToArrayBuffer(name))
+        const encryptedUsername = await cryptography.encrypt(databaseKey, utils.stringToArrayBuffer(username))
+        const encryptedPassword = await cryptography.encrypt(databaseKey, utils.stringToArrayBuffer(password))
 
         const processedAdditionalFields = []
-        let lastWasField = false
+        const processedUrls = []
+
+        let aFLastWasField = false
         let skip = false
         let temp = {}
 
         for (const [ key, value ] of data) {
-            if (!lastWasField && key === "key") {
+            if (!aFLastWasField && key === "key") {
                 if (value.trim() === "") {
                     skip = true
                 } else {
-                    const encryptedKey = await cryptography.encrypt(importedDatabaseKey, utils.stringToArrayBuffer(value))
-                    temp.Key = base64.encode(encryptedKey.encrypted)
-                    temp.KeyIv = base64.encode(encryptedKey.iv)
+                    const encryptedKey = await cryptography.encrypt(databaseKey, utils.stringToArrayBuffer(value))
+                    temp.key = base64.encode(encryptedKey.encrypted)
+                    temp.keyIv = base64.encode(encryptedKey.iv)
                 }
-            } else if (lastWasField && key === "value" && !skip) {
+            } else if (aFLastWasField && key === "value" && !skip) {
                 if (value.trim() !== "") {
-                    const encryptedValue = await cryptography.encrypt(importedDatabaseKey, utils.stringToArrayBuffer(value))
-                    temp.Value = base64.encode(encryptedValue.encrypted)
-                    temp.ValueIv = base64.encode(encryptedValue.iv)
+                    const encryptedValue = await cryptography.encrypt(databaseKey, utils.stringToArrayBuffer(value))
+                    temp.value = base64.encode(encryptedValue.encrypted)
+                    temp.valueIv = base64.encode(encryptedValue.iv)
                     processedAdditionalFields.push(temp)
                 }
                 temp = {}
@@ -59,7 +62,15 @@
                 skip = false
                 temp = {}
             }
-            lastWasField = !lastWasField
+            aFLastWasField = !aFLastWasField
+
+            if (key === "url") {
+                const encryptedUrl = await cryptography.encrypt(databaseKey, utils.stringToArrayBuffer(value))
+                processedUrls.push({
+                    url: base64.encode(encryptedUrl.encrypted),
+                    urlIv: base64.encode(encryptedUrl.iv)
+                })
+            }
         }
 
         const response = await fetch("/api/v1/password", {
@@ -75,7 +86,9 @@
                 usernameIv: base64.encode(encryptedUsername.iv),
                 password: base64.encode(encryptedPassword.encrypted),
                 passwordIv: base64.encode(encryptedPassword.iv),
+                colour: colour.replaceAll("#", ""),
                 additionalFields: processedAdditionalFields,
+                urls: processedUrls,
             })
         })
         const json = await response.json()
@@ -94,10 +107,12 @@
     <div class="outer">
         <div class="inner">
             <form method="POST" class="inner space-y-5" use:enhance={submit}>
-                <TextInput classList="flex-grow" label="Name" name="name" description="Enter a namae."/>
+                <TextInput classList="flex-grow" label="Name" name="name" description="Enter a name."/>
                 <TextInput classList="flex-grow" label="Username" name="username" description="Enter a username."/>
                 <PasswordInput verifiyValidity={false} classList="flex-grow" label="Password" name="password" description="Enter a password."/>
             
+                <input type="colour" value="0000ff" name="colour"/>
+
                 <div class="flex flex-col">
                     {#each additionalFields as additionalField}
                         <div class="flex flex-row">
@@ -106,9 +121,18 @@
                         </div>
                     {/each}
                 </div>
+
+                <div class="flex flex-col">
+                    {#each urls as url}
+                        <div class="flex flex-row">
+                            <TextInput required={false} classList="flex-grow" name="url" label="Url" bind:value={url}/>
+                        </div>
+                    {/each}
+                </div>
             
                 <RegularButton onClick={() => {
                     additionalFields = [...additionalFields, { Key: "", Value: "" }]
+                    urls = [...urls, ""]
                 }}>Click me!</RegularButton>
             
                 <RegularButton submit>Submit</RegularButton>

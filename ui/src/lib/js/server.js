@@ -5,7 +5,7 @@ export async function isAuthed() {
         method: "GET",
         headers: {
             "Content-type": "application/json",
-            "Authorization": storage.getAuthToken()
+            "Authorization": await storage.getAuthToken()
         }
     })).status
 

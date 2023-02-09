@@ -30,4 +30,4 @@
 
 <svelte:options accessors={true}/>
 
-<TextInput bind:value={value} onInput={internalOnInput} {name} {label} {description} {required} classList={validClass + " " + classList} autocomplete="email" type="email"/>
+<TextInput bind:value={value} onInput={internalOnInput} {name} {label} {description} {required} classList={`${validClass} ${classList}`} autocomplete="email" type="email"/>

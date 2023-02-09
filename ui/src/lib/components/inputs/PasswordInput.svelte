@@ -40,7 +40,7 @@
 
 <svelte:options accessors={true}/>
 
-<TextInput bind:value={value} bind:changeType={changeType} onInput={internalOnInput} {name} {label} {description} {required} classList={validClass + " " + classList} autocomplete="password" type="password">
+<TextInput bind:value={value} bind:changeType={changeType} onInput={internalOnInput} {name} {label} {description} {required} classList={`${validClass} ${classList}`} autocomplete="password" type="password">
     <button tabindex="-1" type="button" on:click={toggleType}>{hidden ? "Show": "Hide"}</button>
 </TextInput>
 

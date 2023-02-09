@@ -13,7 +13,7 @@
         submitError = undefined
 
         const name = data.get("name")
-        const authToken = storage.getAuthToken()
+        const authToken = await storage.getAuthToken()
 
         const response = await fetch(`/api/v1/webauthn/register`, {
             method: "GET",
