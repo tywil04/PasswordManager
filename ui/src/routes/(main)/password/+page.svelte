@@ -107,17 +107,17 @@
     <div class="outer">
         <div class="inner">
             <form method="POST" class="inner space-y-5" use:enhance={submit}>
-                <TextInput classList="flex-grow" label="Name" name="name" description="Enter a name."/>
-                <TextInput classList="flex-grow" label="Username" name="username" description="Enter a username."/>
-                <PasswordInput verifiyValidity={false} classList="flex-grow" label="Password" name="password" description="Enter a password."/>
+                <TextInput class="flex-grow" label="Name" name="name" description="Enter a name."/>
+                <TextInput class="flex-grow" label="Username" name="username" description="Enter a username."/>
+                <PasswordInput checkValid={false} class="flex-grow" label="Password" name="password" description="Enter a password."/>
             
                 <input type="colour" value="0000ff" name="colour"/>
 
                 <div class="flex flex-col">
                     {#each additionalFields as additionalField}
                         <div class="flex flex-row">
-                            <TextInput required={false} classList="flex-grow" name="key" label="Key" bind:value={additionalField.Key}/>
-                            <TextInput required={false} classList="flex-grow" name="value" label="Value" bind:value={additionalField.Value}/>
+                            <TextInput required={false} class="flex-grow" name="key" label="Key" bind:value={additionalField.Key}/>
+                            <TextInput required={false} class="flex-grow" name="value" label="Value" bind:value={additionalField.Value}/>
                         </div>
                     {/each}
                 </div>
@@ -125,15 +125,22 @@
                 <div class="flex flex-col">
                     {#each urls as url}
                         <div class="flex flex-row">
-                            <TextInput required={false} classList="flex-grow" name="url" label="Url" bind:value={url}/>
+                            <TextInput required={false} class="flex-grow" name="url" label="Url" bind:value={url}>
+                                <svelte:fragment slot="left">
+                                    <span>https://</span>
+                                </svelte:fragment>
+                            </TextInput>
                         </div>
                     {/each}
                 </div>
             
                 <RegularButton onClick={() => {
                     additionalFields = [...additionalFields, { Key: "", Value: "" }]
+                }}>additionalField</RegularButton>
+
+                <RegularButton onClick={() => {
                     urls = [...urls, ""]
-                }}>Click me!</RegularButton>
+                }}>url</RegularButton>
             
                 <RegularButton submit>Submit</RegularButton>
             </form>            

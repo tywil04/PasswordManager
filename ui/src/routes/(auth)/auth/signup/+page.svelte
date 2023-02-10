@@ -111,21 +111,21 @@
                     <br/>
                     <code class="text-gray-500">!#$%^'"`&*-=_+&gt;&lt;?;:()&#123;&#125;[].,@</code>
                     <br/><br/>
-                    Your password must also have a length of 12 characters or more.
+                    Your password must also have a length of 8 characters or more.
                 </p>
             </div>
         
             <form method="POST" class="inner space-y-5" use:enhance={signup}>
-                <EmailInput classList="flex-grow" label="Email" name="email" description="Enter your email address."/>
-                <PasswordInput classList="flex-grow" label="Password" name="password" description="Enter a secure password."/>
-                <PasswordInput classList="flex-grow" label="Confirm Password" name="passwordConfirm" description="Confirm your secure password."/>
+                <EmailInput class="flex-grow" label="Email" name="email" description="Enter your email address." invalidMsg="Enter a valid email address."/>
+                <PasswordInput class="flex-grow" label="Password" name="password" description="Enter a secure password." invalidMsg="Enter a valid secure password."/>
+                <PasswordInput class="flex-grow" label="Confirm Password" name="passwordConfirm" description="Confirm your secure password." invalidMsg="Enter a valid secure password."/>
 
                 {#if submitError !== undefined}
                     <div class="text-red-500 text-sm">• {submitError}</div>
                 {/if}
 
                 <div class="flex flex-row space-x-5">
-                    <PrimaryButton class="flex-grow" submit variant="accent">Sign up</PrimaryButton>  
+                    <PrimaryButton class="flex-grow" submit>Sign up</PrimaryButton>  
                     <RegularButton class="flex-grow" href="/auth/signin">Sign in</RegularButton>          
                 </div>
             </form>
@@ -148,7 +148,7 @@
                 {/if}
 
                 <div class="flex flex-row space-x-5">
-                    <PrimaryButton class="flex-grow" submit variant="accent">Verify</PrimaryButton>  
+                    <PrimaryButton class="flex-grow" submit>Verify</PrimaryButton>  
                 </div>
             </form>
         {/if}
@@ -173,7 +173,7 @@
     }
 
     h1 {
-        @apply text-xl font-bold h-fit px-5 py-2.5 bg-black text-white rounded-t-[15px];
+        @apply text-xl font-bold h-fit px-5 py-2.5 bg-gray-300/80 border-b border-black text-gray-800/80 rounded-t-[15px];
     }
 
     p {

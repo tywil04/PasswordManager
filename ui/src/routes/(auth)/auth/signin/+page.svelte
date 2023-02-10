@@ -163,15 +163,15 @@
             </div>
         
             <form method="POST" class="inner space-y-5" use:enhance={signin}>
-                <EmailInput classList="flex-grow" label="Email" name="email" description="Enter your email address."/>
-                <PasswordInput classList="flex-grow" label="Password" name="password" description="Enter a secure password."/>
+                <EmailInput class="flex-grow" label="Email" name="email" description="Enter your email address." invalidMsg="Enter a valid email address."/>
+                <PasswordInput class="flex-grow" label="Password" name="password" description="Enter a secure password." invalidMsg="Enter a valid secure password."/>
 
                 {#if submitError !== undefined}
                     <div class="text-red-500 text-sm">• {submitError}</div>
                 {/if}
 
                 <div class="flex flex-row space-x-5">
-                    <PrimaryButton class="flex-grow" submit variant="accent">Sign in</PrimaryButton>  
+                    <PrimaryButton class="flex-grow" submit>Sign in</PrimaryButton>  
                     <RegularButton class="flex-grow" href="/auth/signup">Sign up</RegularButton>          
                 </div>
             </form>
@@ -194,7 +194,7 @@
                 {/if}
 
                 <div class="flex flex-row space-x-5">
-                    <PrimaryButton class="flex-grow" submit variant="accent">Verify</PrimaryButton>  
+                    <PrimaryButton class="flex-grow" submit>Verify</PrimaryButton>  
                 </div>
             </form>
         {:else if view === "webauthnChallenge"}
@@ -211,7 +211,7 @@
                 {/if}
 
                 <div class="flex flex-row space-x-5">
-                    <PrimaryButton class="flex-grow" submit variant="accent">Start Webauthn</PrimaryButton>  
+                    <PrimaryButton class="flex-grow" submit>Start Webauthn</PrimaryButton>  
                 </div>
             </form>
         {/if}
@@ -222,7 +222,7 @@
     main {
         @apply w-full h-full bg-blue-400 flex flex-col justify-center;
     }
-
+    
     div.outer {
         @apply w-full h-fit flex flex-col justify-center space-y-5 p-16 md:p-0 md:space-x-5 md:space-y-0 md:flex-row;
     }
@@ -236,7 +236,7 @@
     }
 
     h1 {
-        @apply text-xl font-bold h-fit px-5 py-2.5 bg-black text-white rounded-t-[15px];
+        @apply text-xl font-bold h-fit px-5 py-2.5 bg-gray-300/80 border-b border-black text-gray-800/80 rounded-t-[15px];
     }
 
     p {

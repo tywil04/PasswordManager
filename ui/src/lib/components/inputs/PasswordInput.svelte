@@ -1,51 +1,39 @@
 <script>
-    import TextInput from "$lib/components/inputs/TextInput.svelte";
+    import TextInput from "$lib/components/inputs/TextInput.svelte"
 
-    export let value = ""
-    export let valid = null 
-    export let name = ""
-    export let label = ""
-    export let description = ""
-    export let required = true
-    export let classList = ""
-    export let verifiyValidity = true
+    let value = ""
+    let id = undefined
+    let name = ""
+    let label = ""
+    let description = ""
+    let required = true
+    let classList = ""
+    let invalidMsg = "Invalid password."
+    let checkValid = true
+    export { value, id, name, label, description, required, classList as class, invalidMsg, checkValid }
 
-    let validClass = ""
-    let hidden = true
-    let changeType
+    let input
 
-    const internalOnInput = () => {
-        if (verifiyValidity) {
-            const regex = /^((?=.*([A-Z]){2,})(?=.*([!#$%^'"`&*-=_+><?;:(){}\[\].,@]){2,})(?=.*([0-9]){2,})(?=.*([a-z]){2,})).{12,}$/
-            valid = regex.test(value)
+    let type = "password"
+    let buttonText = "Show"
 
-            if (value === "") {
-                validClass = ""
-            } else if (valid === true) {
-                validClass = "valid"
-            } else if (valid === false) {
-                validClass = "invalid"
-            }
+    const checkValidity = () => {
+        if (checkValid) {
+            const valid = /^((?=.*([A-Z]){1,})(?=.*([a-z]){1,})(?=.*([0-9]){1,})(?=.*([!#$%^'"\`&*-=_+><?;:(){}\[\].,@]){1,})).{8,}$/.test(value)
+            if (value === "" || valid)
+                input.setCustomValidity("")
+            else if (!valid)
+                input.setCustomValidity(invalidMsg)
         }
     }
 
-    const toggleType = () => {
-        if (hidden)
-            changeType("text")
-        else
-            changeType("password")
-        hidden = !hidden
+    const toggleHidden = () => {
+        [type, buttonText] = type === "password" ? ["text", "Hide"]: ["password", "Show"]
     }
 </script>
 
-<svelte:options accessors={true}/>
-
-<TextInput bind:value={value} bind:changeType={changeType} onInput={internalOnInput} {name} {label} {description} {required} classList={`${validClass} ${classList}`} autocomplete="password" type="password">
-    <button tabindex="-1" type="button" on:click={toggleType}>{hidden ? "Show": "Hide"}</button>
+<TextInput bind:this={input} bind:value={value} bind:type={type} on:input={checkValidity} class={classList} autocomplete="password" {id} {name} {label} {description} {required}>
+    <svelte:fragment slot="right">
+        <button tabindex="-1" type="button" on:click={toggleHidden} class="font-mono">{buttonText}</button>  
+    </svelte:fragment>
 </TextInput>
-
-<style lang="postcss">
-    button {
-        @apply text-sm bg-black text-white font-mono border border-black h-fit px-2 py-1 rounded-md ml-2;
-    }
-</style>

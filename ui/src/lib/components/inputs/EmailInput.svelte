@@ -1,33 +1,28 @@
 <script>
-    import TextInput from "$lib/components/inputs/TextInput.svelte";
+    import TextInput from "$lib/components/inputs/TextInput.svelte"
 
-    export let value = ""
-    export let valid = null 
-    export let name = ""
-    export let label = ""
-    export let description = ""
-    export let required = true
-    export let classList = ""
-    export let verifiyValidity = true
+    let value = ""
+    let id = undefined 
+    let name = ""
+    let label = ""
+    let description = ""
+    let required = true
+    let classList = ""
+    let invalidMsg = "Invalid email."
+    let checkValid = true
+    export { value, id, name, label, description, required, classList as class, invalidMsg, checkValid }
 
-    let validClass = ""
+    let input
 
-    const internalOnInput = () => {
-        if (verifiyValidity) {
-            const regex = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
-            valid = regex.test(value)
-
-            if (value === "") {
-                validClass = ""
-            } else if (valid === true) {
-                validClass = "valid"
-            } else if (valid === false) {
-                validClass = "invalid"
-            }
+    const checkValidity = () => {
+        if (checkValid) {
+            const valid = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/.test(value)
+            if (value === "" || valid)
+                input.setCustomValidity("")
+            else if (!valid)
+                input.setCustomValidity(invalidMsg)
         }
     }
 </script>
 
-<svelte:options accessors={true}/>
-
-<TextInput bind:value={value} onInput={internalOnInput} {name} {label} {description} {required} classList={`${validClass} ${classList}`} autocomplete="email" type="email"/>
+<TextInput bind:this={input} bind:value={value} on:input={checkValidity} class={classList} autocomplete="email" type="email" {id} {name} {label} {description} {required}/>

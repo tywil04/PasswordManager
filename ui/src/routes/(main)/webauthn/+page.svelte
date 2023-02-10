@@ -57,7 +57,7 @@
 </script>
 
 <form method="POST" use:enhance={webauthnRegisterChallenge}>
-    <TextInput classList="flex-grow" label="Name" name="name" description="Enter a namae."/>
+    <TextInput class="flex-grow" label="Name" name="name" description="Enter a namae."/>
 
     <button type="submit">start</button>
 </form>

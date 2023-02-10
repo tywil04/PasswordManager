@@ -1,33 +1,34 @@
 <script>
-    export let value = ""
-    export let name = ""
-    export let label = ""
-    export let description = ""
-    export let required = true
-    export let autocomplete = ""
-    export let type = ""
-    export let classList = ""
-    export let onInput = () => {}
-    export let changeType = () => {}
+    import { createEventDispatcher } from 'svelte';
 
-    const id = crypto.randomUUID()
+    const dispatch = createEventDispatcher()
 
-    const typeAction = (node) => {
+    let value = ""
+    let id = crypto.randomUUID()
+    let name = ""
+    let label = ""
+    let description = ""
+    let required = true
+    let autocomplete = ""
+    let type = ""
+    let classList = ""
+    export { value, id, name, label, description, required, autocomplete, type, classList as class } 
+
+    let input
+
+    const setType = (node, type) => {
         node.type = type
-
-        changeType = (newType) => {
-            node.type = newType
+        return {
+            update(type) {
+                node.type = type
+            }
         }
     }
 
-    const internalOnInput = (event) => {
-        onInput(event)
-    }
+    export const setCustomValidity = (value) => input.setCustomValidity(value)
 </script>
 
-<svelte:options accessors={true}/>
-
-<div class="column">
+<div class="outerContainer">
     {#if label}
         <label for={id}>
             {label} 
@@ -37,10 +38,10 @@
         </label>
     {/if}
     
-    <div class="row"> 
-        <input bind:value={value} on:input={internalOnInput} class={classList} {id} {name} {required} {autocomplete} use:typeAction/>
-
-        <slot/>
+    <div class="inputContainer"> 
+        <slot name="left"/>
+        <input bind:this={input} bind:value={value} on:input={(e) => dispatch("input", e)} use:setType={type} class={classList} {id} {name} {required} {autocomplete}/>
+        <slot name="right"/>
     </div>
 
     {#if description}
@@ -49,11 +50,27 @@
 </div>
 
 <style lang="postcss">
-    div.row {
+    div.inputContainer {
         @apply flex flex-row;
     }
 
-    div.column {
+    div.inputContainer :global(*:first-child:not(:last-child):not(input)) {
+        @apply bg-gray-300/80 border border-black px-2 py-1 rounded-md rounded-r-none w-fit duration-100 text-sm;
+    }
+
+    div.inputContainer :global(*:last-child:not(:first-child):not(input)) {
+        @apply bg-gray-300/80 border border-black px-2 py-1 rounded-md rounded-l-none w-fit duration-100 text-sm;
+    }
+
+    div.inputContainer > input:first-child:not(:last-child) {
+        @apply border-r-0 rounded-r-none;
+    }
+
+    div.inputContainer > input:last-child:not(:first-child) {
+        @apply border-l-0 rounded-l-none;
+    }
+
+    div.outerContainer {
         @apply flex flex-col h-fit;
     }
 
@@ -71,13 +88,5 @@
 
     input {
         @apply text-sm bg-gray-200 border border-black px-2 py-1 outline-none m-0 rounded-md w-fit duration-100;
-    }
-
-    input.valid {
-        @apply bg-green-300/80;
-    }
-
-    input.invalid {
-        @apply bg-red-300/80;
     }
 </style>
