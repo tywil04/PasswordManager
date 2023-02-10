@@ -6,9 +6,9 @@
 
     import * as cryptography from "$lib/js/cryptography.js"
     import * as validations from "$lib/js/validations.js"
+    import { Envelope, Key } from "svelte-heros-v2"
 
-    import RegularButton from "$lib/components/buttons/RegularButton.svelte"
-    import PrimaryButton from "$lib/components/buttons/PrimaryButton.svelte"
+    import Button from "$lib/components/buttons/Button.svelte"
     import EmailInput from "$lib/components/inputs/EmailInput.svelte"
     import PasswordInput from "$lib/components/inputs/PasswordInput.svelte"
     import TextInput from "$lib/components/inputs/TextInput.svelte"
@@ -99,7 +99,6 @@
     <div class="outer">
         {#if view === "signup"}
             <div class="inner">
-                <h1>Sign up</h1>
                 <p>
                     To sign in, click the <span class="text-gray-500">Sign in</span> button to be redirected to the correct page.
                     <br/><br/>
@@ -116,22 +115,33 @@
             </div>
         
             <form method="POST" class="inner space-y-5" use:enhance={signup}>
-                <EmailInput class="flex-grow" label="Email" name="email" description="Enter your email address." invalidMsg="Enter a valid email address."/>
-                <PasswordInput class="flex-grow" label="Password" name="password" description="Enter a secure password." invalidMsg="Enter a valid secure password."/>
-                <PasswordInput class="flex-grow" label="Confirm Password" name="passwordConfirm" description="Confirm your secure password." invalidMsg="Enter a valid secure password."/>
+                <EmailInput class="flex-grow" label="Email" name="email" description="Enter your email address." invalidMsg="Enter a valid email address.">
+                    <svelte:fragment slot="left">
+                        <Envelope size="30"strokeWidth="1"/>
+                    </svelte:fragment>
+                </EmailInput>
+                <PasswordInput class="flex-grow" label="Password" name="password" description="Enter a secure password." invalidMsg="Enter a valid secure password.">
+                    <svelte:fragment slot="left">
+                        <Key size="30"strokeWidth="1"/>
+                    </svelte:fragment>
+                </PasswordInput>
+                <PasswordInput class="flex-grow" label="Confirm Password" name="passwordConfirm" description="Confirm your secure password." invalidMsg="Enter a valid secure password.">
+                    <svelte:fragment slot="left">
+                        <Key size="30"strokeWidth="1"/>
+                    </svelte:fragment>
+                </PasswordInput>
 
                 {#if submitError !== undefined}
                     <div class="text-red-500 text-sm">• {submitError}</div>
                 {/if}
 
                 <div class="flex flex-row space-x-5">
-                    <PrimaryButton class="flex-grow" submit>Sign up</PrimaryButton>  
-                    <RegularButton class="flex-grow" href="/auth/signin">Sign in</RegularButton>          
+                    <Button class="flex-grow" variant="accent" type="submit">Sign up</Button>  
+                    <Button class="flex-grow" href="/auth/signin">Sign in</Button>          
                 </div>
             </form>
         {:else if view === "emailChallenge"}
             <div class="inner">
-                <h1>Email Verification</h1>
                 <p>
                     A code has been sent to your email address so we can verify you and finish creating your account.
                     <br/>
@@ -148,7 +158,7 @@
                 {/if}
 
                 <div class="flex flex-row space-x-5">
-                    <PrimaryButton class="flex-grow" submit>Verify</PrimaryButton>  
+                    <Button class="flex-grow" variant="accent" type="submit">Verify</Button>  
                 </div>
             </form>
         {/if}

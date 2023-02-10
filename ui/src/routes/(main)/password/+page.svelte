@@ -7,9 +7,10 @@
     import * as utils from "$lib/js/utils.js"
     import * as storage from "$lib/js/storage.js"
 
-    import RegularButton from "$lib/components/buttons/RegularButton.svelte"
+    import Button from "$lib/components/buttons/Button.svelte"
     import PasswordInput from "$lib/components/inputs/PasswordInput.svelte"
     import TextInput from "$lib/components/inputs/TextInput.svelte"
+    import ColourInput from "$lib/components/inputs/ColourInput.svelte";
 
     let additionalFields = []
     let urls = []
@@ -110,8 +111,7 @@
                 <TextInput class="flex-grow" label="Name" name="name" description="Enter a name."/>
                 <TextInput class="flex-grow" label="Username" name="username" description="Enter a username."/>
                 <PasswordInput checkValid={false} class="flex-grow" label="Password" name="password" description="Enter a password."/>
-            
-                <input type="colour" value="0000ff" name="colour"/>
+                <ColourInput class="flex-grow" label="Colour" name="colour" description="Find a colour." invalidMsg="Find a valid colour."/>
 
                 <div class="flex flex-col">
                     {#each additionalFields as additionalField}
@@ -142,7 +142,7 @@
                     urls = [...urls, ""]
                 }}>url</RegularButton>
             
-                <RegularButton submit>Submit</RegularButton>
+                <Button type="submit">Submit</Button>
             </form>            
         </div>
     </div>

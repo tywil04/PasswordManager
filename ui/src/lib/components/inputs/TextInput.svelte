@@ -10,7 +10,7 @@
     let description = ""
     let required = true
     let autocomplete = ""
-    let type = ""
+    let type = "text"
     let classList = ""
     export { value, id, name, label, description, required, autocomplete, type, classList as class } 
 
@@ -54,16 +54,36 @@
         @apply flex flex-row;
     }
 
+    div.inputContainer :global(*:first-child:not(:last-child):not(input):not(button):not(a)) {
+        @apply bg-gray-200/80;
+    }
+
+    div.inputContainer :global(*:last-child:not(:first-child):not(input):not(button):not(a)) {
+        @apply bg-gray-200/80;
+    }
+
     div.inputContainer :global(*:first-child:not(:last-child):not(input)) {
-        @apply bg-gray-300/80 border border-black px-2 py-1 rounded-md rounded-r-none w-fit duration-100 text-sm;
+        @apply bg-gray-300/80 border border-black px-2 py-1 rounded-l-md w-fit duration-100 text-sm;
     }
 
     div.inputContainer :global(*:last-child:not(:first-child):not(input)) {
-        @apply bg-gray-300/80 border border-black px-2 py-1 rounded-md rounded-l-none w-fit duration-100 text-sm;
+        @apply bg-gray-300/80 border border-black px-2 py-1 rounded-r-md w-fit duration-100 text-sm;
+    }
+
+    div.inputContainer :global(*:last-child:not(:first-child):not(input)) {
+        @apply bg-gray-300/80;
+    }
+
+    div.inputContainer :global(*:first-child:not(:last-child):not(input)), div.inputContainer :global(*:last-child:not(:first-child):not(input)) {
+        @apply outline-none ring-0;
     }
 
     div.inputContainer > input:first-child:not(:last-child) {
         @apply border-r-0 rounded-r-none;
+    }
+
+    div.inputContainer > input:not(:first-child):not(:last-child) {
+        @apply border-x-0 rounded-none;
     }
 
     div.inputContainer > input:last-child:not(:first-child) {
@@ -87,6 +107,10 @@
     }
 
     input {
-        @apply text-sm bg-gray-200 border border-black px-2 py-1 outline-none m-0 rounded-md w-fit duration-100;
+        @apply text-sm bg-gray-200 border border-black px-2 py-1 outline-none ring-0 m-0 rounded-md w-fit duration-100;
+    }
+
+    input:focus {
+        @apply outline-none ring-0;
     }
 </style>

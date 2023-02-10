@@ -4,13 +4,13 @@
 
     import * as base64 from "base64-arraybuffer"
     import * as webauthnJson from "@github/webauthn-json/browser-ponyfill"
+    import { Envelope, Key } from "svelte-heros-v2"
 
     import * as cryptography from "$lib/js/cryptography.js"
     import * as validations from "$lib/js/validations.js"
     import * as storage from "$lib/js/storage.js"
 
-    import RegularButton from "$lib/components/buttons/RegularButton.svelte"
-    import PrimaryButton from "$lib/components/buttons/PrimaryButton.svelte"
+    import Button from "$lib/components/buttons/Button.svelte"
     import EmailInput from "$lib/components/inputs/EmailInput.svelte"
     import PasswordInput from "$lib/components/inputs/PasswordInput.svelte"
     import TextInput from "$lib/components/inputs/TextInput.svelte"
@@ -153,7 +153,6 @@
     <div class="outer">
         {#if view === "signin"}
             <div class="inner">
-                <h1>Sign in</h1>
                 <p>
                     To sign up, click the <span class="text-gray-500">Sign up</span> button to be redirected to the correct page.
                     <br/>
@@ -163,21 +162,28 @@
             </div>
         
             <form method="POST" class="inner space-y-5" use:enhance={signin}>
-                <EmailInput class="flex-grow" label="Email" name="email" description="Enter your email address." invalidMsg="Enter a valid email address."/>
-                <PasswordInput class="flex-grow" label="Password" name="password" description="Enter a secure password." invalidMsg="Enter a valid secure password."/>
+                <EmailInput class="flex-grow" label="Email" name="email" description="Enter your email address." invalidMsg="Enter a valid email address.">
+                    <svelte:fragment slot="left">
+                        <Envelope size="30"strokeWidth="1"/>
+                    </svelte:fragment>
+                </EmailInput>
+                <PasswordInput class="flex-grow" label="Password" name="password" description="Enter a secure password." invalidMsg="Enter a valid secure password.">
+                    <svelte:fragment slot="left">
+                        <Key size="30"strokeWidth="1"/>
+                    </svelte:fragment>
+                </PasswordInput>
 
                 {#if submitError !== undefined}
                     <div class="text-red-500 text-sm">• {submitError}</div>
                 {/if}
 
                 <div class="flex flex-row space-x-5">
-                    <PrimaryButton class="flex-grow" submit>Sign in</PrimaryButton>  
-                    <RegularButton class="flex-grow" href="/auth/signup">Sign up</RegularButton>          
+                    <Button class="flex-grow" variant="accent" type="submit">Sign in</Button>  
+                    <Button class="flex-grow" href="/auth/signup">Sign up</Button>          
                 </div>
             </form>
         {:else if view === "emailChallenge"}
             <div class="inner">
-                <h1>Email Verification</h1>
                 <p>
                     A code has been sent to your email address so we can verify you.
                     <br/>
@@ -194,12 +200,11 @@
                 {/if}
 
                 <div class="flex flex-row space-x-5">
-                    <PrimaryButton class="flex-grow" submit>Verify</PrimaryButton>  
+                    <Button class="flex-grow" type="submit">Verify</Button>  
                 </div>
             </form>
         {:else if view === "webauthnChallenge"}
             <div class="inner">
-                <h1>Webauthn Verification</h1>
                 <p>
                     To start Webauthn verification click the <span class="text-blue-500">Start Webauthn</span> button.
                 </p>
@@ -211,7 +216,7 @@
                 {/if}
 
                 <div class="flex flex-row space-x-5">
-                    <PrimaryButton class="flex-grow" submit>Start Webauthn</PrimaryButton>  
+                    <Button class="flex-grow" variant="accent" type="submit">Start Webauthn</Button>  
                 </div>
             </form>
         {/if}
@@ -222,7 +227,7 @@
     main {
         @apply w-full h-full bg-blue-400 flex flex-col justify-center;
     }
-    
+
     div.outer {
         @apply w-full h-fit flex flex-col justify-center space-y-5 p-16 md:p-0 md:space-x-5 md:space-y-0 md:flex-row;
     }
@@ -233,10 +238,6 @@
 
     form.inner {
         @apply bg-white border border-black w-full h-fit md:w-fit duration-100 p-5 rounded-2xl min-w-[25%];
-    }
-
-    h1 {
-        @apply text-xl font-bold h-fit px-5 py-2.5 bg-gray-300/80 border-b border-black text-gray-800/80 rounded-t-[15px];
     }
 
     p {

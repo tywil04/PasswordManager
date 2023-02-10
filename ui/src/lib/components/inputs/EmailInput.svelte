@@ -25,4 +25,7 @@
     }
 </script>
 
-<TextInput bind:this={input} bind:value={value} on:input={checkValidity} class={classList} autocomplete="email" type="email" {id} {name} {label} {description} {required}/>
+<TextInput bind:this={input} bind:value={value} on:input={checkValidity} class={classList} autocomplete="email" type="email" {id} {name} {label} {description} {required}>
+    <slot name="left" slot="left"/>
+    <slot name="right" slot="right"/>
+</TextInput>
