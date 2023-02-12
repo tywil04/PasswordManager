@@ -57,13 +57,13 @@ func GetSigninChallenge(c *gin.Context) {
 		return
 	}
 
-	foundWebauthnChallenge, fwcErr := db.Client.WebAuthnChallenge.Get(db.Context, decodedChallengeId)
+	foundWebauthnChallenge, fwcErr := db.GetWebauthnChallenge(decodedChallengeId)
 	if fwcErr != nil {
 		c.JSON(400, gin.H{"error": gin.H{"code": "errWebauthnChallengeNotFound", "message": "Unable to find valid webauthn challenge using 'webauthnChallengeId'."}})
 		return
 	}
 
-	foundUser, fuErr := foundWebauthnChallenge.QueryUser().First(db.Context)
+	foundUser, fuErr := db.GetWebauthnChallengeUser(foundWebauthnChallenge)
 	if fuErr != nil {
 		c.JSON(400, gin.H{"error": gin.H{"code": "errWebauthnChallengeNotFound", "message": "Unable to find valid webauthn challenge using 'webauthnChallengeId'."}})
 		return
@@ -112,15 +112,15 @@ func PostSigninChallenge(c *gin.Context) {
 		return
 	}
 
-	foundWebauthnChallenge, fwcErr := db.Client.WebAuthnChallenge.Get(db.Context, decodedChallengeId)
+	foundWebauthnChallenge, fwcErr := db.GetWebauthnChallenge(decodedChallengeId)
 	if fwcErr != nil {
 		c.JSON(400, gin.H{"error": gin.H{"code": "errWebauthnChallengeNotFound", "message": "Unable to find valid webauthn challenge using 'webauthnChallengeId'."}})
 		return
 	}
 
-	foundUser, foundUserErr := foundWebauthnChallenge.QueryUser().Unique(true).First(db.Context)
+	foundUser, foundUserErr := db.GetWebauthnChallengeUser(foundWebauthnChallenge)
 	if foundUserErr != nil {
-		c.JSON(400, gin.H{"error": gin.H{"code": "errWebauthnChallengeNotFound", "message": "Unable to find valid challenge using 'webauthnChallengeId'."}})
+		c.JSON(400, gin.H{"error": gin.H{"code": "errWebauthnChallengeNotFound", "message": "Unable to find valid webauthn challenge using 'webauthnChallengeId'."}})
 		return
 	}
 
@@ -169,7 +169,7 @@ func PostSigninChallenge(c *gin.Context) {
 
 	token := base64.StdEncoding.EncodeToString([]byte(session.ID.String())) + ";" + encodedSalt + ";" + base64.StdEncoding.EncodeToString(signature)
 
-	db.Client.WebAuthnChallenge.DeleteOne(foundWebauthnChallenge).Exec(db.Context)
+	db.DeleteWebauthnChallenge(foundWebauthnChallenge)
 
 	encodedProtectedDatabaseKey := base64.StdEncoding.EncodeToString(foundUser.ProtectedDatabaseKey)
 	encodedProtectedDatabaseKeyIv := base64.StdEncoding.EncodeToString(foundUser.ProtectedDatabaseKeyIv)

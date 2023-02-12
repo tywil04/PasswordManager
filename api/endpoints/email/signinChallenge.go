@@ -43,13 +43,13 @@ func PostSigninEmailChallenge(c *gin.Context) {
 		return
 	}
 
-	foundChallenge, foundChallengeErr := db.Client.EmailChallenge.Get(db.Context, decodedChallengeId)
+	foundChallenge, foundChallengeErr := db.GetEmailChallenge(decodedChallengeId)
 	if foundChallengeErr != nil || foundChallenge.For != emailchallenge.ForSignin {
 		c.JSON(400, gin.H{"error": gin.H{"code": "errEmailChallengeNotFound", "message": "Unable to find valid challenge using 'emailChallengeId'."}})
 		return
 	}
 
-	foundUser, foundUserErr := foundChallenge.QueryUser().Unique(true).First(db.Context)
+	foundUser, foundUserErr := db.GetEmailChallengeUser(foundChallenge)
 	if foundUserErr != nil {
 		c.JSON(400, gin.H{"error": gin.H{"code": "errEmailChallengeNotFound", "message": "Unable to find valid challenge using 'emailChallengeId'."}})
 		return
@@ -82,7 +82,7 @@ func PostSigninEmailChallenge(c *gin.Context) {
 
 	token := base64.StdEncoding.EncodeToString([]byte(session.ID.String())) + ";" + encodedSalt + ";" + base64.StdEncoding.EncodeToString(signature)
 
-	db.Client.EmailChallenge.DeleteOne(foundChallenge).Exec(db.Context)
+	db.DeleteEmailChallenge(foundChallenge)
 
 	encodedProtectedDatabaseKey := base64.StdEncoding.EncodeToString(foundUser.ProtectedDatabaseKey)
 	encodedProtectedDatabaseKeyIv := base64.StdEncoding.EncodeToString(foundUser.ProtectedDatabaseKeyIv)

@@ -80,20 +80,9 @@ func PostRegister(c *gin.Context) {
 		return
 	}
 
-	foundWebauthnChallenge, fwcErr := db.Client.WebAuthnChallenge.Get(db.Context, decodedChallengeId)
+	foundWebauthnChallenge, fwcErr := db.GetUserWebauthnChallenge(authedUser, decodedChallengeId)
 	if fwcErr != nil {
 		c.JSON(400, gin.H{"error": gin.H{"code": "errWebauthnChallengeNotFound", "message": "Unable to find valid webauthn challenge using 'webauthnChallengeId'."}})
-		return
-	}
-
-	foundUser, foundUserErr := foundWebauthnChallenge.QueryUser().Unique(true).First(db.Context)
-	if foundUserErr != nil {
-		c.JSON(400, gin.H{"error": gin.H{"code": "errWebauthnChallengeNotFound", "message": "Unable to find valid challenge using 'webauthnChallengeId'."}})
-		return
-	}
-
-	if authedUser.Email != foundUser.Email {
-		c.JSON(400, gin.H{"error": gin.H{"code": "errWebauthnChallengeNotFound", "message": "Unable to find valid challenge using 'webauthnChallengeId'."}})
 		return
 	}
 
@@ -125,7 +114,7 @@ func PostRegister(c *gin.Context) {
 		transport[tIndex] = string(t)
 	}
 
-	_, wcErr := db.Client.WebAuthnCredential.Create().
+	webauthnCredential, wcErr := db.Client.WebAuthnCredential.Create().
 		SetCredentialId(credential.ID).
 		SetPublicKey(credential.PublicKey).
 		SetAttestationType(credential.AttestationType).
@@ -145,5 +134,5 @@ func PostRegister(c *gin.Context) {
 	authedUser.Update().SetDefault2FA(user.Default2FAWebauthn).Exec(db.Context)
 	db.Client.WebAuthnChallenge.DeleteOne(foundWebauthnChallenge).Exec(db.Context)
 
-	c.JSON(200, gin.H{})
+	c.JSON(200, gin.H{"webauthnCredentialId": webauthnCredential.ID.String()})
 }

@@ -41,7 +41,9 @@ type DeleteInput struct {
 }
 
 func Get(c *gin.Context) {
-	var input DeleteInput
+	authedUser := c.MustGet("authedUser").(*ent.User)
+
+	var input GetInput
 
 	bindingErr := c.Bind(&input)
 	if bindingErr != nil {
@@ -50,7 +52,7 @@ func Get(c *gin.Context) {
 	}
 
 	if input.PasswordId == "" {
-		passwords, passwordsErr := db.Client.Password.Query().All(db.Context)
+		passwords, passwordsErr := db.GetUserPasswords(authedUser)
 		if passwordsErr != nil {
 			c.JSON(500, gin.H{"error": gin.H{"code": "errUnknown", "message": "An unknown error has occured. Please try again later."}})
 			return
@@ -58,13 +60,13 @@ func Get(c *gin.Context) {
 
 		jsonPasswords := make([]gin.H, len(passwords))
 		for index, password := range passwords {
-			additionalFields, afErr := password.QueryAdditionalFields().All(db.Context)
+			additionalFields, afErr := db.GetPasswordAdditionalFields(password)
 			if afErr != nil {
 				c.JSON(500, gin.H{"error": gin.H{"code": "errUnknown", "message": "An unknown error has occured. Please try again later."}})
 				return
 			}
 
-			urls, uErr := password.QueryUrls().All(db.Context)
+			urls, uErr := db.GetPasswordUrls(password)
 			if uErr != nil {
 				c.JSON(500, gin.H{"error": gin.H{"code": "errUnknown", "message": "An unknown error has occured. Please try again later."}})
 				return
@@ -110,19 +112,19 @@ func Get(c *gin.Context) {
 			return
 		}
 
-		password, passwordErr := db.Client.Password.Get(db.Context, decodedPasswordId)
+		password, passwordErr := db.GetUserPassword(authedUser, decodedPasswordId)
 		if passwordErr != nil {
 			c.JSON(400, gin.H{"error": gin.H{"code": "errPasswordNotFound", "message": "Unable to find valid password using 'passwordId'."}})
 			return
 		}
 
-		additionalFields, afErr := password.QueryAdditionalFields().All(db.Context)
+		additionalFields, afErr := db.GetPasswordAdditionalFields(password)
 		if afErr != nil {
 			c.JSON(500, gin.H{"error": gin.H{"code": "errUnknown", "message": "An unknown error has occured. Please try again later."}})
 			return
 		}
 
-		urls, uErr := password.QueryUrls().All(db.Context)
+		urls, uErr := db.GetPasswordUrls(password)
 		if uErr != nil {
 			c.JSON(500, gin.H{"error": gin.H{"code": "errUnknown", "message": "An unknown error has occured. Please try again later."}})
 			return
@@ -164,6 +166,8 @@ func Get(c *gin.Context) {
 }
 
 func Post(c *gin.Context) {
+	authedUser := c.MustGet("authedUser").(*ent.User)
+
 	var input PostInput
 
 	bindingErr := c.Bind(&input)
@@ -318,6 +322,7 @@ func Post(c *gin.Context) {
 	}
 
 	password, passwordErr := db.Client.Password.Create().
+		SetUser(authedUser).
 		SetName(decodedName).
 		SetNameIv(decodedNameIv).
 		SetUsername(decodedUsername).
@@ -338,6 +343,8 @@ func Post(c *gin.Context) {
 }
 
 func Delete(c *gin.Context) {
+	authedUser := c.MustGet("authedUser").(*ent.User)
+
 	var input DeleteInput
 
 	bindingErr := c.Bind(&input)
@@ -357,13 +364,7 @@ func Delete(c *gin.Context) {
 		return
 	}
 
-	password, passwordErr := db.Client.Password.Get(db.Context, decodedPasswordId)
-	if passwordErr != nil {
-		c.JSON(400, gin.H{"error": gin.H{"code": "errPasswordNotFound", "message": "Unable to find valid password using 'passwordId'."}})
-		return
-	}
-
-	dpErr := db.Client.Password.DeleteOne(password).Exec(db.Context)
+	dpErr := db.DeleteUserPasswordViaId(authedUser, decodedPasswordId)
 	if dpErr != nil {
 		c.JSON(500, gin.H{"error": gin.H{"code": "errUnknown", "message": "An unknown error has occured. Please try again later."}})
 		return

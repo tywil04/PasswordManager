@@ -49,7 +49,7 @@ func Post(c *gin.Context) {
 		return
 	}
 
-	foundUser, _ := db.Client.User.Query().Where(user.EmailEQ(input.Email)).First(db.Context)
+	foundUser, _ := db.GetUserViaEmail(input.Email)
 	if foundUser == nil {
 		c.JSON(400, gin.H{"error": gin.H{"code": "errEmailNotInUse", "message": "Email is not in use."}})
 		return

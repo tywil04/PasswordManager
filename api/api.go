@@ -40,6 +40,8 @@ func Start(router *gin.Engine) {
 	authRequired.DELETE("/api/v1/password", password.Delete)
 	authRequired.GET("/api/v1/webauthn/register", webauthnEndpoints.GetRegister)
 	authRequired.POST("/api/v1/webauthn/register", webauthnEndpoints.PostRegister)
+	authRequired.GET("/api/v1/webauthn/credential", webauthnEndpoints.GetCredential)
+	authRequired.DELETE("/api/v1/webauthn/credential", webauthnEndpoints.DeleteCredential)
 }
 
 func Stop() {

@@ -39,13 +39,13 @@ func PostSignupEmailChallenge(c *gin.Context) {
 		return
 	}
 
-	foundChallenge, foundChallengeErr := db.Client.EmailChallenge.Get(db.Context, decodedChallengeId)
+	foundChallenge, foundChallengeErr := db.GetEmailChallenge(decodedChallengeId)
 	if foundChallengeErr != nil || foundChallenge.For != emailchallenge.ForSignup {
 		c.JSON(400, gin.H{"error": gin.H{"code": "errEmailChallengeNotFound", "message": "Unable to find valid challenge using 'emailChallengeId'."}})
 		return
 	}
 
-	foundUser, foundUserErr := foundChallenge.QueryUser().Unique(true).First(db.Context)
+	foundUser, foundUserErr := db.GetEmailChallengeUser(foundChallenge)
 	if foundUserErr != nil {
 		c.JSON(400, gin.H{"error": gin.H{"code": "errEmailChallengeNotFound", "message": "Unable to find valid challenge using 'emailChallengeId'."}})
 		return

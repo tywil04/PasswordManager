@@ -11,7 +11,6 @@ import (
 	"PasswordManager/api/lib/smtp"
 	"PasswordManager/api/lib/validations"
 	"PasswordManager/ent/emailchallenge"
-	"PasswordManager/ent/user"
 )
 
 type PostInput struct {
@@ -73,7 +72,7 @@ func Post(c *gin.Context) {
 		return
 	}
 
-	testUser, _ := db.Client.User.Query().Where(user.EmailEQ(input.Email)).First(db.Context)
+	testUser, _ := db.GetUserViaEmail(input.Email)
 	if testUser != nil {
 		if !testUser.Verified {
 			db.Client.User.DeleteOne(testUser).Exec(db.Context)
