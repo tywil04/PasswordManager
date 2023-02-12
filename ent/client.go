@@ -604,6 +604,22 @@ func (c *PasswordClient) QueryUrls(pa *Password) *URLQuery {
 	return query
 }
 
+// QueryUser queries the user edge of a Password.
+func (c *PasswordClient) QueryUser(pa *Password) *UserQuery {
+	query := (&UserClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := pa.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(password.Table, password.FieldID, id),
+			sqlgraph.To(user.Table, user.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, password.UserTable, password.UserColumn),
+		)
+		fromV = sqlgraph.Neighbors(pa.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
 func (c *PasswordClient) Hooks() []Hook {
 	return c.hooks.Password
@@ -1031,6 +1047,22 @@ func (c *UserClient) QueryWebauthnChallenges(u *User) *WebAuthnChallengeQuery {
 			sqlgraph.From(user.Table, user.FieldID, id),
 			sqlgraph.To(webauthnchallenge.Table, webauthnchallenge.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, user.WebauthnChallengesTable, user.WebauthnChallengesColumn),
+		)
+		fromV = sqlgraph.Neighbors(u.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryPasswords queries the passwords edge of a User.
+func (c *UserClient) QueryPasswords(u *User) *PasswordQuery {
+	query := (&PasswordClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := u.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(user.Table, user.FieldID, id),
+			sqlgraph.To(password.Table, password.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, user.PasswordsTable, user.PasswordsColumn),
 		)
 		fromV = sqlgraph.Neighbors(u.driver.Dialect(), step)
 		return fromV, nil

@@ -4,6 +4,7 @@ package ent
 
 import (
 	"PasswordManager/ent/emailchallenge"
+	"PasswordManager/ent/password"
 	"PasswordManager/ent/predicate"
 	"PasswordManager/ent/session"
 	"PasswordManager/ent/user"
@@ -30,6 +31,7 @@ type UserQuery struct {
 	withEmailChallenges     *EmailChallengeQuery
 	withWebauthnCredentials *WebAuthnCredentialQuery
 	withWebauthnChallenges  *WebAuthnChallengeQuery
+	withPasswords           *PasswordQuery
 	withSessions            *SessionQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
@@ -126,6 +128,28 @@ func (uq *UserQuery) QueryWebauthnChallenges() *WebAuthnChallengeQuery {
 			sqlgraph.From(user.Table, user.FieldID, selector),
 			sqlgraph.To(webauthnchallenge.Table, webauthnchallenge.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, user.WebauthnChallengesTable, user.WebauthnChallengesColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(uq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryPasswords chains the current query on the "passwords" edge.
+func (uq *UserQuery) QueryPasswords() *PasswordQuery {
+	query := (&PasswordClient{config: uq.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := uq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := uq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(user.Table, user.FieldID, selector),
+			sqlgraph.To(password.Table, password.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, user.PasswordsTable, user.PasswordsColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(uq.driver.Dialect(), step)
 		return fromU, nil
@@ -348,6 +372,7 @@ func (uq *UserQuery) Clone() *UserQuery {
 		withEmailChallenges:     uq.withEmailChallenges.Clone(),
 		withWebauthnCredentials: uq.withWebauthnCredentials.Clone(),
 		withWebauthnChallenges:  uq.withWebauthnChallenges.Clone(),
+		withPasswords:           uq.withPasswords.Clone(),
 		withSessions:            uq.withSessions.Clone(),
 		// clone intermediate query.
 		sql:  uq.sql.Clone(),
@@ -385,6 +410,17 @@ func (uq *UserQuery) WithWebauthnChallenges(opts ...func(*WebAuthnChallengeQuery
 		opt(query)
 	}
 	uq.withWebauthnChallenges = query
+	return uq
+}
+
+// WithPasswords tells the query-builder to eager-load the nodes that are connected to
+// the "passwords" edge. The optional arguments are used to configure the query builder of the edge.
+func (uq *UserQuery) WithPasswords(opts ...func(*PasswordQuery)) *UserQuery {
+	query := (&PasswordClient{config: uq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	uq.withPasswords = query
 	return uq
 }
 
@@ -479,10 +515,11 @@ func (uq *UserQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*User, e
 	var (
 		nodes       = []*User{}
 		_spec       = uq.querySpec()
-		loadedTypes = [4]bool{
+		loadedTypes = [5]bool{
 			uq.withEmailChallenges != nil,
 			uq.withWebauthnCredentials != nil,
 			uq.withWebauthnChallenges != nil,
+			uq.withPasswords != nil,
 			uq.withSessions != nil,
 		}
 	)
@@ -526,6 +563,13 @@ func (uq *UserQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*User, e
 			func(n *User, e *WebAuthnChallenge) {
 				n.Edges.WebauthnChallenges = append(n.Edges.WebauthnChallenges, e)
 			}); err != nil {
+			return nil, err
+		}
+	}
+	if query := uq.withPasswords; query != nil {
+		if err := uq.loadPasswords(ctx, query, nodes,
+			func(n *User) { n.Edges.Passwords = []*Password{} },
+			func(n *User, e *Password) { n.Edges.Passwords = append(n.Edges.Passwords, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -627,6 +671,37 @@ func (uq *UserQuery) loadWebauthnChallenges(ctx context.Context, query *WebAuthn
 		node, ok := nodeids[*fk]
 		if !ok {
 			return fmt.Errorf(`unexpected foreign-key "user_webauthn_challenges" returned %v for node %v`, *fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (uq *UserQuery) loadPasswords(ctx context.Context, query *PasswordQuery, nodes []*User, init func(*User), assign func(*User, *Password)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[uuid.UUID]*User)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	query.withFKs = true
+	query.Where(predicate.Password(func(s *sql.Selector) {
+		s.Where(sql.InValues(user.PasswordsColumn, fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.user_passwords
+		if fk == nil {
+			return fmt.Errorf(`foreign-key "user_passwords" is nil for node %v`, n.ID)
+		}
+		node, ok := nodeids[*fk]
+		if !ok {
+			return fmt.Errorf(`unexpected foreign-key "user_passwords" returned %v for node %v`, *fk, n.ID)
 		}
 		assign(node, n)
 	}

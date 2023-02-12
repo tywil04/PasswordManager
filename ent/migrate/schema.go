@@ -63,12 +63,21 @@ var (
 		{Name: "password", Type: field.TypeBytes},
 		{Name: "password_iv", Type: field.TypeBytes},
 		{Name: "colour", Type: field.TypeString, Nullable: true},
+		{Name: "user_passwords", Type: field.TypeUUID, Nullable: true},
 	}
 	// PasswordsTable holds the schema information for the "passwords" table.
 	PasswordsTable = &schema.Table{
 		Name:       "passwords",
 		Columns:    PasswordsColumns,
 		PrimaryKey: []*schema.Column{PasswordsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "passwords_users_passwords",
+				Columns:    []*schema.Column{PasswordsColumns[8]},
+				RefColumns: []*schema.Column{UsersColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+		},
 	}
 	// SessionsColumns holds the columns for the "sessions" table.
 	SessionsColumns = []*schema.Column{
@@ -205,6 +214,7 @@ var (
 func init() {
 	AdditionalFieldsTable.ForeignKeys[0].RefTable = PasswordsTable
 	EmailChallengesTable.ForeignKeys[0].RefTable = UsersTable
+	PasswordsTable.ForeignKeys[0].RefTable = UsersTable
 	SessionsTable.ForeignKeys[0].RefTable = UsersTable
 	UrlsTable.ForeignKeys[0].RefTable = PasswordsTable
 	WebAuthnChallengesTable.ForeignKeys[0].RefTable = UsersTable

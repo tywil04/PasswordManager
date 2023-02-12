@@ -43,11 +43,13 @@ type UserEdges struct {
 	WebauthnCredentials []*WebAuthnCredential `json:"webauthnCredentials,omitempty"`
 	// WebauthnChallenges holds the value of the webauthnChallenges edge.
 	WebauthnChallenges []*WebAuthnChallenge `json:"webauthnChallenges,omitempty"`
+	// Passwords holds the value of the passwords edge.
+	Passwords []*Password `json:"passwords,omitempty"`
 	// Sessions holds the value of the sessions edge.
 	Sessions []*Session `json:"sessions,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [4]bool
+	loadedTypes [5]bool
 }
 
 // EmailChallengesOrErr returns the EmailChallenges value or an error if the edge
@@ -77,10 +79,19 @@ func (e UserEdges) WebauthnChallengesOrErr() ([]*WebAuthnChallenge, error) {
 	return nil, &NotLoadedError{edge: "webauthnChallenges"}
 }
 
+// PasswordsOrErr returns the Passwords value or an error if the edge
+// was not loaded in eager-loading.
+func (e UserEdges) PasswordsOrErr() ([]*Password, error) {
+	if e.loadedTypes[3] {
+		return e.Passwords, nil
+	}
+	return nil, &NotLoadedError{edge: "passwords"}
+}
+
 // SessionsOrErr returns the Sessions value or an error if the edge
 // was not loaded in eager-loading.
 func (e UserEdges) SessionsOrErr() ([]*Session, error) {
-	if e.loadedTypes[3] {
+	if e.loadedTypes[4] {
 		return e.Sessions, nil
 	}
 	return nil, &NotLoadedError{edge: "sessions"}
@@ -180,6 +191,11 @@ func (u *User) QueryWebauthnCredentials() *WebAuthnCredentialQuery {
 // QueryWebauthnChallenges queries the "webauthnChallenges" edge of the User entity.
 func (u *User) QueryWebauthnChallenges() *WebAuthnChallengeQuery {
 	return NewUserClient(u.config).QueryWebauthnChallenges(u)
+}
+
+// QueryPasswords queries the "passwords" edge of the User entity.
+func (u *User) QueryPasswords() *PasswordQuery {
+	return NewUserClient(u.config).QueryPasswords(u)
 }
 
 // QuerySessions queries the "sessions" edge of the User entity.

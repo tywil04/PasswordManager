@@ -4,6 +4,7 @@ package ent
 
 import (
 	"PasswordManager/ent/emailchallenge"
+	"PasswordManager/ent/password"
 	"PasswordManager/ent/predicate"
 	"PasswordManager/ent/session"
 	"PasswordManager/ent/user"
@@ -135,6 +136,21 @@ func (uu *UserUpdate) AddWebauthnChallenges(w ...*WebAuthnChallenge) *UserUpdate
 	return uu.AddWebauthnChallengeIDs(ids...)
 }
 
+// AddPasswordIDs adds the "passwords" edge to the Password entity by IDs.
+func (uu *UserUpdate) AddPasswordIDs(ids ...uuid.UUID) *UserUpdate {
+	uu.mutation.AddPasswordIDs(ids...)
+	return uu
+}
+
+// AddPasswords adds the "passwords" edges to the Password entity.
+func (uu *UserUpdate) AddPasswords(p ...*Password) *UserUpdate {
+	ids := make([]uuid.UUID, len(p))
+	for i := range p {
+		ids[i] = p[i].ID
+	}
+	return uu.AddPasswordIDs(ids...)
+}
+
 // AddSessionIDs adds the "sessions" edge to the Session entity by IDs.
 func (uu *UserUpdate) AddSessionIDs(ids ...uuid.UUID) *UserUpdate {
 	uu.mutation.AddSessionIDs(ids...)
@@ -216,6 +232,27 @@ func (uu *UserUpdate) RemoveWebauthnChallenges(w ...*WebAuthnChallenge) *UserUpd
 		ids[i] = w[i].ID
 	}
 	return uu.RemoveWebauthnChallengeIDs(ids...)
+}
+
+// ClearPasswords clears all "passwords" edges to the Password entity.
+func (uu *UserUpdate) ClearPasswords() *UserUpdate {
+	uu.mutation.ClearPasswords()
+	return uu
+}
+
+// RemovePasswordIDs removes the "passwords" edge to Password entities by IDs.
+func (uu *UserUpdate) RemovePasswordIDs(ids ...uuid.UUID) *UserUpdate {
+	uu.mutation.RemovePasswordIDs(ids...)
+	return uu
+}
+
+// RemovePasswords removes "passwords" edges to Password entities.
+func (uu *UserUpdate) RemovePasswords(p ...*Password) *UserUpdate {
+	ids := make([]uuid.UUID, len(p))
+	for i := range p {
+		ids[i] = p[i].ID
+	}
+	return uu.RemovePasswordIDs(ids...)
 }
 
 // ClearSessions clears all "sessions" edges to the Session entity.
@@ -505,6 +542,60 @@ func (uu *UserUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if uu.mutation.PasswordsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.PasswordsTable,
+			Columns: []string{user.PasswordsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeUUID,
+					Column: password.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := uu.mutation.RemovedPasswordsIDs(); len(nodes) > 0 && !uu.mutation.PasswordsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.PasswordsTable,
+			Columns: []string{user.PasswordsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeUUID,
+					Column: password.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := uu.mutation.PasswordsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.PasswordsTable,
+			Columns: []string{user.PasswordsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeUUID,
+					Column: password.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if uu.mutation.SessionsCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
@@ -682,6 +773,21 @@ func (uuo *UserUpdateOne) AddWebauthnChallenges(w ...*WebAuthnChallenge) *UserUp
 	return uuo.AddWebauthnChallengeIDs(ids...)
 }
 
+// AddPasswordIDs adds the "passwords" edge to the Password entity by IDs.
+func (uuo *UserUpdateOne) AddPasswordIDs(ids ...uuid.UUID) *UserUpdateOne {
+	uuo.mutation.AddPasswordIDs(ids...)
+	return uuo
+}
+
+// AddPasswords adds the "passwords" edges to the Password entity.
+func (uuo *UserUpdateOne) AddPasswords(p ...*Password) *UserUpdateOne {
+	ids := make([]uuid.UUID, len(p))
+	for i := range p {
+		ids[i] = p[i].ID
+	}
+	return uuo.AddPasswordIDs(ids...)
+}
+
 // AddSessionIDs adds the "sessions" edge to the Session entity by IDs.
 func (uuo *UserUpdateOne) AddSessionIDs(ids ...uuid.UUID) *UserUpdateOne {
 	uuo.mutation.AddSessionIDs(ids...)
@@ -763,6 +869,27 @@ func (uuo *UserUpdateOne) RemoveWebauthnChallenges(w ...*WebAuthnChallenge) *Use
 		ids[i] = w[i].ID
 	}
 	return uuo.RemoveWebauthnChallengeIDs(ids...)
+}
+
+// ClearPasswords clears all "passwords" edges to the Password entity.
+func (uuo *UserUpdateOne) ClearPasswords() *UserUpdateOne {
+	uuo.mutation.ClearPasswords()
+	return uuo
+}
+
+// RemovePasswordIDs removes the "passwords" edge to Password entities by IDs.
+func (uuo *UserUpdateOne) RemovePasswordIDs(ids ...uuid.UUID) *UserUpdateOne {
+	uuo.mutation.RemovePasswordIDs(ids...)
+	return uuo
+}
+
+// RemovePasswords removes "passwords" edges to Password entities.
+func (uuo *UserUpdateOne) RemovePasswords(p ...*Password) *UserUpdateOne {
+	ids := make([]uuid.UUID, len(p))
+	for i := range p {
+		ids[i] = p[i].ID
+	}
+	return uuo.RemovePasswordIDs(ids...)
 }
 
 // ClearSessions clears all "sessions" edges to the Session entity.
@@ -1068,6 +1195,60 @@ func (uuo *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) 
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeUUID,
 					Column: webauthnchallenge.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if uuo.mutation.PasswordsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.PasswordsTable,
+			Columns: []string{user.PasswordsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeUUID,
+					Column: password.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := uuo.mutation.RemovedPasswordsIDs(); len(nodes) > 0 && !uuo.mutation.PasswordsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.PasswordsTable,
+			Columns: []string{user.PasswordsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeUUID,
+					Column: password.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := uuo.mutation.PasswordsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.PasswordsTable,
+			Columns: []string{user.PasswordsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeUUID,
+					Column: password.FieldID,
 				},
 			},
 		}

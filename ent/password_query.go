@@ -7,6 +7,7 @@ import (
 	"PasswordManager/ent/password"
 	"PasswordManager/ent/predicate"
 	"PasswordManager/ent/url"
+	"PasswordManager/ent/user"
 	"context"
 	"database/sql/driver"
 	"fmt"
@@ -27,6 +28,8 @@ type PasswordQuery struct {
 	predicates           []predicate.Password
 	withAdditionalFields *AdditionalFieldQuery
 	withUrls             *URLQuery
+	withUser             *UserQuery
+	withFKs              bool
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -100,6 +103,28 @@ func (pq *PasswordQuery) QueryUrls() *URLQuery {
 			sqlgraph.From(password.Table, password.FieldID, selector),
 			sqlgraph.To(url.Table, url.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, password.UrlsTable, password.UrlsColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(pq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryUser chains the current query on the "user" edge.
+func (pq *PasswordQuery) QueryUser() *UserQuery {
+	query := (&UserClient{config: pq.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := pq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := pq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(password.Table, password.FieldID, selector),
+			sqlgraph.To(user.Table, user.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, password.UserTable, password.UserColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(pq.driver.Dialect(), step)
 		return fromU, nil
@@ -299,6 +324,7 @@ func (pq *PasswordQuery) Clone() *PasswordQuery {
 		predicates:           append([]predicate.Password{}, pq.predicates...),
 		withAdditionalFields: pq.withAdditionalFields.Clone(),
 		withUrls:             pq.withUrls.Clone(),
+		withUser:             pq.withUser.Clone(),
 		// clone intermediate query.
 		sql:  pq.sql.Clone(),
 		path: pq.path,
@@ -324,6 +350,17 @@ func (pq *PasswordQuery) WithUrls(opts ...func(*URLQuery)) *PasswordQuery {
 		opt(query)
 	}
 	pq.withUrls = query
+	return pq
+}
+
+// WithUser tells the query-builder to eager-load the nodes that are connected to
+// the "user" edge. The optional arguments are used to configure the query builder of the edge.
+func (pq *PasswordQuery) WithUser(opts ...func(*UserQuery)) *PasswordQuery {
+	query := (&UserClient{config: pq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	pq.withUser = query
 	return pq
 }
 
@@ -406,12 +443,20 @@ func (pq *PasswordQuery) prepareQuery(ctx context.Context) error {
 func (pq *PasswordQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Password, error) {
 	var (
 		nodes       = []*Password{}
+		withFKs     = pq.withFKs
 		_spec       = pq.querySpec()
-		loadedTypes = [2]bool{
+		loadedTypes = [3]bool{
 			pq.withAdditionalFields != nil,
 			pq.withUrls != nil,
+			pq.withUser != nil,
 		}
 	)
+	if pq.withUser != nil {
+		withFKs = true
+	}
+	if withFKs {
+		_spec.Node.Columns = append(_spec.Node.Columns, password.ForeignKeys...)
+	}
 	_spec.ScanValues = func(columns []string) ([]any, error) {
 		return (*Password).scanValues(nil, columns)
 	}
@@ -441,6 +486,12 @@ func (pq *PasswordQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Pas
 		if err := pq.loadUrls(ctx, query, nodes,
 			func(n *Password) { n.Edges.Urls = []*Url{} },
 			func(n *Password, e *Url) { n.Edges.Urls = append(n.Edges.Urls, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := pq.withUser; query != nil {
+		if err := pq.loadUser(ctx, query, nodes, nil,
+			func(n *Password, e *User) { n.Edges.User = e }); err != nil {
 			return nil, err
 		}
 	}
@@ -506,6 +557,38 @@ func (pq *PasswordQuery) loadUrls(ctx context.Context, query *URLQuery, nodes []
 			return fmt.Errorf(`unexpected foreign-key "password_urls" returned %v for node %v`, *fk, n.ID)
 		}
 		assign(node, n)
+	}
+	return nil
+}
+func (pq *PasswordQuery) loadUser(ctx context.Context, query *UserQuery, nodes []*Password, init func(*Password), assign func(*Password, *User)) error {
+	ids := make([]uuid.UUID, 0, len(nodes))
+	nodeids := make(map[uuid.UUID][]*Password)
+	for i := range nodes {
+		if nodes[i].user_passwords == nil {
+			continue
+		}
+		fk := *nodes[i].user_passwords
+		if _, ok := nodeids[fk]; !ok {
+			ids = append(ids, fk)
+		}
+		nodeids[fk] = append(nodeids[fk], nodes[i])
+	}
+	if len(ids) == 0 {
+		return nil
+	}
+	query.Where(user.IDIn(ids...))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		nodes, ok := nodeids[n.ID]
+		if !ok {
+			return fmt.Errorf(`unexpected foreign-key "user_passwords" returned %v`, n.ID)
+		}
+		for i := range nodes {
+			assign(nodes[i], n)
+		}
 	}
 	return nil
 }

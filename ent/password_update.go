@@ -7,6 +7,7 @@ import (
 	"PasswordManager/ent/password"
 	"PasswordManager/ent/predicate"
 	"PasswordManager/ent/url"
+	"PasswordManager/ent/user"
 	"context"
 	"errors"
 	"fmt"
@@ -116,6 +117,25 @@ func (pu *PasswordUpdate) AddUrls(u ...*Url) *PasswordUpdate {
 	return pu.AddURLIDs(ids...)
 }
 
+// SetUserID sets the "user" edge to the User entity by ID.
+func (pu *PasswordUpdate) SetUserID(id uuid.UUID) *PasswordUpdate {
+	pu.mutation.SetUserID(id)
+	return pu
+}
+
+// SetNillableUserID sets the "user" edge to the User entity by ID if the given value is not nil.
+func (pu *PasswordUpdate) SetNillableUserID(id *uuid.UUID) *PasswordUpdate {
+	if id != nil {
+		pu = pu.SetUserID(*id)
+	}
+	return pu
+}
+
+// SetUser sets the "user" edge to the User entity.
+func (pu *PasswordUpdate) SetUser(u *User) *PasswordUpdate {
+	return pu.SetUserID(u.ID)
+}
+
 // Mutation returns the PasswordMutation object of the builder.
 func (pu *PasswordUpdate) Mutation() *PasswordMutation {
 	return pu.mutation
@@ -161,6 +181,12 @@ func (pu *PasswordUpdate) RemoveUrls(u ...*Url) *PasswordUpdate {
 		ids[i] = u[i].ID
 	}
 	return pu.RemoveURLIDs(ids...)
+}
+
+// ClearUser clears the "user" edge to the User entity.
+func (pu *PasswordUpdate) ClearUser() *PasswordUpdate {
+	pu.mutation.ClearUser()
+	return pu
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -378,6 +404,41 @@ func (pu *PasswordUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if pu.mutation.UserCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   password.UserTable,
+			Columns: []string{password.UserColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeUUID,
+					Column: user.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := pu.mutation.UserIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   password.UserTable,
+			Columns: []string{password.UserColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeUUID,
+					Column: user.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if n, err = sqlgraph.UpdateNodes(ctx, pu.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{password.Label}
@@ -484,6 +545,25 @@ func (puo *PasswordUpdateOne) AddUrls(u ...*Url) *PasswordUpdateOne {
 	return puo.AddURLIDs(ids...)
 }
 
+// SetUserID sets the "user" edge to the User entity by ID.
+func (puo *PasswordUpdateOne) SetUserID(id uuid.UUID) *PasswordUpdateOne {
+	puo.mutation.SetUserID(id)
+	return puo
+}
+
+// SetNillableUserID sets the "user" edge to the User entity by ID if the given value is not nil.
+func (puo *PasswordUpdateOne) SetNillableUserID(id *uuid.UUID) *PasswordUpdateOne {
+	if id != nil {
+		puo = puo.SetUserID(*id)
+	}
+	return puo
+}
+
+// SetUser sets the "user" edge to the User entity.
+func (puo *PasswordUpdateOne) SetUser(u *User) *PasswordUpdateOne {
+	return puo.SetUserID(u.ID)
+}
+
 // Mutation returns the PasswordMutation object of the builder.
 func (puo *PasswordUpdateOne) Mutation() *PasswordMutation {
 	return puo.mutation
@@ -529,6 +609,12 @@ func (puo *PasswordUpdateOne) RemoveUrls(u ...*Url) *PasswordUpdateOne {
 		ids[i] = u[i].ID
 	}
 	return puo.RemoveURLIDs(ids...)
+}
+
+// ClearUser clears the "user" edge to the User entity.
+func (puo *PasswordUpdateOne) ClearUser() *PasswordUpdateOne {
+	puo.mutation.ClearUser()
+	return puo
 }
 
 // Select allows selecting one or more fields (columns) of the returned entity.
@@ -762,6 +848,41 @@ func (puo *PasswordUpdateOne) sqlSave(ctx context.Context) (_node *Password, err
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeUUID,
 					Column: url.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if puo.mutation.UserCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   password.UserTable,
+			Columns: []string{password.UserColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeUUID,
+					Column: user.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := puo.mutation.UserIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   password.UserTable,
+			Columns: []string{password.UserColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeUUID,
+					Column: user.FieldID,
 				},
 			},
 		}

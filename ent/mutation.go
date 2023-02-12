@@ -1131,6 +1131,8 @@ type PasswordMutation struct {
 	urls                    map[uuid.UUID]struct{}
 	removedurls             map[uuid.UUID]struct{}
 	clearedurls             bool
+	user                    *uuid.UUID
+	cleareduser             bool
 	done                    bool
 	oldValue                func(context.Context) (*Password, error)
 	predicates              []predicate.Password
@@ -1613,6 +1615,45 @@ func (m *PasswordMutation) ResetUrls() {
 	m.removedurls = nil
 }
 
+// SetUserID sets the "user" edge to the User entity by id.
+func (m *PasswordMutation) SetUserID(id uuid.UUID) {
+	m.user = &id
+}
+
+// ClearUser clears the "user" edge to the User entity.
+func (m *PasswordMutation) ClearUser() {
+	m.cleareduser = true
+}
+
+// UserCleared reports if the "user" edge to the User entity was cleared.
+func (m *PasswordMutation) UserCleared() bool {
+	return m.cleareduser
+}
+
+// UserID returns the "user" edge ID in the mutation.
+func (m *PasswordMutation) UserID() (id uuid.UUID, exists bool) {
+	if m.user != nil {
+		return *m.user, true
+	}
+	return
+}
+
+// UserIDs returns the "user" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// UserID instead. It exists only for internal usage by the builders.
+func (m *PasswordMutation) UserIDs() (ids []uuid.UUID) {
+	if id := m.user; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetUser resets all changes to the "user" edge.
+func (m *PasswordMutation) ResetUser() {
+	m.user = nil
+	m.cleareduser = false
+}
+
 // Where appends a list predicates to the PasswordMutation builder.
 func (m *PasswordMutation) Where(ps ...predicate.Password) {
 	m.predicates = append(m.predicates, ps...)
@@ -1857,12 +1898,15 @@ func (m *PasswordMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *PasswordMutation) AddedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 3)
 	if m.additionalFields != nil {
 		edges = append(edges, password.EdgeAdditionalFields)
 	}
 	if m.urls != nil {
 		edges = append(edges, password.EdgeUrls)
+	}
+	if m.user != nil {
+		edges = append(edges, password.EdgeUser)
 	}
 	return edges
 }
@@ -1883,13 +1927,17 @@ func (m *PasswordMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case password.EdgeUser:
+		if id := m.user; id != nil {
+			return []ent.Value{*id}
+		}
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *PasswordMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 3)
 	if m.removedadditionalFields != nil {
 		edges = append(edges, password.EdgeAdditionalFields)
 	}
@@ -1921,12 +1969,15 @@ func (m *PasswordMutation) RemovedIDs(name string) []ent.Value {
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *PasswordMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 3)
 	if m.clearedadditionalFields {
 		edges = append(edges, password.EdgeAdditionalFields)
 	}
 	if m.clearedurls {
 		edges = append(edges, password.EdgeUrls)
+	}
+	if m.cleareduser {
+		edges = append(edges, password.EdgeUser)
 	}
 	return edges
 }
@@ -1939,6 +1990,8 @@ func (m *PasswordMutation) EdgeCleared(name string) bool {
 		return m.clearedadditionalFields
 	case password.EdgeUrls:
 		return m.clearedurls
+	case password.EdgeUser:
+		return m.cleareduser
 	}
 	return false
 }
@@ -1947,6 +2000,9 @@ func (m *PasswordMutation) EdgeCleared(name string) bool {
 // if that edge is not defined in the schema.
 func (m *PasswordMutation) ClearEdge(name string) error {
 	switch name {
+	case password.EdgeUser:
+		m.ClearUser()
+		return nil
 	}
 	return fmt.Errorf("unknown Password unique edge %s", name)
 }
@@ -1960,6 +2016,9 @@ func (m *PasswordMutation) ResetEdge(name string) error {
 		return nil
 	case password.EdgeUrls:
 		m.ResetUrls()
+		return nil
+	case password.EdgeUser:
+		m.ResetUser()
 		return nil
 	}
 	return fmt.Errorf("unknown Password edge %s", name)
@@ -2984,6 +3043,9 @@ type UserMutation struct {
 	webauthnChallenges         map[uuid.UUID]struct{}
 	removedwebauthnChallenges  map[uuid.UUID]struct{}
 	clearedwebauthnChallenges  bool
+	passwords                  map[uuid.UUID]struct{}
+	removedpasswords           map[uuid.UUID]struct{}
+	clearedpasswords           bool
 	sessions                   map[uuid.UUID]struct{}
 	removedsessions            map[uuid.UUID]struct{}
 	clearedsessions            bool
@@ -3510,6 +3572,60 @@ func (m *UserMutation) ResetWebauthnChallenges() {
 	m.removedwebauthnChallenges = nil
 }
 
+// AddPasswordIDs adds the "passwords" edge to the Password entity by ids.
+func (m *UserMutation) AddPasswordIDs(ids ...uuid.UUID) {
+	if m.passwords == nil {
+		m.passwords = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		m.passwords[ids[i]] = struct{}{}
+	}
+}
+
+// ClearPasswords clears the "passwords" edge to the Password entity.
+func (m *UserMutation) ClearPasswords() {
+	m.clearedpasswords = true
+}
+
+// PasswordsCleared reports if the "passwords" edge to the Password entity was cleared.
+func (m *UserMutation) PasswordsCleared() bool {
+	return m.clearedpasswords
+}
+
+// RemovePasswordIDs removes the "passwords" edge to the Password entity by IDs.
+func (m *UserMutation) RemovePasswordIDs(ids ...uuid.UUID) {
+	if m.removedpasswords == nil {
+		m.removedpasswords = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		delete(m.passwords, ids[i])
+		m.removedpasswords[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedPasswords returns the removed IDs of the "passwords" edge to the Password entity.
+func (m *UserMutation) RemovedPasswordsIDs() (ids []uuid.UUID) {
+	for id := range m.removedpasswords {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// PasswordsIDs returns the "passwords" edge IDs in the mutation.
+func (m *UserMutation) PasswordsIDs() (ids []uuid.UUID) {
+	for id := range m.passwords {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetPasswords resets all changes to the "passwords" edge.
+func (m *UserMutation) ResetPasswords() {
+	m.passwords = nil
+	m.clearedpasswords = false
+	m.removedpasswords = nil
+}
+
 // AddSessionIDs adds the "sessions" edge to the Session entity by ids.
 func (m *UserMutation) AddSessionIDs(ids ...uuid.UUID) {
 	if m.sessions == nil {
@@ -3799,7 +3915,7 @@ func (m *UserMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *UserMutation) AddedEdges() []string {
-	edges := make([]string, 0, 4)
+	edges := make([]string, 0, 5)
 	if m.emailChallenges != nil {
 		edges = append(edges, user.EdgeEmailChallenges)
 	}
@@ -3808,6 +3924,9 @@ func (m *UserMutation) AddedEdges() []string {
 	}
 	if m.webauthnChallenges != nil {
 		edges = append(edges, user.EdgeWebauthnChallenges)
+	}
+	if m.passwords != nil {
+		edges = append(edges, user.EdgePasswords)
 	}
 	if m.sessions != nil {
 		edges = append(edges, user.EdgeSessions)
@@ -3837,6 +3956,12 @@ func (m *UserMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case user.EdgePasswords:
+		ids := make([]ent.Value, 0, len(m.passwords))
+		for id := range m.passwords {
+			ids = append(ids, id)
+		}
+		return ids
 	case user.EdgeSessions:
 		ids := make([]ent.Value, 0, len(m.sessions))
 		for id := range m.sessions {
@@ -3849,7 +3974,7 @@ func (m *UserMutation) AddedIDs(name string) []ent.Value {
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *UserMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 4)
+	edges := make([]string, 0, 5)
 	if m.removedemailChallenges != nil {
 		edges = append(edges, user.EdgeEmailChallenges)
 	}
@@ -3858,6 +3983,9 @@ func (m *UserMutation) RemovedEdges() []string {
 	}
 	if m.removedwebauthnChallenges != nil {
 		edges = append(edges, user.EdgeWebauthnChallenges)
+	}
+	if m.removedpasswords != nil {
+		edges = append(edges, user.EdgePasswords)
 	}
 	if m.removedsessions != nil {
 		edges = append(edges, user.EdgeSessions)
@@ -3887,6 +4015,12 @@ func (m *UserMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case user.EdgePasswords:
+		ids := make([]ent.Value, 0, len(m.removedpasswords))
+		for id := range m.removedpasswords {
+			ids = append(ids, id)
+		}
+		return ids
 	case user.EdgeSessions:
 		ids := make([]ent.Value, 0, len(m.removedsessions))
 		for id := range m.removedsessions {
@@ -3899,7 +4033,7 @@ func (m *UserMutation) RemovedIDs(name string) []ent.Value {
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *UserMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 4)
+	edges := make([]string, 0, 5)
 	if m.clearedemailChallenges {
 		edges = append(edges, user.EdgeEmailChallenges)
 	}
@@ -3908,6 +4042,9 @@ func (m *UserMutation) ClearedEdges() []string {
 	}
 	if m.clearedwebauthnChallenges {
 		edges = append(edges, user.EdgeWebauthnChallenges)
+	}
+	if m.clearedpasswords {
+		edges = append(edges, user.EdgePasswords)
 	}
 	if m.clearedsessions {
 		edges = append(edges, user.EdgeSessions)
@@ -3925,6 +4062,8 @@ func (m *UserMutation) EdgeCleared(name string) bool {
 		return m.clearedwebauthnCredentials
 	case user.EdgeWebauthnChallenges:
 		return m.clearedwebauthnChallenges
+	case user.EdgePasswords:
+		return m.clearedpasswords
 	case user.EdgeSessions:
 		return m.clearedsessions
 	}
@@ -3951,6 +4090,9 @@ func (m *UserMutation) ResetEdge(name string) error {
 		return nil
 	case user.EdgeWebauthnChallenges:
 		m.ResetWebauthnChallenges()
+		return nil
+	case user.EdgePasswords:
+		m.ResetPasswords()
 		return nil
 	case user.EdgeSessions:
 		m.ResetSessions()

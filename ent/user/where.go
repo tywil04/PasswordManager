@@ -421,6 +421,33 @@ func HasWebauthnChallengesWith(preds ...predicate.WebAuthnChallenge) predicate.U
 	})
 }
 
+// HasPasswords applies the HasEdge predicate on the "passwords" edge.
+func HasPasswords() predicate.User {
+	return predicate.User(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, PasswordsTable, PasswordsColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasPasswordsWith applies the HasEdge predicate on the "passwords" edge with a given conditions (other predicates).
+func HasPasswordsWith(preds ...predicate.Password) predicate.User {
+	return predicate.User(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(PasswordsInverseTable, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, PasswordsTable, PasswordsColumn),
+		)
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
 // HasSessions applies the HasEdge predicate on the "sessions" edge.
 func HasSessions() predicate.User {
 	return predicate.User(func(s *sql.Selector) {

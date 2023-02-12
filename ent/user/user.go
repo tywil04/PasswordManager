@@ -33,6 +33,8 @@ const (
 	EdgeWebauthnCredentials = "webauthnCredentials"
 	// EdgeWebauthnChallenges holds the string denoting the webauthnchallenges edge name in mutations.
 	EdgeWebauthnChallenges = "webauthnChallenges"
+	// EdgePasswords holds the string denoting the passwords edge name in mutations.
+	EdgePasswords = "passwords"
 	// EdgeSessions holds the string denoting the sessions edge name in mutations.
 	EdgeSessions = "sessions"
 	// Table holds the table name of the user in the database.
@@ -58,6 +60,13 @@ const (
 	WebauthnChallengesInverseTable = "web_authn_challenges"
 	// WebauthnChallengesColumn is the table column denoting the webauthnChallenges relation/edge.
 	WebauthnChallengesColumn = "user_webauthn_challenges"
+	// PasswordsTable is the table that holds the passwords relation/edge.
+	PasswordsTable = "passwords"
+	// PasswordsInverseTable is the table name for the Password entity.
+	// It exists in this package in order to avoid circular dependency with the "password" package.
+	PasswordsInverseTable = "passwords"
+	// PasswordsColumn is the table column denoting the passwords relation/edge.
+	PasswordsColumn = "user_passwords"
 	// SessionsTable is the table that holds the sessions relation/edge.
 	SessionsTable = "sessions"
 	// SessionsInverseTable is the table name for the Session entity.

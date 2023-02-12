@@ -33,6 +33,7 @@ func (User) Edges() []ent.Edge {
 		edge.To("emailChallenges", EmailChallenge.Type),
 		edge.To("webauthnCredentials", WebAuthnCredential.Type),
 		edge.To("webauthnChallenges", WebAuthnChallenge.Type),
+		edge.To("passwords", Password.Type),
 		edge.To("sessions", Session.Type),
 	}
 }

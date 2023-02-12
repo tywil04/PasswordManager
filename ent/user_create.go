@@ -4,6 +4,7 @@ package ent
 
 import (
 	"PasswordManager/ent/emailchallenge"
+	"PasswordManager/ent/password"
 	"PasswordManager/ent/session"
 	"PasswordManager/ent/user"
 	"PasswordManager/ent/webauthnchallenge"
@@ -139,6 +140,21 @@ func (uc *UserCreate) AddWebauthnChallenges(w ...*WebAuthnChallenge) *UserCreate
 		ids[i] = w[i].ID
 	}
 	return uc.AddWebauthnChallengeIDs(ids...)
+}
+
+// AddPasswordIDs adds the "passwords" edge to the Password entity by IDs.
+func (uc *UserCreate) AddPasswordIDs(ids ...uuid.UUID) *UserCreate {
+	uc.mutation.AddPasswordIDs(ids...)
+	return uc
+}
+
+// AddPasswords adds the "passwords" edges to the Password entity.
+func (uc *UserCreate) AddPasswords(p ...*Password) *UserCreate {
+	ids := make([]uuid.UUID, len(p))
+	for i := range p {
+		ids[i] = p[i].ID
+	}
+	return uc.AddPasswordIDs(ids...)
 }
 
 // AddSessionIDs adds the "sessions" edge to the Session entity by IDs.
@@ -376,6 +392,25 @@ func (uc *UserCreate) createSpec() (*User, *sqlgraph.CreateSpec) {
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeUUID,
 					Column: webauthnchallenge.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := uc.mutation.PasswordsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.PasswordsTable,
+			Columns: []string{user.PasswordsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeUUID,
+					Column: password.FieldID,
 				},
 			},
 		}

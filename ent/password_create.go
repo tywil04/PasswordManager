@@ -6,6 +6,7 @@ import (
 	"PasswordManager/ent/additionalfield"
 	"PasswordManager/ent/password"
 	"PasswordManager/ent/url"
+	"PasswordManager/ent/user"
 	"context"
 	"errors"
 	"fmt"
@@ -114,6 +115,25 @@ func (pc *PasswordCreate) AddUrls(u ...*Url) *PasswordCreate {
 		ids[i] = u[i].ID
 	}
 	return pc.AddURLIDs(ids...)
+}
+
+// SetUserID sets the "user" edge to the User entity by ID.
+func (pc *PasswordCreate) SetUserID(id uuid.UUID) *PasswordCreate {
+	pc.mutation.SetUserID(id)
+	return pc
+}
+
+// SetNillableUserID sets the "user" edge to the User entity by ID if the given value is not nil.
+func (pc *PasswordCreate) SetNillableUserID(id *uuid.UUID) *PasswordCreate {
+	if id != nil {
+		pc = pc.SetUserID(*id)
+	}
+	return pc
+}
+
+// SetUser sets the "user" edge to the User entity.
+func (pc *PasswordCreate) SetUser(u *User) *PasswordCreate {
+	return pc.SetUserID(u.ID)
 }
 
 // Mutation returns the PasswordMutation object of the builder.
@@ -312,6 +332,26 @@ func (pc *PasswordCreate) createSpec() (*Password, *sqlgraph.CreateSpec) {
 		for _, k := range nodes {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := pc.mutation.UserIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   password.UserTable,
+			Columns: []string{password.UserColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeUUID,
+					Column: user.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_node.user_passwords = &nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec

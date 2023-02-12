@@ -31,6 +31,9 @@ func (Password) Edges() []ent.Edge {
 	return []ent.Edge{
 		edge.To("additionalFields", AdditionalField.Type),
 		edge.To("urls", Url.Type),
+		edge.From("user", User.Type).
+			Ref("passwords").
+			Unique(),
 	}
 }
 
