@@ -56,6 +56,18 @@ func (f SessionFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, err
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.SessionMutation", m)
 }
 
+// The TotpCredentialFunc type is an adapter to allow the use of ordinary
+// function as TotpCredential mutator.
+type TotpCredentialFunc func(context.Context, *ent.TotpCredentialMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f TotpCredentialFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.TotpCredentialMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.TotpCredentialMutation", m)
+}
+
 // The UrlFunc type is an adapter to allow the use of ordinary
 // function as Url mutator.
 type UrlFunc func(context.Context, *ent.URLMutation) (ent.Value, error)

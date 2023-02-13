@@ -109,6 +109,19 @@ func GetWebauthnChallengeUser(webauthnChallenge *ent.WebAuthnChallenge) (*ent.Us
 	return webauthnChallenge.QueryUser().Unique(true).First(Context)
 }
 
+// Totp Challenges
+func GetTotpCredentialViaId(totpCredentialId uuid.UUID) (*ent.TotpCredential, error) {
+	return Client.TotpCredential.Get(Context, totpCredentialId)
+}
+
+func GetUserTotpCredential(user *ent.User) (*ent.TotpCredential, error) {
+	return user.QueryTotpCredential().First(Context)
+}
+
+func GetTotpCredentialUser(totpCredential *ent.TotpCredential) (*ent.User, error) {
+	return totpCredential.QueryUser().First(Context)
+}
+
 // Email Challenges
 
 func GetEmailChallenge(emailChallengeId uuid.UUID) (*ent.EmailChallenge, error) {

@@ -367,6 +367,33 @@ func HasEmailChallengesWith(preds ...predicate.EmailChallenge) predicate.User {
 	})
 }
 
+// HasTotpCredential applies the HasEdge predicate on the "totpCredential" edge.
+func HasTotpCredential() predicate.User {
+	return predicate.User(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, false, TotpCredentialTable, TotpCredentialColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasTotpCredentialWith applies the HasEdge predicate on the "totpCredential" edge with a given conditions (other predicates).
+func HasTotpCredentialWith(preds ...predicate.TotpCredential) predicate.User {
+	return predicate.User(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(TotpCredentialInverseTable, FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, false, TotpCredentialTable, TotpCredentialColumn),
+		)
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
 // HasWebauthnCredentials applies the HasEdge predicate on the "webauthnCredentials" edge.
 func HasWebauthnCredentials() predicate.User {
 	return predicate.User(func(s *sql.Selector) {

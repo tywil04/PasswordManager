@@ -7,6 +7,7 @@ import (
 	"PasswordManager/ent/password"
 	"PasswordManager/ent/predicate"
 	"PasswordManager/ent/session"
+	"PasswordManager/ent/totpcredential"
 	"PasswordManager/ent/user"
 	"PasswordManager/ent/webauthnchallenge"
 	"PasswordManager/ent/webauthncredential"
@@ -106,6 +107,25 @@ func (uu *UserUpdate) AddEmailChallenges(e ...*EmailChallenge) *UserUpdate {
 	return uu.AddEmailChallengeIDs(ids...)
 }
 
+// SetTotpCredentialID sets the "totpCredential" edge to the TotpCredential entity by ID.
+func (uu *UserUpdate) SetTotpCredentialID(id uuid.UUID) *UserUpdate {
+	uu.mutation.SetTotpCredentialID(id)
+	return uu
+}
+
+// SetNillableTotpCredentialID sets the "totpCredential" edge to the TotpCredential entity by ID if the given value is not nil.
+func (uu *UserUpdate) SetNillableTotpCredentialID(id *uuid.UUID) *UserUpdate {
+	if id != nil {
+		uu = uu.SetTotpCredentialID(*id)
+	}
+	return uu
+}
+
+// SetTotpCredential sets the "totpCredential" edge to the TotpCredential entity.
+func (uu *UserUpdate) SetTotpCredential(t *TotpCredential) *UserUpdate {
+	return uu.SetTotpCredentialID(t.ID)
+}
+
 // AddWebauthnCredentialIDs adds the "webauthnCredentials" edge to the WebAuthnCredential entity by IDs.
 func (uu *UserUpdate) AddWebauthnCredentialIDs(ids ...uuid.UUID) *UserUpdate {
 	uu.mutation.AddWebauthnCredentialIDs(ids...)
@@ -190,6 +210,12 @@ func (uu *UserUpdate) RemoveEmailChallenges(e ...*EmailChallenge) *UserUpdate {
 		ids[i] = e[i].ID
 	}
 	return uu.RemoveEmailChallengeIDs(ids...)
+}
+
+// ClearTotpCredential clears the "totpCredential" edge to the TotpCredential entity.
+func (uu *UserUpdate) ClearTotpCredential() *UserUpdate {
+	uu.mutation.ClearTotpCredential()
+	return uu
 }
 
 // ClearWebauthnCredentials clears all "webauthnCredentials" edges to the WebAuthnCredential entity.
@@ -426,6 +452,41 @@ func (uu *UserUpdate) sqlSave(ctx context.Context) (n int, err error) {
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeUUID,
 					Column: emailchallenge.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if uu.mutation.TotpCredentialCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   user.TotpCredentialTable,
+			Columns: []string{user.TotpCredentialColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeUUID,
+					Column: totpcredential.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := uu.mutation.TotpCredentialIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   user.TotpCredentialTable,
+			Columns: []string{user.TotpCredentialColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeUUID,
+					Column: totpcredential.FieldID,
 				},
 			},
 		}
@@ -743,6 +804,25 @@ func (uuo *UserUpdateOne) AddEmailChallenges(e ...*EmailChallenge) *UserUpdateOn
 	return uuo.AddEmailChallengeIDs(ids...)
 }
 
+// SetTotpCredentialID sets the "totpCredential" edge to the TotpCredential entity by ID.
+func (uuo *UserUpdateOne) SetTotpCredentialID(id uuid.UUID) *UserUpdateOne {
+	uuo.mutation.SetTotpCredentialID(id)
+	return uuo
+}
+
+// SetNillableTotpCredentialID sets the "totpCredential" edge to the TotpCredential entity by ID if the given value is not nil.
+func (uuo *UserUpdateOne) SetNillableTotpCredentialID(id *uuid.UUID) *UserUpdateOne {
+	if id != nil {
+		uuo = uuo.SetTotpCredentialID(*id)
+	}
+	return uuo
+}
+
+// SetTotpCredential sets the "totpCredential" edge to the TotpCredential entity.
+func (uuo *UserUpdateOne) SetTotpCredential(t *TotpCredential) *UserUpdateOne {
+	return uuo.SetTotpCredentialID(t.ID)
+}
+
 // AddWebauthnCredentialIDs adds the "webauthnCredentials" edge to the WebAuthnCredential entity by IDs.
 func (uuo *UserUpdateOne) AddWebauthnCredentialIDs(ids ...uuid.UUID) *UserUpdateOne {
 	uuo.mutation.AddWebauthnCredentialIDs(ids...)
@@ -827,6 +907,12 @@ func (uuo *UserUpdateOne) RemoveEmailChallenges(e ...*EmailChallenge) *UserUpdat
 		ids[i] = e[i].ID
 	}
 	return uuo.RemoveEmailChallengeIDs(ids...)
+}
+
+// ClearTotpCredential clears the "totpCredential" edge to the TotpCredential entity.
+func (uuo *UserUpdateOne) ClearTotpCredential() *UserUpdateOne {
+	uuo.mutation.ClearTotpCredential()
+	return uuo
 }
 
 // ClearWebauthnCredentials clears all "webauthnCredentials" edges to the WebAuthnCredential entity.
@@ -1087,6 +1173,41 @@ func (uuo *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) 
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeUUID,
 					Column: emailchallenge.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if uuo.mutation.TotpCredentialCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   user.TotpCredentialTable,
+			Columns: []string{user.TotpCredentialColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeUUID,
+					Column: totpcredential.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := uuo.mutation.TotpCredentialIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   user.TotpCredentialTable,
+			Columns: []string{user.TotpCredentialColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeUUID,
+					Column: totpcredential.FieldID,
 				},
 			},
 		}

@@ -179,7 +179,7 @@
     }
 
     form.inner {
-        @apply bg-white border border-black w-full h-fit md:w-fit duration-100 p-5 rounded-2xl min-w-[25%];
+        @apply bg-white border border-black md:w-fit h-fit duration-100 p-5 rounded-2xl w-full min-w-[25%];
     }
 
     h1 {

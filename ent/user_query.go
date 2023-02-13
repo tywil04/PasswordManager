@@ -7,6 +7,7 @@ import (
 	"PasswordManager/ent/password"
 	"PasswordManager/ent/predicate"
 	"PasswordManager/ent/session"
+	"PasswordManager/ent/totpcredential"
 	"PasswordManager/ent/user"
 	"PasswordManager/ent/webauthnchallenge"
 	"PasswordManager/ent/webauthncredential"
@@ -29,6 +30,7 @@ type UserQuery struct {
 	inters                  []Interceptor
 	predicates              []predicate.User
 	withEmailChallenges     *EmailChallengeQuery
+	withTotpCredential      *TotpCredentialQuery
 	withWebauthnCredentials *WebAuthnCredentialQuery
 	withWebauthnChallenges  *WebAuthnChallengeQuery
 	withPasswords           *PasswordQuery
@@ -84,6 +86,28 @@ func (uq *UserQuery) QueryEmailChallenges() *EmailChallengeQuery {
 			sqlgraph.From(user.Table, user.FieldID, selector),
 			sqlgraph.To(emailchallenge.Table, emailchallenge.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, user.EmailChallengesTable, user.EmailChallengesColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(uq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryTotpCredential chains the current query on the "totpCredential" edge.
+func (uq *UserQuery) QueryTotpCredential() *TotpCredentialQuery {
+	query := (&TotpCredentialClient{config: uq.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := uq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := uq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(user.Table, user.FieldID, selector),
+			sqlgraph.To(totpcredential.Table, totpcredential.FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, false, user.TotpCredentialTable, user.TotpCredentialColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(uq.driver.Dialect(), step)
 		return fromU, nil
@@ -370,6 +394,7 @@ func (uq *UserQuery) Clone() *UserQuery {
 		inters:                  append([]Interceptor{}, uq.inters...),
 		predicates:              append([]predicate.User{}, uq.predicates...),
 		withEmailChallenges:     uq.withEmailChallenges.Clone(),
+		withTotpCredential:      uq.withTotpCredential.Clone(),
 		withWebauthnCredentials: uq.withWebauthnCredentials.Clone(),
 		withWebauthnChallenges:  uq.withWebauthnChallenges.Clone(),
 		withPasswords:           uq.withPasswords.Clone(),
@@ -388,6 +413,17 @@ func (uq *UserQuery) WithEmailChallenges(opts ...func(*EmailChallengeQuery)) *Us
 		opt(query)
 	}
 	uq.withEmailChallenges = query
+	return uq
+}
+
+// WithTotpCredential tells the query-builder to eager-load the nodes that are connected to
+// the "totpCredential" edge. The optional arguments are used to configure the query builder of the edge.
+func (uq *UserQuery) WithTotpCredential(opts ...func(*TotpCredentialQuery)) *UserQuery {
+	query := (&TotpCredentialClient{config: uq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	uq.withTotpCredential = query
 	return uq
 }
 
@@ -515,8 +551,9 @@ func (uq *UserQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*User, e
 	var (
 		nodes       = []*User{}
 		_spec       = uq.querySpec()
-		loadedTypes = [5]bool{
+		loadedTypes = [6]bool{
 			uq.withEmailChallenges != nil,
+			uq.withTotpCredential != nil,
 			uq.withWebauthnCredentials != nil,
 			uq.withWebauthnChallenges != nil,
 			uq.withPasswords != nil,
@@ -545,6 +582,12 @@ func (uq *UserQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*User, e
 		if err := uq.loadEmailChallenges(ctx, query, nodes,
 			func(n *User) { n.Edges.EmailChallenges = []*EmailChallenge{} },
 			func(n *User, e *EmailChallenge) { n.Edges.EmailChallenges = append(n.Edges.EmailChallenges, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := uq.withTotpCredential; query != nil {
+		if err := uq.loadTotpCredential(ctx, query, nodes, nil,
+			func(n *User, e *TotpCredential) { n.Edges.TotpCredential = e }); err != nil {
 			return nil, err
 		}
 	}
@@ -609,6 +652,34 @@ func (uq *UserQuery) loadEmailChallenges(ctx context.Context, query *EmailChalle
 		node, ok := nodeids[*fk]
 		if !ok {
 			return fmt.Errorf(`unexpected foreign-key "user_email_challenges" returned %v for node %v`, *fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (uq *UserQuery) loadTotpCredential(ctx context.Context, query *TotpCredentialQuery, nodes []*User, init func(*User), assign func(*User, *TotpCredential)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[uuid.UUID]*User)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+	}
+	query.withFKs = true
+	query.Where(predicate.TotpCredential(func(s *sql.Selector) {
+		s.Where(sql.InValues(user.TotpCredentialColumn, fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.user_totp_credential
+		if fk == nil {
+			return fmt.Errorf(`foreign-key "user_totp_credential" is nil for node %v`, n.ID)
+		}
+		node, ok := nodeids[*fk]
+		if !ok {
+			return fmt.Errorf(`unexpected foreign-key "user_totp_credential" returned %v for node %v`, *fk, n.ID)
 		}
 		assign(node, n)
 	}

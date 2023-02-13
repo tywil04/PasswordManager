@@ -6,6 +6,7 @@ import (
 	"PasswordManager/ent/emailchallenge"
 	"PasswordManager/ent/password"
 	"PasswordManager/ent/session"
+	"PasswordManager/ent/totpcredential"
 	"PasswordManager/ent/user"
 	"PasswordManager/ent/webauthnchallenge"
 	"PasswordManager/ent/webauthncredential"
@@ -110,6 +111,25 @@ func (uc *UserCreate) AddEmailChallenges(e ...*EmailChallenge) *UserCreate {
 		ids[i] = e[i].ID
 	}
 	return uc.AddEmailChallengeIDs(ids...)
+}
+
+// SetTotpCredentialID sets the "totpCredential" edge to the TotpCredential entity by ID.
+func (uc *UserCreate) SetTotpCredentialID(id uuid.UUID) *UserCreate {
+	uc.mutation.SetTotpCredentialID(id)
+	return uc
+}
+
+// SetNillableTotpCredentialID sets the "totpCredential" edge to the TotpCredential entity by ID if the given value is not nil.
+func (uc *UserCreate) SetNillableTotpCredentialID(id *uuid.UUID) *UserCreate {
+	if id != nil {
+		uc = uc.SetTotpCredentialID(*id)
+	}
+	return uc
+}
+
+// SetTotpCredential sets the "totpCredential" edge to the TotpCredential entity.
+func (uc *UserCreate) SetTotpCredential(t *TotpCredential) *UserCreate {
+	return uc.SetTotpCredentialID(t.ID)
 }
 
 // AddWebauthnCredentialIDs adds the "webauthnCredentials" edge to the WebAuthnCredential entity by IDs.
@@ -354,6 +374,25 @@ func (uc *UserCreate) createSpec() (*User, *sqlgraph.CreateSpec) {
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeUUID,
 					Column: emailchallenge.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := uc.mutation.TotpCredentialIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   user.TotpCredentialTable,
+			Columns: []string{user.TotpCredentialColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeUUID,
+					Column: totpcredential.FieldID,
 				},
 			},
 		}

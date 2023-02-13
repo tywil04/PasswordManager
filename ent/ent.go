@@ -7,6 +7,7 @@ import (
 	"PasswordManager/ent/emailchallenge"
 	"PasswordManager/ent/password"
 	"PasswordManager/ent/session"
+	"PasswordManager/ent/totpcredential"
 	"PasswordManager/ent/url"
 	"PasswordManager/ent/user"
 	"PasswordManager/ent/webauthnchallenge"
@@ -50,6 +51,7 @@ func columnChecker(table string) func(string) error {
 		emailchallenge.Table:     emailchallenge.ValidColumn,
 		password.Table:           password.ValidColumn,
 		session.Table:            session.ValidColumn,
+		totpcredential.Table:     totpcredential.ValidColumn,
 		url.Table:                url.ValidColumn,
 		user.Table:               user.ValidColumn,
 		webauthnchallenge.Table:  webauthnchallenge.ValidColumn,

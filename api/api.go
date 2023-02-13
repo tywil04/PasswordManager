@@ -9,6 +9,7 @@ import (
 	"PasswordManager/api/endpoints/auth/test"
 	"PasswordManager/api/endpoints/email"
 	"PasswordManager/api/endpoints/password"
+	"PasswordManager/api/endpoints/totp"
 	webauthnEndpoints "PasswordManager/api/endpoints/webauthn"
 	"PasswordManager/api/lib/db"
 	"PasswordManager/api/lib/middleware"
@@ -42,6 +43,8 @@ func Start(router *gin.Engine) {
 	authRequired.POST("/api/v1/webauthn/register", webauthnEndpoints.PostRegister)
 	authRequired.GET("/api/v1/webauthn/credential", webauthnEndpoints.GetCredential)
 	authRequired.DELETE("/api/v1/webauthn/credential", webauthnEndpoints.DeleteCredential)
+	authRequired.GET("/api/v1/totp/register", totp.GetRegister)
+	authRequired.POST("/api/v1/totp/register", totp.PostRegister)
 }
 
 func Stop() {

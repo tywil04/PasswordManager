@@ -8,6 +8,7 @@ import (
 	"PasswordManager/ent/password"
 	"PasswordManager/ent/predicate"
 	"PasswordManager/ent/session"
+	"PasswordManager/ent/totpcredential"
 	"PasswordManager/ent/url"
 	"PasswordManager/ent/user"
 	"PasswordManager/ent/webauthnchallenge"
@@ -37,6 +38,7 @@ const (
 	TypeEmailChallenge     = "EmailChallenge"
 	TypePassword           = "Password"
 	TypeSession            = "Session"
+	TypeTotpCredential     = "TotpCredential"
 	TypeURL                = "Url"
 	TypeUser               = "User"
 	TypeWebAuthnChallenge  = "WebAuthnChallenge"
@@ -2567,6 +2569,513 @@ func (m *SessionMutation) ResetEdge(name string) error {
 	return fmt.Errorf("unknown Session edge %s", name)
 }
 
+// TotpCredentialMutation represents an operation that mutates the TotpCredential nodes in the graph.
+type TotpCredentialMutation struct {
+	config
+	op            Op
+	typ           string
+	id            *uuid.UUID
+	createdAt     *time.Time
+	secret        *string
+	validated     *bool
+	clearedFields map[string]struct{}
+	user          *uuid.UUID
+	cleareduser   bool
+	done          bool
+	oldValue      func(context.Context) (*TotpCredential, error)
+	predicates    []predicate.TotpCredential
+}
+
+var _ ent.Mutation = (*TotpCredentialMutation)(nil)
+
+// totpcredentialOption allows management of the mutation configuration using functional options.
+type totpcredentialOption func(*TotpCredentialMutation)
+
+// newTotpCredentialMutation creates new mutation for the TotpCredential entity.
+func newTotpCredentialMutation(c config, op Op, opts ...totpcredentialOption) *TotpCredentialMutation {
+	m := &TotpCredentialMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeTotpCredential,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withTotpCredentialID sets the ID field of the mutation.
+func withTotpCredentialID(id uuid.UUID) totpcredentialOption {
+	return func(m *TotpCredentialMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *TotpCredential
+		)
+		m.oldValue = func(ctx context.Context) (*TotpCredential, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().TotpCredential.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withTotpCredential sets the old TotpCredential of the mutation.
+func withTotpCredential(node *TotpCredential) totpcredentialOption {
+	return func(m *TotpCredentialMutation) {
+		m.oldValue = func(context.Context) (*TotpCredential, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m TotpCredentialMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m TotpCredentialMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of TotpCredential entities.
+func (m *TotpCredentialMutation) SetID(id uuid.UUID) {
+	m.id = &id
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *TotpCredentialMutation) ID() (id uuid.UUID, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *TotpCredentialMutation) IDs(ctx context.Context) ([]uuid.UUID, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []uuid.UUID{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().TotpCredential.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetCreatedAt sets the "createdAt" field.
+func (m *TotpCredentialMutation) SetCreatedAt(t time.Time) {
+	m.createdAt = &t
+}
+
+// CreatedAt returns the value of the "createdAt" field in the mutation.
+func (m *TotpCredentialMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.createdAt
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "createdAt" field's value of the TotpCredential entity.
+// If the TotpCredential object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TotpCredentialMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "createdAt" field.
+func (m *TotpCredentialMutation) ResetCreatedAt() {
+	m.createdAt = nil
+}
+
+// SetSecret sets the "secret" field.
+func (m *TotpCredentialMutation) SetSecret(s string) {
+	m.secret = &s
+}
+
+// Secret returns the value of the "secret" field in the mutation.
+func (m *TotpCredentialMutation) Secret() (r string, exists bool) {
+	v := m.secret
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSecret returns the old "secret" field's value of the TotpCredential entity.
+// If the TotpCredential object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TotpCredentialMutation) OldSecret(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSecret is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSecret requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSecret: %w", err)
+	}
+	return oldValue.Secret, nil
+}
+
+// ResetSecret resets all changes to the "secret" field.
+func (m *TotpCredentialMutation) ResetSecret() {
+	m.secret = nil
+}
+
+// SetValidated sets the "validated" field.
+func (m *TotpCredentialMutation) SetValidated(b bool) {
+	m.validated = &b
+}
+
+// Validated returns the value of the "validated" field in the mutation.
+func (m *TotpCredentialMutation) Validated() (r bool, exists bool) {
+	v := m.validated
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldValidated returns the old "validated" field's value of the TotpCredential entity.
+// If the TotpCredential object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TotpCredentialMutation) OldValidated(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldValidated is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldValidated requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldValidated: %w", err)
+	}
+	return oldValue.Validated, nil
+}
+
+// ResetValidated resets all changes to the "validated" field.
+func (m *TotpCredentialMutation) ResetValidated() {
+	m.validated = nil
+}
+
+// SetUserID sets the "user" edge to the User entity by id.
+func (m *TotpCredentialMutation) SetUserID(id uuid.UUID) {
+	m.user = &id
+}
+
+// ClearUser clears the "user" edge to the User entity.
+func (m *TotpCredentialMutation) ClearUser() {
+	m.cleareduser = true
+}
+
+// UserCleared reports if the "user" edge to the User entity was cleared.
+func (m *TotpCredentialMutation) UserCleared() bool {
+	return m.cleareduser
+}
+
+// UserID returns the "user" edge ID in the mutation.
+func (m *TotpCredentialMutation) UserID() (id uuid.UUID, exists bool) {
+	if m.user != nil {
+		return *m.user, true
+	}
+	return
+}
+
+// UserIDs returns the "user" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// UserID instead. It exists only for internal usage by the builders.
+func (m *TotpCredentialMutation) UserIDs() (ids []uuid.UUID) {
+	if id := m.user; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetUser resets all changes to the "user" edge.
+func (m *TotpCredentialMutation) ResetUser() {
+	m.user = nil
+	m.cleareduser = false
+}
+
+// Where appends a list predicates to the TotpCredentialMutation builder.
+func (m *TotpCredentialMutation) Where(ps ...predicate.TotpCredential) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the TotpCredentialMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *TotpCredentialMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.TotpCredential, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *TotpCredentialMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *TotpCredentialMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (TotpCredential).
+func (m *TotpCredentialMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *TotpCredentialMutation) Fields() []string {
+	fields := make([]string, 0, 3)
+	if m.createdAt != nil {
+		fields = append(fields, totpcredential.FieldCreatedAt)
+	}
+	if m.secret != nil {
+		fields = append(fields, totpcredential.FieldSecret)
+	}
+	if m.validated != nil {
+		fields = append(fields, totpcredential.FieldValidated)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *TotpCredentialMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case totpcredential.FieldCreatedAt:
+		return m.CreatedAt()
+	case totpcredential.FieldSecret:
+		return m.Secret()
+	case totpcredential.FieldValidated:
+		return m.Validated()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *TotpCredentialMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case totpcredential.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case totpcredential.FieldSecret:
+		return m.OldSecret(ctx)
+	case totpcredential.FieldValidated:
+		return m.OldValidated(ctx)
+	}
+	return nil, fmt.Errorf("unknown TotpCredential field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *TotpCredentialMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case totpcredential.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case totpcredential.FieldSecret:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSecret(v)
+		return nil
+	case totpcredential.FieldValidated:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetValidated(v)
+		return nil
+	}
+	return fmt.Errorf("unknown TotpCredential field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *TotpCredentialMutation) AddedFields() []string {
+	return nil
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *TotpCredentialMutation) AddedField(name string) (ent.Value, bool) {
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *TotpCredentialMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	}
+	return fmt.Errorf("unknown TotpCredential numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *TotpCredentialMutation) ClearedFields() []string {
+	return nil
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *TotpCredentialMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *TotpCredentialMutation) ClearField(name string) error {
+	return fmt.Errorf("unknown TotpCredential nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *TotpCredentialMutation) ResetField(name string) error {
+	switch name {
+	case totpcredential.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case totpcredential.FieldSecret:
+		m.ResetSecret()
+		return nil
+	case totpcredential.FieldValidated:
+		m.ResetValidated()
+		return nil
+	}
+	return fmt.Errorf("unknown TotpCredential field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *TotpCredentialMutation) AddedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.user != nil {
+		edges = append(edges, totpcredential.EdgeUser)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *TotpCredentialMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case totpcredential.EdgeUser:
+		if id := m.user; id != nil {
+			return []ent.Value{*id}
+		}
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *TotpCredentialMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 1)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *TotpCredentialMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *TotpCredentialMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.cleareduser {
+		edges = append(edges, totpcredential.EdgeUser)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *TotpCredentialMutation) EdgeCleared(name string) bool {
+	switch name {
+	case totpcredential.EdgeUser:
+		return m.cleareduser
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *TotpCredentialMutation) ClearEdge(name string) error {
+	switch name {
+	case totpcredential.EdgeUser:
+		m.ClearUser()
+		return nil
+	}
+	return fmt.Errorf("unknown TotpCredential unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *TotpCredentialMutation) ResetEdge(name string) error {
+	switch name {
+	case totpcredential.EdgeUser:
+		m.ResetUser()
+		return nil
+	}
+	return fmt.Errorf("unknown TotpCredential edge %s", name)
+}
+
 // URLMutation represents an operation that mutates the Url nodes in the graph.
 type URLMutation struct {
 	config
@@ -3037,6 +3546,8 @@ type UserMutation struct {
 	emailChallenges            map[uuid.UUID]struct{}
 	removedemailChallenges     map[uuid.UUID]struct{}
 	clearedemailChallenges     bool
+	totpCredential             *uuid.UUID
+	clearedtotpCredential      bool
 	webauthnCredentials        map[uuid.UUID]struct{}
 	removedwebauthnCredentials map[uuid.UUID]struct{}
 	clearedwebauthnCredentials bool
@@ -3462,6 +3973,45 @@ func (m *UserMutation) ResetEmailChallenges() {
 	m.emailChallenges = nil
 	m.clearedemailChallenges = false
 	m.removedemailChallenges = nil
+}
+
+// SetTotpCredentialID sets the "totpCredential" edge to the TotpCredential entity by id.
+func (m *UserMutation) SetTotpCredentialID(id uuid.UUID) {
+	m.totpCredential = &id
+}
+
+// ClearTotpCredential clears the "totpCredential" edge to the TotpCredential entity.
+func (m *UserMutation) ClearTotpCredential() {
+	m.clearedtotpCredential = true
+}
+
+// TotpCredentialCleared reports if the "totpCredential" edge to the TotpCredential entity was cleared.
+func (m *UserMutation) TotpCredentialCleared() bool {
+	return m.clearedtotpCredential
+}
+
+// TotpCredentialID returns the "totpCredential" edge ID in the mutation.
+func (m *UserMutation) TotpCredentialID() (id uuid.UUID, exists bool) {
+	if m.totpCredential != nil {
+		return *m.totpCredential, true
+	}
+	return
+}
+
+// TotpCredentialIDs returns the "totpCredential" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// TotpCredentialID instead. It exists only for internal usage by the builders.
+func (m *UserMutation) TotpCredentialIDs() (ids []uuid.UUID) {
+	if id := m.totpCredential; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetTotpCredential resets all changes to the "totpCredential" edge.
+func (m *UserMutation) ResetTotpCredential() {
+	m.totpCredential = nil
+	m.clearedtotpCredential = false
 }
 
 // AddWebauthnCredentialIDs adds the "webauthnCredentials" edge to the WebAuthnCredential entity by ids.
@@ -3915,9 +4465,12 @@ func (m *UserMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *UserMutation) AddedEdges() []string {
-	edges := make([]string, 0, 5)
+	edges := make([]string, 0, 6)
 	if m.emailChallenges != nil {
 		edges = append(edges, user.EdgeEmailChallenges)
+	}
+	if m.totpCredential != nil {
+		edges = append(edges, user.EdgeTotpCredential)
 	}
 	if m.webauthnCredentials != nil {
 		edges = append(edges, user.EdgeWebauthnCredentials)
@@ -3944,6 +4497,10 @@ func (m *UserMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case user.EdgeTotpCredential:
+		if id := m.totpCredential; id != nil {
+			return []ent.Value{*id}
+		}
 	case user.EdgeWebauthnCredentials:
 		ids := make([]ent.Value, 0, len(m.webauthnCredentials))
 		for id := range m.webauthnCredentials {
@@ -3974,7 +4531,7 @@ func (m *UserMutation) AddedIDs(name string) []ent.Value {
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *UserMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 5)
+	edges := make([]string, 0, 6)
 	if m.removedemailChallenges != nil {
 		edges = append(edges, user.EdgeEmailChallenges)
 	}
@@ -4033,9 +4590,12 @@ func (m *UserMutation) RemovedIDs(name string) []ent.Value {
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *UserMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 5)
+	edges := make([]string, 0, 6)
 	if m.clearedemailChallenges {
 		edges = append(edges, user.EdgeEmailChallenges)
+	}
+	if m.clearedtotpCredential {
+		edges = append(edges, user.EdgeTotpCredential)
 	}
 	if m.clearedwebauthnCredentials {
 		edges = append(edges, user.EdgeWebauthnCredentials)
@@ -4058,6 +4618,8 @@ func (m *UserMutation) EdgeCleared(name string) bool {
 	switch name {
 	case user.EdgeEmailChallenges:
 		return m.clearedemailChallenges
+	case user.EdgeTotpCredential:
+		return m.clearedtotpCredential
 	case user.EdgeWebauthnCredentials:
 		return m.clearedwebauthnCredentials
 	case user.EdgeWebauthnChallenges:
@@ -4074,6 +4636,9 @@ func (m *UserMutation) EdgeCleared(name string) bool {
 // if that edge is not defined in the schema.
 func (m *UserMutation) ClearEdge(name string) error {
 	switch name {
+	case user.EdgeTotpCredential:
+		m.ClearTotpCredential()
+		return nil
 	}
 	return fmt.Errorf("unknown User unique edge %s", name)
 }
@@ -4084,6 +4649,9 @@ func (m *UserMutation) ResetEdge(name string) error {
 	switch name {
 	case user.EdgeEmailChallenges:
 		m.ResetEmailChallenges()
+		return nil
+	case user.EdgeTotpCredential:
+		m.ResetTotpCredential()
 		return nil
 	case user.EdgeWebauthnCredentials:
 		m.ResetWebauthnCredentials()

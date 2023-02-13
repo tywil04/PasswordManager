@@ -29,6 +29,8 @@ const (
 	FieldVerified = "verified"
 	// EdgeEmailChallenges holds the string denoting the emailchallenges edge name in mutations.
 	EdgeEmailChallenges = "emailChallenges"
+	// EdgeTotpCredential holds the string denoting the totpcredential edge name in mutations.
+	EdgeTotpCredential = "totpCredential"
 	// EdgeWebauthnCredentials holds the string denoting the webauthncredentials edge name in mutations.
 	EdgeWebauthnCredentials = "webauthnCredentials"
 	// EdgeWebauthnChallenges holds the string denoting the webauthnchallenges edge name in mutations.
@@ -46,6 +48,13 @@ const (
 	EmailChallengesInverseTable = "email_challenges"
 	// EmailChallengesColumn is the table column denoting the emailChallenges relation/edge.
 	EmailChallengesColumn = "user_email_challenges"
+	// TotpCredentialTable is the table that holds the totpCredential relation/edge.
+	TotpCredentialTable = "totp_credentials"
+	// TotpCredentialInverseTable is the table name for the TotpCredential entity.
+	// It exists in this package in order to avoid circular dependency with the "totpcredential" package.
+	TotpCredentialInverseTable = "totp_credentials"
+	// TotpCredentialColumn is the table column denoting the totpCredential relation/edge.
+	TotpCredentialColumn = "user_totp_credential"
 	// WebauthnCredentialsTable is the table that holds the webauthnCredentials relation/edge.
 	WebauthnCredentialsTable = "web_authn_credentials"
 	// WebauthnCredentialsInverseTable is the table name for the WebAuthnCredential entity.
@@ -125,6 +134,7 @@ const DefaultDefault2FA = Default2FAEmail
 const (
 	Default2FAEmail    Default2FA = "email"
 	Default2FAWebauthn Default2FA = "webauthn"
+	Default2FATotp     Default2FA = "totp"
 )
 
 func (d Default2FA) String() string {
@@ -134,7 +144,7 @@ func (d Default2FA) String() string {
 // Default2FAValidator is a validator for the "default2FA" field enum values. It is called by the builders before save.
 func Default2FAValidator(d Default2FA) error {
 	switch d {
-	case Default2FAEmail, Default2FAWebauthn:
+	case Default2FAEmail, Default2FAWebauthn, Default2FATotp:
 		return nil
 	default:
 		return fmt.Errorf("user: invalid enum value for default2FA field: %q", d)

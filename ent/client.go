@@ -14,6 +14,7 @@ import (
 	"PasswordManager/ent/emailchallenge"
 	"PasswordManager/ent/password"
 	"PasswordManager/ent/session"
+	"PasswordManager/ent/totpcredential"
 	"PasswordManager/ent/url"
 	"PasswordManager/ent/user"
 	"PasswordManager/ent/webauthnchallenge"
@@ -38,6 +39,8 @@ type Client struct {
 	Password *PasswordClient
 	// Session is the client for interacting with the Session builders.
 	Session *SessionClient
+	// TotpCredential is the client for interacting with the TotpCredential builders.
+	TotpCredential *TotpCredentialClient
 	// Url is the client for interacting with the Url builders.
 	Url *URLClient
 	// User is the client for interacting with the User builders.
@@ -63,6 +66,7 @@ func (c *Client) init() {
 	c.EmailChallenge = NewEmailChallengeClient(c.config)
 	c.Password = NewPasswordClient(c.config)
 	c.Session = NewSessionClient(c.config)
+	c.TotpCredential = NewTotpCredentialClient(c.config)
 	c.Url = NewURLClient(c.config)
 	c.User = NewUserClient(c.config)
 	c.WebAuthnChallenge = NewWebAuthnChallengeClient(c.config)
@@ -104,6 +108,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		EmailChallenge:     NewEmailChallengeClient(cfg),
 		Password:           NewPasswordClient(cfg),
 		Session:            NewSessionClient(cfg),
+		TotpCredential:     NewTotpCredentialClient(cfg),
 		Url:                NewURLClient(cfg),
 		User:               NewUserClient(cfg),
 		WebAuthnChallenge:  NewWebAuthnChallengeClient(cfg),
@@ -131,6 +136,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		EmailChallenge:     NewEmailChallengeClient(cfg),
 		Password:           NewPasswordClient(cfg),
 		Session:            NewSessionClient(cfg),
+		TotpCredential:     NewTotpCredentialClient(cfg),
 		Url:                NewURLClient(cfg),
 		User:               NewUserClient(cfg),
 		WebAuthnChallenge:  NewWebAuthnChallengeClient(cfg),
@@ -168,6 +174,7 @@ func (c *Client) Use(hooks ...Hook) {
 	c.EmailChallenge.Use(hooks...)
 	c.Password.Use(hooks...)
 	c.Session.Use(hooks...)
+	c.TotpCredential.Use(hooks...)
 	c.Url.Use(hooks...)
 	c.User.Use(hooks...)
 	c.WebAuthnChallenge.Use(hooks...)
@@ -181,6 +188,7 @@ func (c *Client) Intercept(interceptors ...Interceptor) {
 	c.EmailChallenge.Intercept(interceptors...)
 	c.Password.Intercept(interceptors...)
 	c.Session.Intercept(interceptors...)
+	c.TotpCredential.Intercept(interceptors...)
 	c.Url.Intercept(interceptors...)
 	c.User.Intercept(interceptors...)
 	c.WebAuthnChallenge.Intercept(interceptors...)
@@ -198,6 +206,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.Password.mutate(ctx, m)
 	case *SessionMutation:
 		return c.Session.mutate(ctx, m)
+	case *TotpCredentialMutation:
+		return c.TotpCredential.mutate(ctx, m)
 	case *URLMutation:
 		return c.Url.mutate(ctx, m)
 	case *UserMutation:
@@ -779,6 +789,140 @@ func (c *SessionClient) mutate(ctx context.Context, m *SessionMutation) (Value, 
 	}
 }
 
+// TotpCredentialClient is a client for the TotpCredential schema.
+type TotpCredentialClient struct {
+	config
+}
+
+// NewTotpCredentialClient returns a client for the TotpCredential from the given config.
+func NewTotpCredentialClient(c config) *TotpCredentialClient {
+	return &TotpCredentialClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `totpcredential.Hooks(f(g(h())))`.
+func (c *TotpCredentialClient) Use(hooks ...Hook) {
+	c.hooks.TotpCredential = append(c.hooks.TotpCredential, hooks...)
+}
+
+// Use adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `totpcredential.Intercept(f(g(h())))`.
+func (c *TotpCredentialClient) Intercept(interceptors ...Interceptor) {
+	c.inters.TotpCredential = append(c.inters.TotpCredential, interceptors...)
+}
+
+// Create returns a builder for creating a TotpCredential entity.
+func (c *TotpCredentialClient) Create() *TotpCredentialCreate {
+	mutation := newTotpCredentialMutation(c.config, OpCreate)
+	return &TotpCredentialCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of TotpCredential entities.
+func (c *TotpCredentialClient) CreateBulk(builders ...*TotpCredentialCreate) *TotpCredentialCreateBulk {
+	return &TotpCredentialCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for TotpCredential.
+func (c *TotpCredentialClient) Update() *TotpCredentialUpdate {
+	mutation := newTotpCredentialMutation(c.config, OpUpdate)
+	return &TotpCredentialUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *TotpCredentialClient) UpdateOne(tc *TotpCredential) *TotpCredentialUpdateOne {
+	mutation := newTotpCredentialMutation(c.config, OpUpdateOne, withTotpCredential(tc))
+	return &TotpCredentialUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *TotpCredentialClient) UpdateOneID(id uuid.UUID) *TotpCredentialUpdateOne {
+	mutation := newTotpCredentialMutation(c.config, OpUpdateOne, withTotpCredentialID(id))
+	return &TotpCredentialUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for TotpCredential.
+func (c *TotpCredentialClient) Delete() *TotpCredentialDelete {
+	mutation := newTotpCredentialMutation(c.config, OpDelete)
+	return &TotpCredentialDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *TotpCredentialClient) DeleteOne(tc *TotpCredential) *TotpCredentialDeleteOne {
+	return c.DeleteOneID(tc.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *TotpCredentialClient) DeleteOneID(id uuid.UUID) *TotpCredentialDeleteOne {
+	builder := c.Delete().Where(totpcredential.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &TotpCredentialDeleteOne{builder}
+}
+
+// Query returns a query builder for TotpCredential.
+func (c *TotpCredentialClient) Query() *TotpCredentialQuery {
+	return &TotpCredentialQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeTotpCredential},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a TotpCredential entity by its id.
+func (c *TotpCredentialClient) Get(ctx context.Context, id uuid.UUID) (*TotpCredential, error) {
+	return c.Query().Where(totpcredential.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *TotpCredentialClient) GetX(ctx context.Context, id uuid.UUID) *TotpCredential {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryUser queries the user edge of a TotpCredential.
+func (c *TotpCredentialClient) QueryUser(tc *TotpCredential) *UserQuery {
+	query := (&UserClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := tc.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(totpcredential.Table, totpcredential.FieldID, id),
+			sqlgraph.To(user.Table, user.FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, true, totpcredential.UserTable, totpcredential.UserColumn),
+		)
+		fromV = sqlgraph.Neighbors(tc.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *TotpCredentialClient) Hooks() []Hook {
+	return c.hooks.TotpCredential
+}
+
+// Interceptors returns the client interceptors.
+func (c *TotpCredentialClient) Interceptors() []Interceptor {
+	return c.inters.TotpCredential
+}
+
+func (c *TotpCredentialClient) mutate(ctx context.Context, m *TotpCredentialMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&TotpCredentialCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&TotpCredentialUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&TotpCredentialUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&TotpCredentialDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown TotpCredential mutation op: %q", m.Op())
+	}
+}
+
 // URLClient is a client for the Url schema.
 type URLClient struct {
 	config
@@ -1015,6 +1159,22 @@ func (c *UserClient) QueryEmailChallenges(u *User) *EmailChallengeQuery {
 			sqlgraph.From(user.Table, user.FieldID, id),
 			sqlgraph.To(emailchallenge.Table, emailchallenge.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, user.EmailChallengesTable, user.EmailChallengesColumn),
+		)
+		fromV = sqlgraph.Neighbors(u.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryTotpCredential queries the totpCredential edge of a User.
+func (c *UserClient) QueryTotpCredential(u *User) *TotpCredentialQuery {
+	query := (&TotpCredentialClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := u.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(user.Table, user.FieldID, id),
+			sqlgraph.To(totpcredential.Table, totpcredential.FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, false, user.TotpCredentialTable, user.TotpCredentialColumn),
 		)
 		fromV = sqlgraph.Neighbors(u.driver.Dialect(), step)
 		return fromV, nil

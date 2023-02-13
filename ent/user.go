@@ -3,6 +3,7 @@
 package ent
 
 import (
+	"PasswordManager/ent/totpcredential"
 	"PasswordManager/ent/user"
 	"fmt"
 	"strings"
@@ -39,6 +40,8 @@ type User struct {
 type UserEdges struct {
 	// EmailChallenges holds the value of the emailChallenges edge.
 	EmailChallenges []*EmailChallenge `json:"emailChallenges,omitempty"`
+	// TotpCredential holds the value of the totpCredential edge.
+	TotpCredential *TotpCredential `json:"totpCredential,omitempty"`
 	// WebauthnCredentials holds the value of the webauthnCredentials edge.
 	WebauthnCredentials []*WebAuthnCredential `json:"webauthnCredentials,omitempty"`
 	// WebauthnChallenges holds the value of the webauthnChallenges edge.
@@ -49,7 +52,7 @@ type UserEdges struct {
 	Sessions []*Session `json:"sessions,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [5]bool
+	loadedTypes [6]bool
 }
 
 // EmailChallengesOrErr returns the EmailChallenges value or an error if the edge
@@ -61,10 +64,23 @@ func (e UserEdges) EmailChallengesOrErr() ([]*EmailChallenge, error) {
 	return nil, &NotLoadedError{edge: "emailChallenges"}
 }
 
+// TotpCredentialOrErr returns the TotpCredential value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e UserEdges) TotpCredentialOrErr() (*TotpCredential, error) {
+	if e.loadedTypes[1] {
+		if e.TotpCredential == nil {
+			// Edge was loaded but was not found.
+			return nil, &NotFoundError{label: totpcredential.Label}
+		}
+		return e.TotpCredential, nil
+	}
+	return nil, &NotLoadedError{edge: "totpCredential"}
+}
+
 // WebauthnCredentialsOrErr returns the WebauthnCredentials value or an error if the edge
 // was not loaded in eager-loading.
 func (e UserEdges) WebauthnCredentialsOrErr() ([]*WebAuthnCredential, error) {
-	if e.loadedTypes[1] {
+	if e.loadedTypes[2] {
 		return e.WebauthnCredentials, nil
 	}
 	return nil, &NotLoadedError{edge: "webauthnCredentials"}
@@ -73,7 +89,7 @@ func (e UserEdges) WebauthnCredentialsOrErr() ([]*WebAuthnCredential, error) {
 // WebauthnChallengesOrErr returns the WebauthnChallenges value or an error if the edge
 // was not loaded in eager-loading.
 func (e UserEdges) WebauthnChallengesOrErr() ([]*WebAuthnChallenge, error) {
-	if e.loadedTypes[2] {
+	if e.loadedTypes[3] {
 		return e.WebauthnChallenges, nil
 	}
 	return nil, &NotLoadedError{edge: "webauthnChallenges"}
@@ -82,7 +98,7 @@ func (e UserEdges) WebauthnChallengesOrErr() ([]*WebAuthnChallenge, error) {
 // PasswordsOrErr returns the Passwords value or an error if the edge
 // was not loaded in eager-loading.
 func (e UserEdges) PasswordsOrErr() ([]*Password, error) {
-	if e.loadedTypes[3] {
+	if e.loadedTypes[4] {
 		return e.Passwords, nil
 	}
 	return nil, &NotLoadedError{edge: "passwords"}
@@ -91,7 +107,7 @@ func (e UserEdges) PasswordsOrErr() ([]*Password, error) {
 // SessionsOrErr returns the Sessions value or an error if the edge
 // was not loaded in eager-loading.
 func (e UserEdges) SessionsOrErr() ([]*Session, error) {
-	if e.loadedTypes[4] {
+	if e.loadedTypes[5] {
 		return e.Sessions, nil
 	}
 	return nil, &NotLoadedError{edge: "sessions"}
@@ -181,6 +197,11 @@ func (u *User) assignValues(columns []string, values []any) error {
 // QueryEmailChallenges queries the "emailChallenges" edge of the User entity.
 func (u *User) QueryEmailChallenges() *EmailChallengeQuery {
 	return NewUserClient(u.config).QueryEmailChallenges(u)
+}
+
+// QueryTotpCredential queries the "totpCredential" edge of the User entity.
+func (u *User) QueryTotpCredential() *TotpCredentialQuery {
+	return NewUserClient(u.config).QueryTotpCredential(u)
 }
 
 // QueryWebauthnCredentials queries the "webauthnCredentials" edge of the User entity.

@@ -31,6 +31,7 @@ type (
 		EmailChallenge     []ent.Hook
 		Password           []ent.Hook
 		Session            []ent.Hook
+		TotpCredential     []ent.Hook
 		Url                []ent.Hook
 		User               []ent.Hook
 		WebAuthnChallenge  []ent.Hook
@@ -41,6 +42,7 @@ type (
 		EmailChallenge     []ent.Interceptor
 		Password           []ent.Interceptor
 		Session            []ent.Interceptor
+		TotpCredential     []ent.Interceptor
 		Url                []ent.Interceptor
 		User               []ent.Interceptor
 		WebAuthnChallenge  []ent.Interceptor

@@ -101,6 +101,28 @@ var (
 			},
 		},
 	}
+	// TotpCredentialsColumns holds the columns for the "totp_credentials" table.
+	TotpCredentialsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "secret", Type: field.TypeString},
+		{Name: "validated", Type: field.TypeBool, Default: false},
+		{Name: "user_totp_credential", Type: field.TypeUUID, Unique: true},
+	}
+	// TotpCredentialsTable holds the schema information for the "totp_credentials" table.
+	TotpCredentialsTable = &schema.Table{
+		Name:       "totp_credentials",
+		Columns:    TotpCredentialsColumns,
+		PrimaryKey: []*schema.Column{TotpCredentialsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "totp_credentials_users_totpCredential",
+				Columns:    []*schema.Column{TotpCredentialsColumns[4]},
+				RefColumns: []*schema.Column{UsersColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+	}
 	// UrlsColumns holds the columns for the "urls" table.
 	UrlsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID},
@@ -130,7 +152,7 @@ var (
 		{Name: "strengthened_master_hash_salt", Type: field.TypeBytes},
 		{Name: "protected_database_key", Type: field.TypeBytes},
 		{Name: "protected_database_key_iv", Type: field.TypeBytes},
-		{Name: "default2fa", Type: field.TypeEnum, Enums: []string{"email", "webauthn"}, Default: "email"},
+		{Name: "default2fa", Type: field.TypeEnum, Enums: []string{"email", "webauthn", "totp"}, Default: "email"},
 		{Name: "verified", Type: field.TypeBool, Default: false},
 	}
 	// UsersTable holds the schema information for the "users" table.
@@ -204,6 +226,7 @@ var (
 		EmailChallengesTable,
 		PasswordsTable,
 		SessionsTable,
+		TotpCredentialsTable,
 		UrlsTable,
 		UsersTable,
 		WebAuthnChallengesTable,
@@ -216,6 +239,7 @@ func init() {
 	EmailChallengesTable.ForeignKeys[0].RefTable = UsersTable
 	PasswordsTable.ForeignKeys[0].RefTable = UsersTable
 	SessionsTable.ForeignKeys[0].RefTable = UsersTable
+	TotpCredentialsTable.ForeignKeys[0].RefTable = UsersTable
 	UrlsTable.ForeignKeys[0].RefTable = PasswordsTable
 	WebAuthnChallengesTable.ForeignKeys[0].RefTable = UsersTable
 	WebAuthnCredentialsTable.ForeignKeys[0].RefTable = UsersTable

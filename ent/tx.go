@@ -20,6 +20,8 @@ type Tx struct {
 	Password *PasswordClient
 	// Session is the client for interacting with the Session builders.
 	Session *SessionClient
+	// TotpCredential is the client for interacting with the TotpCredential builders.
+	TotpCredential *TotpCredentialClient
 	// Url is the client for interacting with the Url builders.
 	Url *URLClient
 	// User is the client for interacting with the User builders.
@@ -163,6 +165,7 @@ func (tx *Tx) init() {
 	tx.EmailChallenge = NewEmailChallengeClient(tx.config)
 	tx.Password = NewPasswordClient(tx.config)
 	tx.Session = NewSessionClient(tx.config)
+	tx.TotpCredential = NewTotpCredentialClient(tx.config)
 	tx.Url = NewURLClient(tx.config)
 	tx.User = NewUserClient(tx.config)
 	tx.WebAuthnChallenge = NewWebAuthnChallengeClient(tx.config)

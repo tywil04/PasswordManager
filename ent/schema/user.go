@@ -22,7 +22,7 @@ func (User) Fields() []ent.Field {
 		field.Bytes("strengthenedMasterHashSalt").NotEmpty().Sensitive(),
 		field.Bytes("protectedDatabaseKey").NotEmpty().Sensitive(),
 		field.Bytes("protectedDatabaseKeyIv").NotEmpty().Sensitive(),
-		field.Enum("default2FA").Values("email", "webauthn").Default("email"),
+		field.Enum("default2FA").Values("email", "webauthn", "totp").Default("email"),
 		field.Bool("verified").Default(false),
 	}
 }
@@ -31,6 +31,7 @@ func (User) Fields() []ent.Field {
 func (User) Edges() []ent.Edge {
 	return []ent.Edge{
 		edge.To("emailChallenges", EmailChallenge.Type),
+		edge.To("totpCredential", TotpCredential.Type).Unique(),
 		edge.To("webauthnCredentials", WebAuthnCredential.Type),
 		edge.To("webauthnChallenges", WebAuthnChallenge.Type),
 		edge.To("passwords", Password.Type),

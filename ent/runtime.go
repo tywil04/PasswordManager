@@ -8,6 +8,7 @@ import (
 	"PasswordManager/ent/password"
 	"PasswordManager/ent/schema"
 	"PasswordManager/ent/session"
+	"PasswordManager/ent/totpcredential"
 	"PasswordManager/ent/url"
 	"PasswordManager/ent/user"
 	"PasswordManager/ent/webauthnchallenge"
@@ -97,6 +98,24 @@ func init() {
 	sessionDescID := sessionFields[0].Descriptor()
 	// session.DefaultID holds the default value on creation for the id field.
 	session.DefaultID = sessionDescID.Default.(func() uuid.UUID)
+	totpcredentialFields := schema.TotpCredential{}.Fields()
+	_ = totpcredentialFields
+	// totpcredentialDescCreatedAt is the schema descriptor for createdAt field.
+	totpcredentialDescCreatedAt := totpcredentialFields[1].Descriptor()
+	// totpcredential.DefaultCreatedAt holds the default value on creation for the createdAt field.
+	totpcredential.DefaultCreatedAt = totpcredentialDescCreatedAt.Default.(func() time.Time)
+	// totpcredentialDescSecret is the schema descriptor for secret field.
+	totpcredentialDescSecret := totpcredentialFields[2].Descriptor()
+	// totpcredential.SecretValidator is a validator for the "secret" field. It is called by the builders before save.
+	totpcredential.SecretValidator = totpcredentialDescSecret.Validators[0].(func(string) error)
+	// totpcredentialDescValidated is the schema descriptor for validated field.
+	totpcredentialDescValidated := totpcredentialFields[3].Descriptor()
+	// totpcredential.DefaultValidated holds the default value on creation for the validated field.
+	totpcredential.DefaultValidated = totpcredentialDescValidated.Default.(bool)
+	// totpcredentialDescID is the schema descriptor for id field.
+	totpcredentialDescID := totpcredentialFields[0].Descriptor()
+	// totpcredential.DefaultID holds the default value on creation for the id field.
+	totpcredential.DefaultID = totpcredentialDescID.Default.(func() uuid.UUID)
 	urlFields := schema.Url{}.Fields()
 	_ = urlFields
 	// urlDescURL is the schema descriptor for url field.
