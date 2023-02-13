@@ -12,7 +12,8 @@
     let autocomplete = ""
     let type = "text"
     let classList = ""
-    export { value, id, name, label, description, required, autocomplete, type, classList as class } 
+    let tabIndex = 0
+    export { value, id, name, label, description, required, autocomplete, type, classList as class, tabIndex } 
 
     let input
 
@@ -40,7 +41,7 @@
     
     <div class="inputContainer"> 
         <slot name="left"/>
-        <input bind:this={input} bind:value={value} on:input={(e) => dispatch("input", e)} use:setType={type} class={classList} {id} {name} {required} {autocomplete}/>
+        <input bind:this={input} bind:value={value} on:input={(e) => dispatch("input", e)} use:setType={type} class={classList} tabindex={tabIndex} {id} {name} {required} {autocomplete}/>
         <slot name="right"/>
     </div>
 
@@ -55,23 +56,23 @@
     }
 
     div.inputContainer :global(*:first-child:not(:last-child):not(input):not(button):not(a)) {
-        @apply bg-gray-200/80;
+        @apply bg-gray-100;
     }
 
     div.inputContainer :global(*:last-child:not(:first-child):not(input):not(button):not(a)) {
-        @apply bg-gray-200/80;
+        @apply bg-gray-100;
     }
 
     div.inputContainer :global(*:first-child:not(:last-child):not(input)) {
-        @apply bg-gray-300/80 border border-black px-2 py-1 rounded-l-md w-fit duration-100 text-sm;
+        @apply bg-gray-200 border border-black px-2 py-1 rounded-l-md w-fit duration-100 text-sm;
     }
 
     div.inputContainer :global(*:last-child:not(:first-child):not(input)) {
-        @apply bg-gray-300/80 border border-black px-2 py-1 rounded-r-md w-fit duration-100 text-sm;
+        @apply bg-gray-200 border border-black px-2 py-1 rounded-r-md w-fit duration-100 text-sm;
     }
 
     div.inputContainer :global(*:last-child:not(:first-child):not(input)) {
-        @apply bg-gray-300/80;
+        @apply bg-gray-200;
     }
 
     div.inputContainer :global(*:first-child:not(:last-child):not(input)), div.inputContainer :global(*:last-child:not(:first-child):not(input)) {
@@ -107,7 +108,7 @@
     }
 
     input {
-        @apply text-sm bg-gray-200 border border-black px-2 py-1 outline-none ring-0 m-0 rounded-md w-fit duration-100;
+        @apply text-sm bg-gray-100 border border-black px-2 py-1 outline-none ring-0 m-0 rounded-md w-fit duration-100;
     }
 
     input:focus {

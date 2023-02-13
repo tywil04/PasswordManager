@@ -146,7 +146,7 @@
 </script>
 
 <svelte:head>
-    <title>Auth</title>
+    <title>Password Manager - Sign in</title>
 </svelte:head>
 
 <main>
@@ -162,12 +162,12 @@
             </div>
         
             <form method="POST" class="inner space-y-5" use:enhance={signin}>
-                <EmailInput class="flex-grow" label="Email" name="email" description="Enter your email address." invalidMsg="Enter a valid email address.">
+                <EmailInput tabIndex="10" class="flex-grow" label="Email" name="email" description="Enter your email address." invalidMsg="Enter a valid email address.">
                     <svelte:fragment slot="left">
                         <Envelope size="30"strokeWidth="1"/>
                     </svelte:fragment>
                 </EmailInput>
-                <PasswordInput class="flex-grow" label="Password" name="password" description="Enter a secure password." invalidMsg="Enter a valid secure password.">
+                <PasswordInput tabIndex="10" class="flex-grow" label="Password" name="password" description="Enter a secure password." invalidMsg="Enter a valid secure password.">
                     <svelte:fragment slot="left">
                         <Key size="30"strokeWidth="1"/>
                     </svelte:fragment>
@@ -178,8 +178,8 @@
                 {/if}
 
                 <div class="flex flex-row space-x-5">
-                    <Button class="flex-grow" variant="accent" type="submit">Sign in</Button>  
-                    <Button class="flex-grow" href="/auth/signup">Sign up</Button>          
+                    <Button tabIndex="10" class="flex-grow" variant="accent" type="submit">Sign in</Button>  
+                    <Button tabIndex="10" class="flex-grow" href="/auth/signup">Sign up</Button>          
                 </div>
             </form>
         {:else if view === "emailChallenge"}
@@ -193,14 +193,14 @@
             </div>
         
             <form method="POST" class="inner space-y-5" use:enhance={emailChallenge}>
-                <TextInput class="flex-grow" label="Code" name="code" description="Enter the code from your email."/>
+                <TextInput tabIndex="10" class="flex-grow" label="Code" name="code" description="Enter the code from your email."/>
 
                 {#if submitError !== undefined}
                     <div class="text-red-500 text-sm">• {submitError}</div>
                 {/if}
 
                 <div class="flex flex-row space-x-5">
-                    <Button class="flex-grow" type="submit">Verify</Button>  
+                    <Button tabIndex="10" class="flex-grow" type="submit">Verify</Button>  
                 </div>
             </form>
         {:else if view === "webauthnChallenge"}
@@ -216,7 +216,7 @@
                 {/if}
 
                 <div class="flex flex-row space-x-5">
-                    <Button class="flex-grow" variant="accent" type="submit">Start Webauthn</Button>  
+                    <Button tabIndex="10" class="flex-grow" variant="accent" type="submit">Start Webauthn</Button>  
                 </div>
             </form>
         {/if}

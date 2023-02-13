@@ -7,7 +7,8 @@
     let href = ""
     let classList = ""
     let variant = "default"
-    export { type, href, classList as class, variant }
+    let tabIndex = 0
+    export { type, href, classList as class, variant, tabIndex }
 
     const setType = (node, type) => {
         node.type = type
@@ -26,9 +27,9 @@
 </script>
 
 {#if href === ""}
-    <button on:click={(e) => dispatch("click", e)} use:setType={type} class:default={v.default} class:accent={v.accent} class={classList}><slot/></button>
+    <button on:click={(e) => dispatch("click", e)} use:setType={type} class:default={v.default} class:accent={v.accent} tabindex={tabIndex} class={classList}><slot/></button>
 {:else}
-    <a use:setType={type} class:default={v.default} class:accent={v.accent} class={classList} href={href}><slot/></a>
+    <a use:setType={type} class:default={v.default} class:accent={v.accent} tabindex={tabIndex} class={classList} href={href}><slot/></a>
 {/if}
 
 <style lang="postcss">
@@ -45,14 +46,10 @@
     }
 
     .default {
-        @apply w-fit text-sm rounded-md px-2 py-1 text-center duration-100 relative border border-black cursor-pointer bg-gray-100 text-black shadow-none;
+        @apply w-fit text-sm rounded-md px-2 py-1 text-center duration-100 relative border border-black cursor-pointer bg-gray-200 text-black shadow-none outline-none ring-0;
     }
 
-    .default:hover, .default:focus {
-        @apply duration-[0ms] outline-none ring-0;
-    }
-
-    .default:hover {
-        @apply bg-gray-200/80;
+    .default:hover:not(:active), .default:focus:not(:active) {
+        @apply brightness-95 outline-none ring-0;
     }
 </style>

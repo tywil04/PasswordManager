@@ -10,7 +10,8 @@
     let classList = ""
     let invalidMsg = "Invalid email."
     let checkValid = true
-    export { value, id, name, label, description, required, classList as class, invalidMsg, checkValid }
+    let tabIndex = 0
+    export { value, id, name, label, description, required, classList as class, invalidMsg, checkValid, tabIndex }
 
     let input
 
@@ -25,7 +26,7 @@
     }
 </script>
 
-<TextInput bind:this={input} bind:value={value} on:input={checkValidity} class={classList} autocomplete="email" type="email" {id} {name} {label} {description} {required}>
+<TextInput bind:this={input} bind:value={value} on:input={checkValidity} class={classList} autocomplete="email" type="email" {id} {name} {label} {description} {required} {tabIndex}>
     <slot name="left" slot="left"/>
     <slot name="right" slot="right"/>
 </TextInput>

@@ -366,7 +366,7 @@ func Delete(c *gin.Context) {
 
 	dpErr := db.DeleteUserPasswordViaId(authedUser, decodedPasswordId)
 	if dpErr != nil {
-		c.JSON(500, gin.H{"error": gin.H{"code": "errUnknown", "message": "An unknown error has occured. Please try again later."}})
+		c.JSON(400, gin.H{"error": gin.H{"code": "errDeletingPassword", "message": "Unable to delete password using 'passwordId', is the password yours?"}})
 		return
 	}
 

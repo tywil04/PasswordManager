@@ -35,7 +35,7 @@ func GetUserPassword(user *ent.User, passwordId uuid.UUID) (*ent.Password, error
 
 func DeleteUserPasswordViaId(user *ent.User, passwordId uuid.UUID) error {
 	password, pErr := GetUserPassword(user, passwordId)
-	if pErr != nil && password != nil {
+	if pErr != nil || password == nil {
 		return pErr
 	}
 	return DeletePassword(password)
@@ -77,7 +77,7 @@ func CountUserWebauthnCredentials(user *ent.User) (int, error) {
 
 func DeleteUserWebauthnCredentialViaId(user *ent.User, webauthnCredentialId uuid.UUID) error {
 	webauthnCredential, wcErr := GetUserWebauthnCredential(user, webauthnCredentialId)
-	if wcErr != nil && webauthnCredential != nil {
+	if wcErr != nil || webauthnCredential == nil {
 		return wcErr
 	}
 	return DeleteWebauthnCredential(webauthnCredential)

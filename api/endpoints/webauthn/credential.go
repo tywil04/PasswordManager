@@ -92,7 +92,7 @@ func DeleteCredential(c *gin.Context) {
 
 	dcErr := db.DeleteUserWebauthnCredentialViaId(authedUser, decodedCredentialId)
 	if dcErr != nil {
-		c.JSON(500, gin.H{"error": gin.H{"code": "errUnknown", "message": "An unknown error has occured. Please try again later."}})
+		c.JSON(400, gin.H{"error": gin.H{"code": "errDeletingWebauthnCredential", "message": "Unable to delete webauthn credential using 'webauthnCredentialId', is the webauthn credential yours?"}})
 		return
 	}
 

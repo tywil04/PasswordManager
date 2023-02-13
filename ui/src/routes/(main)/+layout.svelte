@@ -42,11 +42,15 @@
     }
 
     .navLink {
-        @apply h-fit bg-gray-100 border-l border-black text-black p-5 text-sm leading-loose duration-100 hover:bg-gray-200/80 active:bg-white;
+        @apply h-fit bg-gray-200 border-l border-black text-black p-5 text-sm leading-loose duration-100;
+    }
+
+    .navLink:hover:not(:active) {
+        @apply brightness-90;
     }
 
     .navLink.active {
-        @apply bg-gray-300
+        @apply bg-gray-300;
     }
 
     .navLink:last-of-type {

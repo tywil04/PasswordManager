@@ -10,7 +10,8 @@
     let classList = ""
     let invalidMsg = "Invalid colour."
     let checkValid = true
-    export { value, id, name, label, description, required, classList as class, invalidMsg, checkValid }
+    let tabIndex = 0
+    export { value, id, name, label, description, required, classList as class, invalidMsg, checkValid, tabIndex }
 
     let input
 
@@ -25,9 +26,9 @@
     }
 </script>
 
-<TextInput bind:this={input} bind:value={value} on:input={checkValidity} class={classList} {id} {name} {label} {description} {required}>
+<TextInput bind:this={input} bind:value={value} on:input={checkValidity} class={classList} {id} {name} {label} {description} {required} {tabIndex}>
     <svelte:fragment slot="left">
-        <input type="color" bind:value={value}/>
+        <input type="color" bind:value={value} tabindex={tabIndex}/>
         <slot name="left"/>
     </svelte:fragment>
     <slot name="right" slot="right"/>

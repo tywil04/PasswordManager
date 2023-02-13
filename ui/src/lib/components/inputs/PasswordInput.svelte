@@ -12,7 +12,8 @@
     let classList = ""
     let invalidMsg = "Invalid password."
     let checkValid = true
-    export { value, id, name, label, description, required, classList as class, invalidMsg, checkValid }
+    let tabIndex = 0
+    export { value, id, name, label, description, required, classList as class, invalidMsg, checkValid, tabIndex }
 
     let input
 
@@ -34,7 +35,7 @@
     }
 </script>
 
-<TextInput bind:this={input} bind:value={value} bind:type={type} on:input={checkValidity} class={classList} autocomplete="password" {id} {name} {label} {description} {required}>
+<TextInput bind:this={input} bind:value={value} bind:type={type} on:input={checkValidity} class={classList} autocomplete="password" {id} {name} {label} {description} {required} {tabIndex}>
     <slot name="left" slot="left"/>
     <svelte:fragment slot="right">
         <button tabindex="-1" type="button" on:click={toggleHidden} class="font-mono">
@@ -50,7 +51,7 @@
     }
 
     button:hover:not(:active) {
-        @apply brightness-90;
+        @apply brightness-95;
     }
 
     :global(svg) {
