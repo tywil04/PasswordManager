@@ -1,8 +1,6 @@
 package schema
 
 import (
-	"time"
-
 	"entgo.io/ent"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
@@ -24,16 +22,14 @@ type EmailChallenge struct {
 func (EmailChallenge) Fields() []ent.Field {
 	return []ent.Field{
 		field.UUID("id", uuid.UUID{}).Default(uuid.New),
-		field.String("code").NotEmpty(),
-		field.Time("expiry").Default(time.Now),
-		field.Enum("for").Values("signup", "signin"),
+		field.String("code").Optional(),
 	}
 }
 
 // Edges of the Verification.
 func (EmailChallenge) Edges() []ent.Edge {
 	return []ent.Edge{
-		edge.From("user", User.Type).Ref("emailChallenges").Unique().Required(),
+		edge.From("challenge", Challenge.Type).Ref("emailChallenge").Unique(),
 	}
 }
 

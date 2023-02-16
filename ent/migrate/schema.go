@@ -31,13 +31,31 @@ var (
 			},
 		},
 	}
+	// ChallengesColumns holds the columns for the "challenges" table.
+	ChallengesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "expiry", Type: field.TypeTime},
+		{Name: "user_challenges", Type: field.TypeUUID},
+	}
+	// ChallengesTable holds the schema information for the "challenges" table.
+	ChallengesTable = &schema.Table{
+		Name:       "challenges",
+		Columns:    ChallengesColumns,
+		PrimaryKey: []*schema.Column{ChallengesColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "challenges_users_challenges",
+				Columns:    []*schema.Column{ChallengesColumns[2]},
+				RefColumns: []*schema.Column{UsersColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+	}
 	// EmailChallengesColumns holds the columns for the "email_challenges" table.
 	EmailChallengesColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID},
-		{Name: "code", Type: field.TypeString},
-		{Name: "expiry", Type: field.TypeTime},
-		{Name: "for", Type: field.TypeEnum, Enums: []string{"signup", "signin"}},
-		{Name: "user_email_challenges", Type: field.TypeUUID},
+		{Name: "code", Type: field.TypeString, Nullable: true},
+		{Name: "challenge_email_challenge", Type: field.TypeUUID, Unique: true, Nullable: true},
 	}
 	// EmailChallengesTable holds the schema information for the "email_challenges" table.
 	EmailChallengesTable = &schema.Table{
@@ -46,10 +64,10 @@ var (
 		PrimaryKey: []*schema.Column{EmailChallengesColumns[0]},
 		ForeignKeys: []*schema.ForeignKey{
 			{
-				Symbol:     "email_challenges_users_emailChallenges",
-				Columns:    []*schema.Column{EmailChallengesColumns[4]},
-				RefColumns: []*schema.Column{UsersColumns[0]},
-				OnDelete:   schema.NoAction,
+				Symbol:     "email_challenges_challenges_emailChallenge",
+				Columns:    []*schema.Column{EmailChallengesColumns[2]},
+				RefColumns: []*schema.Column{ChallengesColumns[0]},
+				OnDelete:   schema.SetNull,
 			},
 		},
 	}
@@ -107,7 +125,8 @@ var (
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "secret", Type: field.TypeString},
 		{Name: "validated", Type: field.TypeBool, Default: false},
-		{Name: "user_totp_credential", Type: field.TypeUUID, Unique: true},
+		{Name: "challenge_totp_credential", Type: field.TypeUUID, Unique: true, Nullable: true},
+		{Name: "user_totp_credential", Type: field.TypeUUID, Unique: true, Nullable: true},
 	}
 	// TotpCredentialsTable holds the schema information for the "totp_credentials" table.
 	TotpCredentialsTable = &schema.Table{
@@ -116,10 +135,16 @@ var (
 		PrimaryKey: []*schema.Column{TotpCredentialsColumns[0]},
 		ForeignKeys: []*schema.ForeignKey{
 			{
-				Symbol:     "totp_credentials_users_totpCredential",
+				Symbol:     "totp_credentials_challenges_totpCredential",
 				Columns:    []*schema.Column{TotpCredentialsColumns[4]},
+				RefColumns: []*schema.Column{ChallengesColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+			{
+				Symbol:     "totp_credentials_users_totpCredential",
+				Columns:    []*schema.Column{TotpCredentialsColumns[5]},
 				RefColumns: []*schema.Column{UsersColumns[0]},
-				OnDelete:   schema.NoAction,
+				OnDelete:   schema.SetNull,
 			},
 		},
 	}
@@ -152,7 +177,8 @@ var (
 		{Name: "strengthened_master_hash_salt", Type: field.TypeBytes},
 		{Name: "protected_database_key", Type: field.TypeBytes},
 		{Name: "protected_database_key_iv", Type: field.TypeBytes},
-		{Name: "default2fa", Type: field.TypeEnum, Enums: []string{"email", "webauthn", "totp"}, Default: "email"},
+		{Name: "webauthn_enabled", Type: field.TypeBool, Default: false},
+		{Name: "totp_enabled", Type: field.TypeBool, Default: false},
 		{Name: "verified", Type: field.TypeBool, Default: false},
 	}
 	// UsersTable holds the schema information for the "users" table.
@@ -171,12 +197,12 @@ var (
 	// WebAuthnChallengesColumns holds the columns for the "web_authn_challenges" table.
 	WebAuthnChallengesColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID},
-		{Name: "challenge", Type: field.TypeString, Nullable: true},
+		{Name: "sd_challenge", Type: field.TypeString, Nullable: true},
 		{Name: "user_id", Type: field.TypeBytes, Nullable: true},
 		{Name: "allowed_credential_ids", Type: field.TypeJSON, Nullable: true},
 		{Name: "user_verification", Type: field.TypeString, Nullable: true},
 		{Name: "extensions", Type: field.TypeJSON, Nullable: true},
-		{Name: "user_webauthn_challenges", Type: field.TypeUUID},
+		{Name: "challenge_webauthn_challenge", Type: field.TypeUUID, Unique: true, Nullable: true},
 	}
 	// WebAuthnChallengesTable holds the schema information for the "web_authn_challenges" table.
 	WebAuthnChallengesTable = &schema.Table{
@@ -185,10 +211,10 @@ var (
 		PrimaryKey: []*schema.Column{WebAuthnChallengesColumns[0]},
 		ForeignKeys: []*schema.ForeignKey{
 			{
-				Symbol:     "web_authn_challenges_users_webauthnChallenges",
+				Symbol:     "web_authn_challenges_challenges_webauthnChallenge",
 				Columns:    []*schema.Column{WebAuthnChallengesColumns[6]},
-				RefColumns: []*schema.Column{UsersColumns[0]},
-				OnDelete:   schema.NoAction,
+				RefColumns: []*schema.Column{ChallengesColumns[0]},
+				OnDelete:   schema.SetNull,
 			},
 		},
 	}
@@ -220,9 +246,34 @@ var (
 			},
 		},
 	}
+	// WebAuthnRegisterChallengesColumns holds the columns for the "web_authn_register_challenges" table.
+	WebAuthnRegisterChallengesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "sd_challenge", Type: field.TypeString, Nullable: true},
+		{Name: "user_id", Type: field.TypeBytes, Nullable: true},
+		{Name: "allowed_credential_ids", Type: field.TypeJSON, Nullable: true},
+		{Name: "user_verification", Type: field.TypeString, Nullable: true},
+		{Name: "extensions", Type: field.TypeJSON, Nullable: true},
+		{Name: "user_webauthn_register_challenges", Type: field.TypeUUID, Nullable: true},
+	}
+	// WebAuthnRegisterChallengesTable holds the schema information for the "web_authn_register_challenges" table.
+	WebAuthnRegisterChallengesTable = &schema.Table{
+		Name:       "web_authn_register_challenges",
+		Columns:    WebAuthnRegisterChallengesColumns,
+		PrimaryKey: []*schema.Column{WebAuthnRegisterChallengesColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "web_authn_register_challenges_users_webauthnRegisterChallenges",
+				Columns:    []*schema.Column{WebAuthnRegisterChallengesColumns[6]},
+				RefColumns: []*schema.Column{UsersColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+		},
+	}
 	// Tables holds all the tables in the schema.
 	Tables = []*schema.Table{
 		AdditionalFieldsTable,
+		ChallengesTable,
 		EmailChallengesTable,
 		PasswordsTable,
 		SessionsTable,
@@ -231,16 +282,20 @@ var (
 		UsersTable,
 		WebAuthnChallengesTable,
 		WebAuthnCredentialsTable,
+		WebAuthnRegisterChallengesTable,
 	}
 )
 
 func init() {
 	AdditionalFieldsTable.ForeignKeys[0].RefTable = PasswordsTable
-	EmailChallengesTable.ForeignKeys[0].RefTable = UsersTable
+	ChallengesTable.ForeignKeys[0].RefTable = UsersTable
+	EmailChallengesTable.ForeignKeys[0].RefTable = ChallengesTable
 	PasswordsTable.ForeignKeys[0].RefTable = UsersTable
 	SessionsTable.ForeignKeys[0].RefTable = UsersTable
-	TotpCredentialsTable.ForeignKeys[0].RefTable = UsersTable
+	TotpCredentialsTable.ForeignKeys[0].RefTable = ChallengesTable
+	TotpCredentialsTable.ForeignKeys[1].RefTable = UsersTable
 	UrlsTable.ForeignKeys[0].RefTable = PasswordsTable
-	WebAuthnChallengesTable.ForeignKeys[0].RefTable = UsersTable
+	WebAuthnChallengesTable.ForeignKeys[0].RefTable = ChallengesTable
 	WebAuthnCredentialsTable.ForeignKeys[0].RefTable = UsersTable
+	WebAuthnRegisterChallengesTable.ForeignKeys[0].RefTable = UsersTable
 }

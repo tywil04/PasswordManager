@@ -80,6 +80,16 @@ func ProtectedDatabaseKeyIv(v []byte) predicate.User {
 	return predicate.User(sql.FieldEQ(FieldProtectedDatabaseKeyIv, v))
 }
 
+// WebauthnEnabled applies equality check predicate on the "webauthnEnabled" field. It's identical to WebauthnEnabledEQ.
+func WebauthnEnabled(v bool) predicate.User {
+	return predicate.User(sql.FieldEQ(FieldWebauthnEnabled, v))
+}
+
+// TotpEnabled applies equality check predicate on the "totpEnabled" field. It's identical to TotpEnabledEQ.
+func TotpEnabled(v bool) predicate.User {
+	return predicate.User(sql.FieldEQ(FieldTotpEnabled, v))
+}
+
 // Verified applies equality check predicate on the "verified" field. It's identical to VerifiedEQ.
 func Verified(v bool) predicate.User {
 	return predicate.User(sql.FieldEQ(FieldVerified, v))
@@ -310,24 +320,24 @@ func ProtectedDatabaseKeyIvLTE(v []byte) predicate.User {
 	return predicate.User(sql.FieldLTE(FieldProtectedDatabaseKeyIv, v))
 }
 
-// Default2FAEQ applies the EQ predicate on the "default2FA" field.
-func Default2FAEQ(v Default2FA) predicate.User {
-	return predicate.User(sql.FieldEQ(FieldDefault2FA, v))
+// WebauthnEnabledEQ applies the EQ predicate on the "webauthnEnabled" field.
+func WebauthnEnabledEQ(v bool) predicate.User {
+	return predicate.User(sql.FieldEQ(FieldWebauthnEnabled, v))
 }
 
-// Default2FANEQ applies the NEQ predicate on the "default2FA" field.
-func Default2FANEQ(v Default2FA) predicate.User {
-	return predicate.User(sql.FieldNEQ(FieldDefault2FA, v))
+// WebauthnEnabledNEQ applies the NEQ predicate on the "webauthnEnabled" field.
+func WebauthnEnabledNEQ(v bool) predicate.User {
+	return predicate.User(sql.FieldNEQ(FieldWebauthnEnabled, v))
 }
 
-// Default2FAIn applies the In predicate on the "default2FA" field.
-func Default2FAIn(vs ...Default2FA) predicate.User {
-	return predicate.User(sql.FieldIn(FieldDefault2FA, vs...))
+// TotpEnabledEQ applies the EQ predicate on the "totpEnabled" field.
+func TotpEnabledEQ(v bool) predicate.User {
+	return predicate.User(sql.FieldEQ(FieldTotpEnabled, v))
 }
 
-// Default2FANotIn applies the NotIn predicate on the "default2FA" field.
-func Default2FANotIn(vs ...Default2FA) predicate.User {
-	return predicate.User(sql.FieldNotIn(FieldDefault2FA, vs...))
+// TotpEnabledNEQ applies the NEQ predicate on the "totpEnabled" field.
+func TotpEnabledNEQ(v bool) predicate.User {
+	return predicate.User(sql.FieldNEQ(FieldTotpEnabled, v))
 }
 
 // VerifiedEQ applies the EQ predicate on the "verified" field.
@@ -338,33 +348,6 @@ func VerifiedEQ(v bool) predicate.User {
 // VerifiedNEQ applies the NEQ predicate on the "verified" field.
 func VerifiedNEQ(v bool) predicate.User {
 	return predicate.User(sql.FieldNEQ(FieldVerified, v))
-}
-
-// HasEmailChallenges applies the HasEdge predicate on the "emailChallenges" edge.
-func HasEmailChallenges() predicate.User {
-	return predicate.User(func(s *sql.Selector) {
-		step := sqlgraph.NewStep(
-			sqlgraph.From(Table, FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, EmailChallengesTable, EmailChallengesColumn),
-		)
-		sqlgraph.HasNeighbors(s, step)
-	})
-}
-
-// HasEmailChallengesWith applies the HasEdge predicate on the "emailChallenges" edge with a given conditions (other predicates).
-func HasEmailChallengesWith(preds ...predicate.EmailChallenge) predicate.User {
-	return predicate.User(func(s *sql.Selector) {
-		step := sqlgraph.NewStep(
-			sqlgraph.From(Table, FieldID),
-			sqlgraph.To(EmailChallengesInverseTable, FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, EmailChallengesTable, EmailChallengesColumn),
-		)
-		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
-			for _, p := range preds {
-				p(s)
-			}
-		})
-	})
 }
 
 // HasTotpCredential applies the HasEdge predicate on the "totpCredential" edge.
@@ -421,24 +404,24 @@ func HasWebauthnCredentialsWith(preds ...predicate.WebAuthnCredential) predicate
 	})
 }
 
-// HasWebauthnChallenges applies the HasEdge predicate on the "webauthnChallenges" edge.
-func HasWebauthnChallenges() predicate.User {
+// HasWebauthnRegisterChallenges applies the HasEdge predicate on the "webauthnRegisterChallenges" edge.
+func HasWebauthnRegisterChallenges() predicate.User {
 	return predicate.User(func(s *sql.Selector) {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, WebauthnChallengesTable, WebauthnChallengesColumn),
+			sqlgraph.Edge(sqlgraph.O2M, false, WebauthnRegisterChallengesTable, WebauthnRegisterChallengesColumn),
 		)
 		sqlgraph.HasNeighbors(s, step)
 	})
 }
 
-// HasWebauthnChallengesWith applies the HasEdge predicate on the "webauthnChallenges" edge with a given conditions (other predicates).
-func HasWebauthnChallengesWith(preds ...predicate.WebAuthnChallenge) predicate.User {
+// HasWebauthnRegisterChallengesWith applies the HasEdge predicate on the "webauthnRegisterChallenges" edge with a given conditions (other predicates).
+func HasWebauthnRegisterChallengesWith(preds ...predicate.WebAuthnRegisterChallenge) predicate.User {
 	return predicate.User(func(s *sql.Selector) {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
-			sqlgraph.To(WebauthnChallengesInverseTable, FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, WebauthnChallengesTable, WebauthnChallengesColumn),
+			sqlgraph.To(WebauthnRegisterChallengesInverseTable, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, WebauthnRegisterChallengesTable, WebauthnRegisterChallengesColumn),
 		)
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
@@ -493,6 +476,33 @@ func HasSessionsWith(preds ...predicate.Session) predicate.User {
 			sqlgraph.From(Table, FieldID),
 			sqlgraph.To(SessionsInverseTable, FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, SessionsTable, SessionsColumn),
+		)
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasChallenges applies the HasEdge predicate on the "challenges" edge.
+func HasChallenges() predicate.User {
+	return predicate.User(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, ChallengesTable, ChallengesColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasChallengesWith applies the HasEdge predicate on the "challenges" edge with a given conditions (other predicates).
+func HasChallengesWith(preds ...predicate.Challenge) predicate.User {
+	return predicate.User(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(ChallengesInverseTable, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, ChallengesTable, ChallengesColumn),
 		)
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {

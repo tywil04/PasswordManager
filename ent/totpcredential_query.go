@@ -3,6 +3,7 @@
 package ent
 
 import (
+	"PasswordManager/ent/challenge"
 	"PasswordManager/ent/predicate"
 	"PasswordManager/ent/totpcredential"
 	"PasswordManager/ent/user"
@@ -19,12 +20,13 @@ import (
 // TotpCredentialQuery is the builder for querying TotpCredential entities.
 type TotpCredentialQuery struct {
 	config
-	ctx        *QueryContext
-	order      []OrderFunc
-	inters     []Interceptor
-	predicates []predicate.TotpCredential
-	withUser   *UserQuery
-	withFKs    bool
+	ctx           *QueryContext
+	order         []OrderFunc
+	inters        []Interceptor
+	predicates    []predicate.TotpCredential
+	withUser      *UserQuery
+	withChallenge *ChallengeQuery
+	withFKs       bool
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -76,6 +78,28 @@ func (tcq *TotpCredentialQuery) QueryUser() *UserQuery {
 			sqlgraph.From(totpcredential.Table, totpcredential.FieldID, selector),
 			sqlgraph.To(user.Table, user.FieldID),
 			sqlgraph.Edge(sqlgraph.O2O, true, totpcredential.UserTable, totpcredential.UserColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(tcq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryChallenge chains the current query on the "challenge" edge.
+func (tcq *TotpCredentialQuery) QueryChallenge() *ChallengeQuery {
+	query := (&ChallengeClient{config: tcq.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := tcq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := tcq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(totpcredential.Table, totpcredential.FieldID, selector),
+			sqlgraph.To(challenge.Table, challenge.FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, true, totpcredential.ChallengeTable, totpcredential.ChallengeColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(tcq.driver.Dialect(), step)
 		return fromU, nil
@@ -268,12 +292,13 @@ func (tcq *TotpCredentialQuery) Clone() *TotpCredentialQuery {
 		return nil
 	}
 	return &TotpCredentialQuery{
-		config:     tcq.config,
-		ctx:        tcq.ctx.Clone(),
-		order:      append([]OrderFunc{}, tcq.order...),
-		inters:     append([]Interceptor{}, tcq.inters...),
-		predicates: append([]predicate.TotpCredential{}, tcq.predicates...),
-		withUser:   tcq.withUser.Clone(),
+		config:        tcq.config,
+		ctx:           tcq.ctx.Clone(),
+		order:         append([]OrderFunc{}, tcq.order...),
+		inters:        append([]Interceptor{}, tcq.inters...),
+		predicates:    append([]predicate.TotpCredential{}, tcq.predicates...),
+		withUser:      tcq.withUser.Clone(),
+		withChallenge: tcq.withChallenge.Clone(),
 		// clone intermediate query.
 		sql:  tcq.sql.Clone(),
 		path: tcq.path,
@@ -288,6 +313,17 @@ func (tcq *TotpCredentialQuery) WithUser(opts ...func(*UserQuery)) *TotpCredenti
 		opt(query)
 	}
 	tcq.withUser = query
+	return tcq
+}
+
+// WithChallenge tells the query-builder to eager-load the nodes that are connected to
+// the "challenge" edge. The optional arguments are used to configure the query builder of the edge.
+func (tcq *TotpCredentialQuery) WithChallenge(opts ...func(*ChallengeQuery)) *TotpCredentialQuery {
+	query := (&ChallengeClient{config: tcq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	tcq.withChallenge = query
 	return tcq
 }
 
@@ -372,11 +408,12 @@ func (tcq *TotpCredentialQuery) sqlAll(ctx context.Context, hooks ...queryHook) 
 		nodes       = []*TotpCredential{}
 		withFKs     = tcq.withFKs
 		_spec       = tcq.querySpec()
-		loadedTypes = [1]bool{
+		loadedTypes = [2]bool{
 			tcq.withUser != nil,
+			tcq.withChallenge != nil,
 		}
 	)
-	if tcq.withUser != nil {
+	if tcq.withUser != nil || tcq.withChallenge != nil {
 		withFKs = true
 	}
 	if withFKs {
@@ -403,6 +440,12 @@ func (tcq *TotpCredentialQuery) sqlAll(ctx context.Context, hooks ...queryHook) 
 	if query := tcq.withUser; query != nil {
 		if err := tcq.loadUser(ctx, query, nodes, nil,
 			func(n *TotpCredential, e *User) { n.Edges.User = e }); err != nil {
+			return nil, err
+		}
+	}
+	if query := tcq.withChallenge; query != nil {
+		if err := tcq.loadChallenge(ctx, query, nodes, nil,
+			func(n *TotpCredential, e *Challenge) { n.Edges.Challenge = e }); err != nil {
 			return nil, err
 		}
 	}
@@ -434,6 +477,38 @@ func (tcq *TotpCredentialQuery) loadUser(ctx context.Context, query *UserQuery, 
 		nodes, ok := nodeids[n.ID]
 		if !ok {
 			return fmt.Errorf(`unexpected foreign-key "user_totp_credential" returned %v`, n.ID)
+		}
+		for i := range nodes {
+			assign(nodes[i], n)
+		}
+	}
+	return nil
+}
+func (tcq *TotpCredentialQuery) loadChallenge(ctx context.Context, query *ChallengeQuery, nodes []*TotpCredential, init func(*TotpCredential), assign func(*TotpCredential, *Challenge)) error {
+	ids := make([]uuid.UUID, 0, len(nodes))
+	nodeids := make(map[uuid.UUID][]*TotpCredential)
+	for i := range nodes {
+		if nodes[i].challenge_totp_credential == nil {
+			continue
+		}
+		fk := *nodes[i].challenge_totp_credential
+		if _, ok := nodeids[fk]; !ok {
+			ids = append(ids, fk)
+		}
+		nodeids[fk] = append(nodeids[fk], nodes[i])
+	}
+	if len(ids) == 0 {
+		return nil
+	}
+	query.Where(challenge.IDIn(ids...))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		nodes, ok := nodeids[n.ID]
+		if !ok {
+			return fmt.Errorf(`unexpected foreign-key "challenge_totp_credential" returned %v`, n.ID)
 		}
 		for i := range nodes {
 			assign(nodes[i], n)

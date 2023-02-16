@@ -4,6 +4,7 @@ package ent
 
 import (
 	"PasswordManager/ent/additionalfield"
+	"PasswordManager/ent/challenge"
 	"PasswordManager/ent/emailchallenge"
 	"PasswordManager/ent/password"
 	"PasswordManager/ent/session"
@@ -12,6 +13,7 @@ import (
 	"PasswordManager/ent/user"
 	"PasswordManager/ent/webauthnchallenge"
 	"PasswordManager/ent/webauthncredential"
+	"PasswordManager/ent/webauthnregisterchallenge"
 	"context"
 	"errors"
 	"fmt"
@@ -47,15 +49,17 @@ type OrderFunc func(*sql.Selector)
 // columnChecker returns a function indicates if the column exists in the given column.
 func columnChecker(table string) func(string) error {
 	checks := map[string]func(string) bool{
-		additionalfield.Table:    additionalfield.ValidColumn,
-		emailchallenge.Table:     emailchallenge.ValidColumn,
-		password.Table:           password.ValidColumn,
-		session.Table:            session.ValidColumn,
-		totpcredential.Table:     totpcredential.ValidColumn,
-		url.Table:                url.ValidColumn,
-		user.Table:               user.ValidColumn,
-		webauthnchallenge.Table:  webauthnchallenge.ValidColumn,
-		webauthncredential.Table: webauthncredential.ValidColumn,
+		additionalfield.Table:           additionalfield.ValidColumn,
+		challenge.Table:                 challenge.ValidColumn,
+		emailchallenge.Table:            emailchallenge.ValidColumn,
+		password.Table:                  password.ValidColumn,
+		session.Table:                   session.ValidColumn,
+		totpcredential.Table:            totpcredential.ValidColumn,
+		url.Table:                       url.ValidColumn,
+		user.Table:                      user.ValidColumn,
+		webauthnchallenge.Table:         webauthnchallenge.ValidColumn,
+		webauthncredential.Table:        webauthncredential.ValidColumn,
+		webauthnregisterchallenge.Table: webauthnregisterchallenge.ValidColumn,
 	}
 	check, ok := checks[table]
 	if !ok {

@@ -3,10 +3,9 @@
 package ent
 
 import (
-	"PasswordManager/ent/user"
+	"PasswordManager/ent/challenge"
 	"PasswordManager/ent/webauthnchallenge"
 	"context"
-	"errors"
 	"fmt"
 
 	"entgo.io/ent/dialect/sql/sqlgraph"
@@ -21,16 +20,16 @@ type WebAuthnChallengeCreate struct {
 	hooks    []Hook
 }
 
-// SetChallenge sets the "challenge" field.
-func (wacc *WebAuthnChallengeCreate) SetChallenge(s string) *WebAuthnChallengeCreate {
-	wacc.mutation.SetChallenge(s)
+// SetSdChallenge sets the "sdChallenge" field.
+func (wacc *WebAuthnChallengeCreate) SetSdChallenge(s string) *WebAuthnChallengeCreate {
+	wacc.mutation.SetSdChallenge(s)
 	return wacc
 }
 
-// SetNillableChallenge sets the "challenge" field if the given value is not nil.
-func (wacc *WebAuthnChallengeCreate) SetNillableChallenge(s *string) *WebAuthnChallengeCreate {
+// SetNillableSdChallenge sets the "sdChallenge" field if the given value is not nil.
+func (wacc *WebAuthnChallengeCreate) SetNillableSdChallenge(s *string) *WebAuthnChallengeCreate {
 	if s != nil {
-		wacc.SetChallenge(*s)
+		wacc.SetSdChallenge(*s)
 	}
 	return wacc
 }
@@ -81,15 +80,23 @@ func (wacc *WebAuthnChallengeCreate) SetNillableID(u *uuid.UUID) *WebAuthnChalle
 	return wacc
 }
 
-// SetUserID sets the "user" edge to the User entity by ID.
-func (wacc *WebAuthnChallengeCreate) SetUserID(id uuid.UUID) *WebAuthnChallengeCreate {
-	wacc.mutation.SetUserID(id)
+// SetChallengeID sets the "challenge" edge to the Challenge entity by ID.
+func (wacc *WebAuthnChallengeCreate) SetChallengeID(id uuid.UUID) *WebAuthnChallengeCreate {
+	wacc.mutation.SetChallengeID(id)
 	return wacc
 }
 
-// SetUser sets the "user" edge to the User entity.
-func (wacc *WebAuthnChallengeCreate) SetUser(u *User) *WebAuthnChallengeCreate {
-	return wacc.SetUserID(u.ID)
+// SetNillableChallengeID sets the "challenge" edge to the Challenge entity by ID if the given value is not nil.
+func (wacc *WebAuthnChallengeCreate) SetNillableChallengeID(id *uuid.UUID) *WebAuthnChallengeCreate {
+	if id != nil {
+		wacc = wacc.SetChallengeID(*id)
+	}
+	return wacc
+}
+
+// SetChallenge sets the "challenge" edge to the Challenge entity.
+func (wacc *WebAuthnChallengeCreate) SetChallenge(c *Challenge) *WebAuthnChallengeCreate {
+	return wacc.SetChallengeID(c.ID)
 }
 
 // Mutation returns the WebAuthnChallengeMutation object of the builder.
@@ -135,9 +142,6 @@ func (wacc *WebAuthnChallengeCreate) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (wacc *WebAuthnChallengeCreate) check() error {
-	if _, ok := wacc.mutation.UserID(); !ok {
-		return &ValidationError{Name: "user", err: errors.New(`ent: missing required edge "WebAuthnChallenge.user"`)}
-	}
 	return nil
 }
 
@@ -179,9 +183,9 @@ func (wacc *WebAuthnChallengeCreate) createSpec() (*WebAuthnChallenge, *sqlgraph
 		_node.ID = id
 		_spec.ID.Value = &id
 	}
-	if value, ok := wacc.mutation.Challenge(); ok {
-		_spec.SetField(webauthnchallenge.FieldChallenge, field.TypeString, value)
-		_node.Challenge = value
+	if value, ok := wacc.mutation.SdChallenge(); ok {
+		_spec.SetField(webauthnchallenge.FieldSdChallenge, field.TypeString, value)
+		_node.SdChallenge = value
 	}
 	if value, ok := wacc.mutation.UserId(); ok {
 		_spec.SetField(webauthnchallenge.FieldUserId, field.TypeBytes, value)
@@ -199,24 +203,24 @@ func (wacc *WebAuthnChallengeCreate) createSpec() (*WebAuthnChallenge, *sqlgraph
 		_spec.SetField(webauthnchallenge.FieldExtensions, field.TypeJSON, value)
 		_node.Extensions = value
 	}
-	if nodes := wacc.mutation.UserIDs(); len(nodes) > 0 {
+	if nodes := wacc.mutation.ChallengeIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
+			Rel:     sqlgraph.O2O,
 			Inverse: true,
-			Table:   webauthnchallenge.UserTable,
-			Columns: []string{webauthnchallenge.UserColumn},
+			Table:   webauthnchallenge.ChallengeTable,
+			Columns: []string{webauthnchallenge.ChallengeColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeUUID,
-					Column: user.FieldID,
+					Column: challenge.FieldID,
 				},
 			},
 		}
 		for _, k := range nodes {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
-		_node.user_webauthn_challenges = &nodes[0]
+		_node.challenge_webauthn_challenge = &nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec

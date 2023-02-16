@@ -14,6 +14,8 @@ type Tx struct {
 	config
 	// AdditionalField is the client for interacting with the AdditionalField builders.
 	AdditionalField *AdditionalFieldClient
+	// Challenge is the client for interacting with the Challenge builders.
+	Challenge *ChallengeClient
 	// EmailChallenge is the client for interacting with the EmailChallenge builders.
 	EmailChallenge *EmailChallengeClient
 	// Password is the client for interacting with the Password builders.
@@ -30,6 +32,8 @@ type Tx struct {
 	WebAuthnChallenge *WebAuthnChallengeClient
 	// WebAuthnCredential is the client for interacting with the WebAuthnCredential builders.
 	WebAuthnCredential *WebAuthnCredentialClient
+	// WebAuthnRegisterChallenge is the client for interacting with the WebAuthnRegisterChallenge builders.
+	WebAuthnRegisterChallenge *WebAuthnRegisterChallengeClient
 
 	// lazily loaded.
 	client     *Client
@@ -162,6 +166,7 @@ func (tx *Tx) Client() *Client {
 
 func (tx *Tx) init() {
 	tx.AdditionalField = NewAdditionalFieldClient(tx.config)
+	tx.Challenge = NewChallengeClient(tx.config)
 	tx.EmailChallenge = NewEmailChallengeClient(tx.config)
 	tx.Password = NewPasswordClient(tx.config)
 	tx.Session = NewSessionClient(tx.config)
@@ -170,6 +175,7 @@ func (tx *Tx) init() {
 	tx.User = NewUserClient(tx.config)
 	tx.WebAuthnChallenge = NewWebAuthnChallengeClient(tx.config)
 	tx.WebAuthnCredential = NewWebAuthnCredentialClient(tx.config)
+	tx.WebAuthnRegisterChallenge = NewWebAuthnRegisterChallengeClient(tx.config)
 }
 
 // txDriver wraps the given dialect.Tx with a nop dialect.Driver implementation.

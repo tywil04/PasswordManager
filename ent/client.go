@@ -11,6 +11,7 @@ import (
 	"PasswordManager/ent/migrate"
 
 	"PasswordManager/ent/additionalfield"
+	"PasswordManager/ent/challenge"
 	"PasswordManager/ent/emailchallenge"
 	"PasswordManager/ent/password"
 	"PasswordManager/ent/session"
@@ -19,6 +20,7 @@ import (
 	"PasswordManager/ent/user"
 	"PasswordManager/ent/webauthnchallenge"
 	"PasswordManager/ent/webauthncredential"
+	"PasswordManager/ent/webauthnregisterchallenge"
 
 	"entgo.io/ent/dialect"
 	"entgo.io/ent/dialect/sql"
@@ -33,6 +35,8 @@ type Client struct {
 	Schema *migrate.Schema
 	// AdditionalField is the client for interacting with the AdditionalField builders.
 	AdditionalField *AdditionalFieldClient
+	// Challenge is the client for interacting with the Challenge builders.
+	Challenge *ChallengeClient
 	// EmailChallenge is the client for interacting with the EmailChallenge builders.
 	EmailChallenge *EmailChallengeClient
 	// Password is the client for interacting with the Password builders.
@@ -49,6 +53,8 @@ type Client struct {
 	WebAuthnChallenge *WebAuthnChallengeClient
 	// WebAuthnCredential is the client for interacting with the WebAuthnCredential builders.
 	WebAuthnCredential *WebAuthnCredentialClient
+	// WebAuthnRegisterChallenge is the client for interacting with the WebAuthnRegisterChallenge builders.
+	WebAuthnRegisterChallenge *WebAuthnRegisterChallengeClient
 }
 
 // NewClient creates a new client configured with the given options.
@@ -63,6 +69,7 @@ func NewClient(opts ...Option) *Client {
 func (c *Client) init() {
 	c.Schema = migrate.NewSchema(c.driver)
 	c.AdditionalField = NewAdditionalFieldClient(c.config)
+	c.Challenge = NewChallengeClient(c.config)
 	c.EmailChallenge = NewEmailChallengeClient(c.config)
 	c.Password = NewPasswordClient(c.config)
 	c.Session = NewSessionClient(c.config)
@@ -71,6 +78,7 @@ func (c *Client) init() {
 	c.User = NewUserClient(c.config)
 	c.WebAuthnChallenge = NewWebAuthnChallengeClient(c.config)
 	c.WebAuthnCredential = NewWebAuthnCredentialClient(c.config)
+	c.WebAuthnRegisterChallenge = NewWebAuthnRegisterChallengeClient(c.config)
 }
 
 // Open opens a database/sql.DB specified by the driver name and
@@ -102,17 +110,19 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 	cfg := c.config
 	cfg.driver = tx
 	return &Tx{
-		ctx:                ctx,
-		config:             cfg,
-		AdditionalField:    NewAdditionalFieldClient(cfg),
-		EmailChallenge:     NewEmailChallengeClient(cfg),
-		Password:           NewPasswordClient(cfg),
-		Session:            NewSessionClient(cfg),
-		TotpCredential:     NewTotpCredentialClient(cfg),
-		Url:                NewURLClient(cfg),
-		User:               NewUserClient(cfg),
-		WebAuthnChallenge:  NewWebAuthnChallengeClient(cfg),
-		WebAuthnCredential: NewWebAuthnCredentialClient(cfg),
+		ctx:                       ctx,
+		config:                    cfg,
+		AdditionalField:           NewAdditionalFieldClient(cfg),
+		Challenge:                 NewChallengeClient(cfg),
+		EmailChallenge:            NewEmailChallengeClient(cfg),
+		Password:                  NewPasswordClient(cfg),
+		Session:                   NewSessionClient(cfg),
+		TotpCredential:            NewTotpCredentialClient(cfg),
+		Url:                       NewURLClient(cfg),
+		User:                      NewUserClient(cfg),
+		WebAuthnChallenge:         NewWebAuthnChallengeClient(cfg),
+		WebAuthnCredential:        NewWebAuthnCredentialClient(cfg),
+		WebAuthnRegisterChallenge: NewWebAuthnRegisterChallengeClient(cfg),
 	}, nil
 }
 
@@ -130,17 +140,19 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 	cfg := c.config
 	cfg.driver = &txDriver{tx: tx, drv: c.driver}
 	return &Tx{
-		ctx:                ctx,
-		config:             cfg,
-		AdditionalField:    NewAdditionalFieldClient(cfg),
-		EmailChallenge:     NewEmailChallengeClient(cfg),
-		Password:           NewPasswordClient(cfg),
-		Session:            NewSessionClient(cfg),
-		TotpCredential:     NewTotpCredentialClient(cfg),
-		Url:                NewURLClient(cfg),
-		User:               NewUserClient(cfg),
-		WebAuthnChallenge:  NewWebAuthnChallengeClient(cfg),
-		WebAuthnCredential: NewWebAuthnCredentialClient(cfg),
+		ctx:                       ctx,
+		config:                    cfg,
+		AdditionalField:           NewAdditionalFieldClient(cfg),
+		Challenge:                 NewChallengeClient(cfg),
+		EmailChallenge:            NewEmailChallengeClient(cfg),
+		Password:                  NewPasswordClient(cfg),
+		Session:                   NewSessionClient(cfg),
+		TotpCredential:            NewTotpCredentialClient(cfg),
+		Url:                       NewURLClient(cfg),
+		User:                      NewUserClient(cfg),
+		WebAuthnChallenge:         NewWebAuthnChallengeClient(cfg),
+		WebAuthnCredential:        NewWebAuthnCredentialClient(cfg),
+		WebAuthnRegisterChallenge: NewWebAuthnRegisterChallengeClient(cfg),
 	}, nil
 }
 
@@ -171,6 +183,7 @@ func (c *Client) Close() error {
 // In order to add hooks to a specific client, call: `client.Node.Use(...)`.
 func (c *Client) Use(hooks ...Hook) {
 	c.AdditionalField.Use(hooks...)
+	c.Challenge.Use(hooks...)
 	c.EmailChallenge.Use(hooks...)
 	c.Password.Use(hooks...)
 	c.Session.Use(hooks...)
@@ -179,12 +192,14 @@ func (c *Client) Use(hooks ...Hook) {
 	c.User.Use(hooks...)
 	c.WebAuthnChallenge.Use(hooks...)
 	c.WebAuthnCredential.Use(hooks...)
+	c.WebAuthnRegisterChallenge.Use(hooks...)
 }
 
 // Intercept adds the query interceptors to all the entity clients.
 // In order to add interceptors to a specific client, call: `client.Node.Intercept(...)`.
 func (c *Client) Intercept(interceptors ...Interceptor) {
 	c.AdditionalField.Intercept(interceptors...)
+	c.Challenge.Intercept(interceptors...)
 	c.EmailChallenge.Intercept(interceptors...)
 	c.Password.Intercept(interceptors...)
 	c.Session.Intercept(interceptors...)
@@ -193,6 +208,7 @@ func (c *Client) Intercept(interceptors ...Interceptor) {
 	c.User.Intercept(interceptors...)
 	c.WebAuthnChallenge.Intercept(interceptors...)
 	c.WebAuthnCredential.Intercept(interceptors...)
+	c.WebAuthnRegisterChallenge.Intercept(interceptors...)
 }
 
 // Mutate implements the ent.Mutator interface.
@@ -200,6 +216,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 	switch m := m.(type) {
 	case *AdditionalFieldMutation:
 		return c.AdditionalField.mutate(ctx, m)
+	case *ChallengeMutation:
+		return c.Challenge.mutate(ctx, m)
 	case *EmailChallengeMutation:
 		return c.EmailChallenge.mutate(ctx, m)
 	case *PasswordMutation:
@@ -216,6 +234,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.WebAuthnChallenge.mutate(ctx, m)
 	case *WebAuthnCredentialMutation:
 		return c.WebAuthnCredential.mutate(ctx, m)
+	case *WebAuthnRegisterChallengeMutation:
+		return c.WebAuthnRegisterChallenge.mutate(ctx, m)
 	default:
 		return nil, fmt.Errorf("ent: unknown mutation type %T", m)
 	}
@@ -355,6 +375,188 @@ func (c *AdditionalFieldClient) mutate(ctx context.Context, m *AdditionalFieldMu
 	}
 }
 
+// ChallengeClient is a client for the Challenge schema.
+type ChallengeClient struct {
+	config
+}
+
+// NewChallengeClient returns a client for the Challenge from the given config.
+func NewChallengeClient(c config) *ChallengeClient {
+	return &ChallengeClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `challenge.Hooks(f(g(h())))`.
+func (c *ChallengeClient) Use(hooks ...Hook) {
+	c.hooks.Challenge = append(c.hooks.Challenge, hooks...)
+}
+
+// Use adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `challenge.Intercept(f(g(h())))`.
+func (c *ChallengeClient) Intercept(interceptors ...Interceptor) {
+	c.inters.Challenge = append(c.inters.Challenge, interceptors...)
+}
+
+// Create returns a builder for creating a Challenge entity.
+func (c *ChallengeClient) Create() *ChallengeCreate {
+	mutation := newChallengeMutation(c.config, OpCreate)
+	return &ChallengeCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of Challenge entities.
+func (c *ChallengeClient) CreateBulk(builders ...*ChallengeCreate) *ChallengeCreateBulk {
+	return &ChallengeCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for Challenge.
+func (c *ChallengeClient) Update() *ChallengeUpdate {
+	mutation := newChallengeMutation(c.config, OpUpdate)
+	return &ChallengeUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *ChallengeClient) UpdateOne(ch *Challenge) *ChallengeUpdateOne {
+	mutation := newChallengeMutation(c.config, OpUpdateOne, withChallenge(ch))
+	return &ChallengeUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *ChallengeClient) UpdateOneID(id uuid.UUID) *ChallengeUpdateOne {
+	mutation := newChallengeMutation(c.config, OpUpdateOne, withChallengeID(id))
+	return &ChallengeUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for Challenge.
+func (c *ChallengeClient) Delete() *ChallengeDelete {
+	mutation := newChallengeMutation(c.config, OpDelete)
+	return &ChallengeDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *ChallengeClient) DeleteOne(ch *Challenge) *ChallengeDeleteOne {
+	return c.DeleteOneID(ch.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *ChallengeClient) DeleteOneID(id uuid.UUID) *ChallengeDeleteOne {
+	builder := c.Delete().Where(challenge.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &ChallengeDeleteOne{builder}
+}
+
+// Query returns a query builder for Challenge.
+func (c *ChallengeClient) Query() *ChallengeQuery {
+	return &ChallengeQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeChallenge},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a Challenge entity by its id.
+func (c *ChallengeClient) Get(ctx context.Context, id uuid.UUID) (*Challenge, error) {
+	return c.Query().Where(challenge.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *ChallengeClient) GetX(ctx context.Context, id uuid.UUID) *Challenge {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryUser queries the user edge of a Challenge.
+func (c *ChallengeClient) QueryUser(ch *Challenge) *UserQuery {
+	query := (&UserClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := ch.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(challenge.Table, challenge.FieldID, id),
+			sqlgraph.To(user.Table, user.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, challenge.UserTable, challenge.UserColumn),
+		)
+		fromV = sqlgraph.Neighbors(ch.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryEmailChallenge queries the emailChallenge edge of a Challenge.
+func (c *ChallengeClient) QueryEmailChallenge(ch *Challenge) *EmailChallengeQuery {
+	query := (&EmailChallengeClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := ch.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(challenge.Table, challenge.FieldID, id),
+			sqlgraph.To(emailchallenge.Table, emailchallenge.FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, false, challenge.EmailChallengeTable, challenge.EmailChallengeColumn),
+		)
+		fromV = sqlgraph.Neighbors(ch.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryWebauthnChallenge queries the webauthnChallenge edge of a Challenge.
+func (c *ChallengeClient) QueryWebauthnChallenge(ch *Challenge) *WebAuthnChallengeQuery {
+	query := (&WebAuthnChallengeClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := ch.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(challenge.Table, challenge.FieldID, id),
+			sqlgraph.To(webauthnchallenge.Table, webauthnchallenge.FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, false, challenge.WebauthnChallengeTable, challenge.WebauthnChallengeColumn),
+		)
+		fromV = sqlgraph.Neighbors(ch.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryTotpCredential queries the totpCredential edge of a Challenge.
+func (c *ChallengeClient) QueryTotpCredential(ch *Challenge) *TotpCredentialQuery {
+	query := (&TotpCredentialClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := ch.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(challenge.Table, challenge.FieldID, id),
+			sqlgraph.To(totpcredential.Table, totpcredential.FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, false, challenge.TotpCredentialTable, challenge.TotpCredentialColumn),
+		)
+		fromV = sqlgraph.Neighbors(ch.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *ChallengeClient) Hooks() []Hook {
+	return c.hooks.Challenge
+}
+
+// Interceptors returns the client interceptors.
+func (c *ChallengeClient) Interceptors() []Interceptor {
+	return c.inters.Challenge
+}
+
+func (c *ChallengeClient) mutate(ctx context.Context, m *ChallengeMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&ChallengeCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&ChallengeUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&ChallengeUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&ChallengeDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown Challenge mutation op: %q", m.Op())
+	}
+}
+
 // EmailChallengeClient is a client for the EmailChallenge schema.
 type EmailChallengeClient struct {
 	config
@@ -448,15 +650,15 @@ func (c *EmailChallengeClient) GetX(ctx context.Context, id uuid.UUID) *EmailCha
 	return obj
 }
 
-// QueryUser queries the user edge of a EmailChallenge.
-func (c *EmailChallengeClient) QueryUser(ec *EmailChallenge) *UserQuery {
-	query := (&UserClient{config: c.config}).Query()
+// QueryChallenge queries the challenge edge of a EmailChallenge.
+func (c *EmailChallengeClient) QueryChallenge(ec *EmailChallenge) *ChallengeQuery {
+	query := (&ChallengeClient{config: c.config}).Query()
 	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
 		id := ec.ID
 		step := sqlgraph.NewStep(
 			sqlgraph.From(emailchallenge.Table, emailchallenge.FieldID, id),
-			sqlgraph.To(user.Table, user.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, emailchallenge.UserTable, emailchallenge.UserColumn),
+			sqlgraph.To(challenge.Table, challenge.FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, true, emailchallenge.ChallengeTable, emailchallenge.ChallengeColumn),
 		)
 		fromV = sqlgraph.Neighbors(ec.driver.Dialect(), step)
 		return fromV, nil
@@ -898,6 +1100,22 @@ func (c *TotpCredentialClient) QueryUser(tc *TotpCredential) *UserQuery {
 	return query
 }
 
+// QueryChallenge queries the challenge edge of a TotpCredential.
+func (c *TotpCredentialClient) QueryChallenge(tc *TotpCredential) *ChallengeQuery {
+	query := (&ChallengeClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := tc.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(totpcredential.Table, totpcredential.FieldID, id),
+			sqlgraph.To(challenge.Table, challenge.FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, true, totpcredential.ChallengeTable, totpcredential.ChallengeColumn),
+		)
+		fromV = sqlgraph.Neighbors(tc.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
 func (c *TotpCredentialClient) Hooks() []Hook {
 	return c.hooks.TotpCredential
@@ -1150,22 +1368,6 @@ func (c *UserClient) GetX(ctx context.Context, id uuid.UUID) *User {
 	return obj
 }
 
-// QueryEmailChallenges queries the emailChallenges edge of a User.
-func (c *UserClient) QueryEmailChallenges(u *User) *EmailChallengeQuery {
-	query := (&EmailChallengeClient{config: c.config}).Query()
-	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
-		id := u.ID
-		step := sqlgraph.NewStep(
-			sqlgraph.From(user.Table, user.FieldID, id),
-			sqlgraph.To(emailchallenge.Table, emailchallenge.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, user.EmailChallengesTable, user.EmailChallengesColumn),
-		)
-		fromV = sqlgraph.Neighbors(u.driver.Dialect(), step)
-		return fromV, nil
-	}
-	return query
-}
-
 // QueryTotpCredential queries the totpCredential edge of a User.
 func (c *UserClient) QueryTotpCredential(u *User) *TotpCredentialQuery {
 	query := (&TotpCredentialClient{config: c.config}).Query()
@@ -1198,15 +1400,15 @@ func (c *UserClient) QueryWebauthnCredentials(u *User) *WebAuthnCredentialQuery 
 	return query
 }
 
-// QueryWebauthnChallenges queries the webauthnChallenges edge of a User.
-func (c *UserClient) QueryWebauthnChallenges(u *User) *WebAuthnChallengeQuery {
-	query := (&WebAuthnChallengeClient{config: c.config}).Query()
+// QueryWebauthnRegisterChallenges queries the webauthnRegisterChallenges edge of a User.
+func (c *UserClient) QueryWebauthnRegisterChallenges(u *User) *WebAuthnRegisterChallengeQuery {
+	query := (&WebAuthnRegisterChallengeClient{config: c.config}).Query()
 	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
 		id := u.ID
 		step := sqlgraph.NewStep(
 			sqlgraph.From(user.Table, user.FieldID, id),
-			sqlgraph.To(webauthnchallenge.Table, webauthnchallenge.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, user.WebauthnChallengesTable, user.WebauthnChallengesColumn),
+			sqlgraph.To(webauthnregisterchallenge.Table, webauthnregisterchallenge.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, user.WebauthnRegisterChallengesTable, user.WebauthnRegisterChallengesColumn),
 		)
 		fromV = sqlgraph.Neighbors(u.driver.Dialect(), step)
 		return fromV, nil
@@ -1239,6 +1441,22 @@ func (c *UserClient) QuerySessions(u *User) *SessionQuery {
 			sqlgraph.From(user.Table, user.FieldID, id),
 			sqlgraph.To(session.Table, session.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, user.SessionsTable, user.SessionsColumn),
+		)
+		fromV = sqlgraph.Neighbors(u.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryChallenges queries the challenges edge of a User.
+func (c *UserClient) QueryChallenges(u *User) *ChallengeQuery {
+	query := (&ChallengeClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := u.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(user.Table, user.FieldID, id),
+			sqlgraph.To(challenge.Table, challenge.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, user.ChallengesTable, user.ChallengesColumn),
 		)
 		fromV = sqlgraph.Neighbors(u.driver.Dialect(), step)
 		return fromV, nil
@@ -1364,15 +1582,15 @@ func (c *WebAuthnChallengeClient) GetX(ctx context.Context, id uuid.UUID) *WebAu
 	return obj
 }
 
-// QueryUser queries the user edge of a WebAuthnChallenge.
-func (c *WebAuthnChallengeClient) QueryUser(wac *WebAuthnChallenge) *UserQuery {
-	query := (&UserClient{config: c.config}).Query()
+// QueryChallenge queries the challenge edge of a WebAuthnChallenge.
+func (c *WebAuthnChallengeClient) QueryChallenge(wac *WebAuthnChallenge) *ChallengeQuery {
+	query := (&ChallengeClient{config: c.config}).Query()
 	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
 		id := wac.ID
 		step := sqlgraph.NewStep(
 			sqlgraph.From(webauthnchallenge.Table, webauthnchallenge.FieldID, id),
-			sqlgraph.To(user.Table, user.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, webauthnchallenge.UserTable, webauthnchallenge.UserColumn),
+			sqlgraph.To(challenge.Table, challenge.FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, true, webauthnchallenge.ChallengeTable, webauthnchallenge.ChallengeColumn),
 		)
 		fromV = sqlgraph.Neighbors(wac.driver.Dialect(), step)
 		return fromV, nil
@@ -1536,5 +1754,139 @@ func (c *WebAuthnCredentialClient) mutate(ctx context.Context, m *WebAuthnCreden
 		return (&WebAuthnCredentialDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
 		return nil, fmt.Errorf("ent: unknown WebAuthnCredential mutation op: %q", m.Op())
+	}
+}
+
+// WebAuthnRegisterChallengeClient is a client for the WebAuthnRegisterChallenge schema.
+type WebAuthnRegisterChallengeClient struct {
+	config
+}
+
+// NewWebAuthnRegisterChallengeClient returns a client for the WebAuthnRegisterChallenge from the given config.
+func NewWebAuthnRegisterChallengeClient(c config) *WebAuthnRegisterChallengeClient {
+	return &WebAuthnRegisterChallengeClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `webauthnregisterchallenge.Hooks(f(g(h())))`.
+func (c *WebAuthnRegisterChallengeClient) Use(hooks ...Hook) {
+	c.hooks.WebAuthnRegisterChallenge = append(c.hooks.WebAuthnRegisterChallenge, hooks...)
+}
+
+// Use adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `webauthnregisterchallenge.Intercept(f(g(h())))`.
+func (c *WebAuthnRegisterChallengeClient) Intercept(interceptors ...Interceptor) {
+	c.inters.WebAuthnRegisterChallenge = append(c.inters.WebAuthnRegisterChallenge, interceptors...)
+}
+
+// Create returns a builder for creating a WebAuthnRegisterChallenge entity.
+func (c *WebAuthnRegisterChallengeClient) Create() *WebAuthnRegisterChallengeCreate {
+	mutation := newWebAuthnRegisterChallengeMutation(c.config, OpCreate)
+	return &WebAuthnRegisterChallengeCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of WebAuthnRegisterChallenge entities.
+func (c *WebAuthnRegisterChallengeClient) CreateBulk(builders ...*WebAuthnRegisterChallengeCreate) *WebAuthnRegisterChallengeCreateBulk {
+	return &WebAuthnRegisterChallengeCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for WebAuthnRegisterChallenge.
+func (c *WebAuthnRegisterChallengeClient) Update() *WebAuthnRegisterChallengeUpdate {
+	mutation := newWebAuthnRegisterChallengeMutation(c.config, OpUpdate)
+	return &WebAuthnRegisterChallengeUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *WebAuthnRegisterChallengeClient) UpdateOne(warc *WebAuthnRegisterChallenge) *WebAuthnRegisterChallengeUpdateOne {
+	mutation := newWebAuthnRegisterChallengeMutation(c.config, OpUpdateOne, withWebAuthnRegisterChallenge(warc))
+	return &WebAuthnRegisterChallengeUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *WebAuthnRegisterChallengeClient) UpdateOneID(id uuid.UUID) *WebAuthnRegisterChallengeUpdateOne {
+	mutation := newWebAuthnRegisterChallengeMutation(c.config, OpUpdateOne, withWebAuthnRegisterChallengeID(id))
+	return &WebAuthnRegisterChallengeUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for WebAuthnRegisterChallenge.
+func (c *WebAuthnRegisterChallengeClient) Delete() *WebAuthnRegisterChallengeDelete {
+	mutation := newWebAuthnRegisterChallengeMutation(c.config, OpDelete)
+	return &WebAuthnRegisterChallengeDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *WebAuthnRegisterChallengeClient) DeleteOne(warc *WebAuthnRegisterChallenge) *WebAuthnRegisterChallengeDeleteOne {
+	return c.DeleteOneID(warc.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *WebAuthnRegisterChallengeClient) DeleteOneID(id uuid.UUID) *WebAuthnRegisterChallengeDeleteOne {
+	builder := c.Delete().Where(webauthnregisterchallenge.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &WebAuthnRegisterChallengeDeleteOne{builder}
+}
+
+// Query returns a query builder for WebAuthnRegisterChallenge.
+func (c *WebAuthnRegisterChallengeClient) Query() *WebAuthnRegisterChallengeQuery {
+	return &WebAuthnRegisterChallengeQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeWebAuthnRegisterChallenge},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a WebAuthnRegisterChallenge entity by its id.
+func (c *WebAuthnRegisterChallengeClient) Get(ctx context.Context, id uuid.UUID) (*WebAuthnRegisterChallenge, error) {
+	return c.Query().Where(webauthnregisterchallenge.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *WebAuthnRegisterChallengeClient) GetX(ctx context.Context, id uuid.UUID) *WebAuthnRegisterChallenge {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryUser queries the user edge of a WebAuthnRegisterChallenge.
+func (c *WebAuthnRegisterChallengeClient) QueryUser(warc *WebAuthnRegisterChallenge) *UserQuery {
+	query := (&UserClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := warc.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(webauthnregisterchallenge.Table, webauthnregisterchallenge.FieldID, id),
+			sqlgraph.To(user.Table, user.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, webauthnregisterchallenge.UserTable, webauthnregisterchallenge.UserColumn),
+		)
+		fromV = sqlgraph.Neighbors(warc.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *WebAuthnRegisterChallengeClient) Hooks() []Hook {
+	return c.hooks.WebAuthnRegisterChallenge
+}
+
+// Interceptors returns the client interceptors.
+func (c *WebAuthnRegisterChallengeClient) Interceptors() []Interceptor {
+	return c.inters.WebAuthnRegisterChallenge
+}
+
+func (c *WebAuthnRegisterChallengeClient) mutate(ctx context.Context, m *WebAuthnRegisterChallengeMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&WebAuthnRegisterChallengeCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&WebAuthnRegisterChallengeUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&WebAuthnRegisterChallengeUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&WebAuthnRegisterChallengeDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown WebAuthnRegisterChallenge mutation op: %q", m.Op())
 	}
 }

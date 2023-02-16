@@ -3,9 +3,6 @@
 package emailchallenge
 
 import (
-	"fmt"
-	"time"
-
 	"github.com/google/uuid"
 )
 
@@ -16,35 +13,29 @@ const (
 	FieldID = "id"
 	// FieldCode holds the string denoting the code field in the database.
 	FieldCode = "code"
-	// FieldExpiry holds the string denoting the expiry field in the database.
-	FieldExpiry = "expiry"
-	// FieldFor holds the string denoting the for field in the database.
-	FieldFor = "for"
-	// EdgeUser holds the string denoting the user edge name in mutations.
-	EdgeUser = "user"
+	// EdgeChallenge holds the string denoting the challenge edge name in mutations.
+	EdgeChallenge = "challenge"
 	// Table holds the table name of the emailchallenge in the database.
 	Table = "email_challenges"
-	// UserTable is the table that holds the user relation/edge.
-	UserTable = "email_challenges"
-	// UserInverseTable is the table name for the User entity.
-	// It exists in this package in order to avoid circular dependency with the "user" package.
-	UserInverseTable = "users"
-	// UserColumn is the table column denoting the user relation/edge.
-	UserColumn = "user_email_challenges"
+	// ChallengeTable is the table that holds the challenge relation/edge.
+	ChallengeTable = "email_challenges"
+	// ChallengeInverseTable is the table name for the Challenge entity.
+	// It exists in this package in order to avoid circular dependency with the "challenge" package.
+	ChallengeInverseTable = "challenges"
+	// ChallengeColumn is the table column denoting the challenge relation/edge.
+	ChallengeColumn = "challenge_email_challenge"
 )
 
 // Columns holds all SQL columns for emailchallenge fields.
 var Columns = []string{
 	FieldID,
 	FieldCode,
-	FieldExpiry,
-	FieldFor,
 }
 
 // ForeignKeys holds the SQL foreign-keys that are owned by the "email_challenges"
 // table and are not defined as standalone fields in the schema.
 var ForeignKeys = []string{
-	"user_email_challenges",
+	"challenge_email_challenge",
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -63,33 +54,6 @@ func ValidColumn(column string) bool {
 }
 
 var (
-	// CodeValidator is a validator for the "code" field. It is called by the builders before save.
-	CodeValidator func(string) error
-	// DefaultExpiry holds the default value on creation for the "expiry" field.
-	DefaultExpiry func() time.Time
 	// DefaultID holds the default value on creation for the "id" field.
 	DefaultID func() uuid.UUID
 )
-
-// For defines the type for the "for" enum field.
-type For string
-
-// For values.
-const (
-	ForSignup For = "signup"
-	ForSignin For = "signin"
-)
-
-func (_for For) String() string {
-	return string(_for)
-}
-
-// ForValidator is a validator for the "for" field enum values. It is called by the builders before save.
-func ForValidator(_for For) error {
-	switch _for {
-	case ForSignup, ForSignin:
-		return nil
-	default:
-		return fmt.Errorf("emailchallenge: invalid enum value for for field: %q", _for)
-	}
-}

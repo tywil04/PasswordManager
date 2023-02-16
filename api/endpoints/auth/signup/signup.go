@@ -2,15 +2,14 @@ package signup
 
 import (
 	"encoding/base64"
-	"time"
+	"fmt"
 
 	"github.com/gin-gonic/gin"
 
 	"PasswordManager/api/lib/cryptography"
 	"PasswordManager/api/lib/db"
-	"PasswordManager/api/lib/smtp"
+	"PasswordManager/api/lib/helpers"
 	"PasswordManager/api/lib/validations"
-	"PasswordManager/ent/emailchallenge"
 )
 
 type PostInput struct {
@@ -25,61 +24,57 @@ func Post(c *gin.Context) {
 
 	bindingErr := c.Bind(&input)
 	if bindingErr != nil {
-		c.JSON(400, gin.H{"error": gin.H{"code": "errParsingBody", "message": "Unable to parse body, expected json structure."}})
+		c.JSON(400, helpers.ErrorInvalid("body"))
 		return
 	}
 
 	if input.Email == "" {
-		c.JSON(400, gin.H{"error": gin.H{"code": "errMissingEmail", "message": "Required 'email' was not found."}})
+		c.JSON(400, helpers.ErrorMissing("email"))
 		return
 	}
 
 	if input.MasterHash == "" {
-		c.JSON(400, gin.H{"error": gin.H{"code": "errMissingMasterHash", "message": "Required 'masterHash' was not found."}})
+		c.JSON(400, helpers.ErrorMissing("masterHash"))
 		return
 	}
 
 	if input.ProtectedDatabaseKey == "" {
-		c.JSON(400, gin.H{"error": gin.H{"code": "errMissingProtectedDatabaseKey", "message": "Required 'protectedDatabaseKey' was not found."}})
+		c.JSON(400, helpers.ErrorMissing("protectedDatabaseKey"))
 		return
 	}
 
 	if input.ProtectedDatabaseKeyIv == "" {
-		c.JSON(400, gin.H{"error": gin.H{"code": "errMissingProtectedDatabaseKeyIv", "message": "Required 'protectedDatabaseKeyIv' was not found."}})
+		c.JSON(400, helpers.ErrorMissing("protectedDatabaseKeyIv"))
 		return
 	}
 
 	if !validations.IsEmailValid(input.Email) {
-		c.JSON(400, gin.H{"error": gin.H{"code": "errInvalidEmail", "message": "Required 'email' is malformed."}})
+		c.JSON(400, helpers.ErrorInvalid("email"))
 		return
 	}
 
 	decodedMasterHash, dmhErr := base64.StdEncoding.DecodeString(input.MasterHash)
 	if dmhErr != nil {
-		c.JSON(400, gin.H{"error": gin.H{"code": "errParsingMasterHash", "message": "Unable to parse 'masterHash', expected base64 encoding."}})
+		c.JSON(400, helpers.ErrorInvalid("masterHash"))
 		return
 	}
 
 	decodedProtectedDatabaseKey, dpdkErr := base64.StdEncoding.DecodeString(input.ProtectedDatabaseKey)
 	if dpdkErr != nil {
-		c.JSON(400, gin.H{"error": gin.H{"code": "errParsingProtectedDatabaseKey", "message": "Unable to parse 'protectedDatabaseKey', expected base64 encoding."}})
+		c.JSON(400, helpers.ErrorInvalid("protectedDatabaseKey"))
 		return
 	}
 
 	decodedProtectedDatabaseKeyIv, dpdkiErr := base64.StdEncoding.DecodeString(input.ProtectedDatabaseKeyIv)
 	if dpdkiErr != nil {
-		c.JSON(400, gin.H{"error": gin.H{"code": "errParsingProtectedDatabaseKeyIv", "message": "Unable to parse 'protectedDatabaseKeyIv', expected base64 encoding."}})
+		c.JSON(400, helpers.ErrorInvalid("protectedDatabaseKeyIv"))
 		return
 	}
 
 	testUser, _ := db.GetUserViaEmail(input.Email)
 	if testUser != nil {
-		if !testUser.Verified {
-			db.Client.User.DeleteOne(testUser).Exec(db.Context)
-		} else if testUser.Verified {
-			c.JSON(400, gin.H{"error": gin.H{"code": "errEmailInUse", "message": "Email is in use."}})
-			return
-		}
+		c.JSON(400, helpers.ErrorInUse("email"))
+		return
 	}
 
 	salt := cryptography.RandomBytes(16)
@@ -94,26 +89,18 @@ func Post(c *gin.Context) {
 		Save(db.Context)
 
 	if userErr != nil {
-		c.JSON(500, gin.H{"error": gin.H{"code": "errUnknown", "message": "An unknown error has occured. Please try again later."}})
+		c.JSON(500, helpers.ErrorCreating("user"))
 		return
 	}
 
-	randomCode := cryptography.RandomString(8)
-	challenge, challengeErr := db.Client.EmailChallenge.Create().
-		SetCode(randomCode).
-		SetUser(user).
-		SetExpiry(time.Now().Add(time.Hour)).
-		SetFor(emailchallenge.ForSignup).
-		Save(db.Context)
-
+	challenge, challengeErr := helpers.GenerateChallenge(user)
+	fmt.Println(challengeErr)
 	if challengeErr != nil {
-		c.JSON(500, gin.H{"error": gin.H{"code": "errUnknown", "message": "An unknown error has occured. Please try again later."}})
+		c.JSON(500, helpers.ErrorIssuing("challenge"))
 		return
 	}
 
-	go smtp.SendTemplate(input.Email, "PasswordManager5 Email Verification", smtp.ChallengeTemplate, smtp.ChallengeTemplateData{
-		Code: randomCode,
-	})
+	availableChallenges := helpers.GetAvailableChallenges(user)
 
-	c.JSON(200, gin.H{"emailChallengeId": challenge.ID.String()})
+	c.JSON(200, gin.H{"challengeId": challenge.ID.String(), "availableChallenges": availableChallenges})
 }

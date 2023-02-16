@@ -20,6 +20,18 @@ func (f AdditionalFieldFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Va
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.AdditionalFieldMutation", m)
 }
 
+// The ChallengeFunc type is an adapter to allow the use of ordinary
+// function as Challenge mutator.
+type ChallengeFunc func(context.Context, *ent.ChallengeMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f ChallengeFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.ChallengeMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.ChallengeMutation", m)
+}
+
 // The EmailChallengeFunc type is an adapter to allow the use of ordinary
 // function as EmailChallenge mutator.
 type EmailChallengeFunc func(context.Context, *ent.EmailChallengeMutation) (ent.Value, error)
@@ -114,6 +126,18 @@ func (f WebAuthnCredentialFunc) Mutate(ctx context.Context, m ent.Mutation) (ent
 		return f(ctx, mv)
 	}
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.WebAuthnCredentialMutation", m)
+}
+
+// The WebAuthnRegisterChallengeFunc type is an adapter to allow the use of ordinary
+// function as WebAuthnRegisterChallenge mutator.
+type WebAuthnRegisterChallengeFunc func(context.Context, *ent.WebAuthnRegisterChallengeMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f WebAuthnRegisterChallengeFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.WebAuthnRegisterChallengeMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.WebAuthnRegisterChallengeMutation", m)
 }
 
 // Condition is a hook condition function.

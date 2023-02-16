@@ -11,8 +11,8 @@ import (
 	"github.com/pquerna/otp/totp"
 
 	"PasswordManager/api/lib/db"
+	"PasswordManager/api/lib/helpers"
 	"PasswordManager/ent"
-	"PasswordManager/ent/user"
 )
 
 type GetRegisterInput struct{}
@@ -30,8 +30,9 @@ func GetRegister(c *gin.Context) {
 		AccountName: authedUser.Email,
 		Algorithm:   otp.AlgorithmSHA512,
 	})
+
 	if totpErr != nil {
-		c.JSON(500, gin.H{"error": gin.H{"code": "errUnknown", "message": "An unknown error has occured. Please try again later."}})
+		c.JSON(500, helpers.ErrorCreating("totpKey"))
 		return
 	}
 
@@ -43,20 +44,20 @@ func GetRegister(c *gin.Context) {
 		Save(db.Context)
 
 	if credentialErr != nil {
-		c.JSON(500, gin.H{"error": gin.H{"code": "errUnknown", "message": "An unknown error has occured. Please try again later."}})
+		c.JSON(500, helpers.ErrorCreating("totpCredential"))
 		return
 	}
 
 	secretQr, sqErr := totpKey.Image(512, 512)
 	if sqErr != nil {
-		c.JSON(500, gin.H{"error": gin.H{"code": "errUnknown", "message": "An unknown error has occured. Please try again later."}})
+		c.JSON(500, helpers.ErrorCreating("totpSecretQr"))
 		return
 	}
 
 	var buffer bytes.Buffer
 	imageErr := jpeg.Encode(&buffer, secretQr, nil)
 	if imageErr != nil {
-		c.JSON(500, gin.H{"error": gin.H{"code": "errUnknown", "message": "An unknown error has occured. Please try again later."}})
+		c.JSON(500, helpers.ErrorCreating("totpSecretQr"))
 		return
 	}
 
@@ -72,46 +73,41 @@ func PostRegister(c *gin.Context) {
 
 	bindingErr := c.Bind(&input)
 	if bindingErr != nil {
-		c.JSON(400, gin.H{"error": gin.H{"code": "errParsingBody", "message": "Unable to parse body, expected json structure."}})
+		c.JSON(400, helpers.ErrorInvalid("body"))
 		return
 	}
 
 	if input.TotpCredentialId == "" {
-		c.JSON(400, gin.H{"error": gin.H{"code": "errMissingTotpCredentialId", "message": "Required 'totpCredentialId' was not found."}})
+		c.JSON(400, helpers.ErrorMissing("totpCredentialId"))
 		return
 	}
 
 	decodedChallengeId, dciErr := uuid.Parse(input.TotpCredentialId)
 	if dciErr != nil {
-		c.JSON(400, gin.H{"error": gin.H{"code": "errParsingTotpCredentialId", "message": "Unable to parse 'totpCredentialId', expected uuid."}})
+		c.JSON(400, helpers.ErrorInvalid("totpCredentialId"))
 		return
 	}
 
 	credential, credentialErr := db.GetUserTotpCredential(authedUser)
 	if credentialErr != nil {
-		c.JSON(400, gin.H{"error": gin.H{"code": "errTotpCredentialNotFound", "message": "Unable to find valid totp credential using 'totpCredentialId'."}})
+		c.JSON(400, helpers.ErrorInvalid("totpCredential"))
 		return
 	}
 
 	if credential.ID != decodedChallengeId {
-		c.JSON(400, gin.H{"error": gin.H{"code": "errTotpCredentialNotFound", "message": "Unable to find valid totp credential using 'totpCredentialId'."}})
+		c.JSON(400, helpers.ErrorInvalid("totpCredential"))
 		return
 	}
 
 	valid := totp.Validate(input.Code, credential.Secret)
 	if valid {
 		credential.Update().SetValidated(true).Exec(db.Context)
-
-		if authedUser.Default2FA != user.Default2FAWebauthn {
-			authedUser.Update().SetDefault2FA(user.Default2FATotp).Exec(db.Context)
-		}
-
+		authedUser.Update().SetTotpEnabled(true).Exec(db.Context)
 		c.JSON(200, gin.H{"totpCredentialId": credential.ID.String()})
 	} else if !valid {
 		db.Client.TotpCredential.DeleteOne(credential).Exec(db.Context)
-
 		if credential.ID != decodedChallengeId {
-			c.JSON(400, gin.H{"error": gin.H{"code": "errIncorrectTotpChallengeCode", "message": "Incorrect code for totpChallenge."}})
+			c.JSON(400, helpers.ErrorChallenge("code"))
 			return
 		}
 	}

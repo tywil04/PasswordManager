@@ -3,14 +3,14 @@
 package ent
 
 import (
-	"PasswordManager/ent/emailchallenge"
+	"PasswordManager/ent/challenge"
 	"PasswordManager/ent/password"
 	"PasswordManager/ent/predicate"
 	"PasswordManager/ent/session"
 	"PasswordManager/ent/totpcredential"
 	"PasswordManager/ent/user"
-	"PasswordManager/ent/webauthnchallenge"
 	"PasswordManager/ent/webauthncredential"
+	"PasswordManager/ent/webauthnregisterchallenge"
 	"context"
 	"database/sql/driver"
 	"fmt"
@@ -25,16 +25,16 @@ import (
 // UserQuery is the builder for querying User entities.
 type UserQuery struct {
 	config
-	ctx                     *QueryContext
-	order                   []OrderFunc
-	inters                  []Interceptor
-	predicates              []predicate.User
-	withEmailChallenges     *EmailChallengeQuery
-	withTotpCredential      *TotpCredentialQuery
-	withWebauthnCredentials *WebAuthnCredentialQuery
-	withWebauthnChallenges  *WebAuthnChallengeQuery
-	withPasswords           *PasswordQuery
-	withSessions            *SessionQuery
+	ctx                            *QueryContext
+	order                          []OrderFunc
+	inters                         []Interceptor
+	predicates                     []predicate.User
+	withTotpCredential             *TotpCredentialQuery
+	withWebauthnCredentials        *WebAuthnCredentialQuery
+	withWebauthnRegisterChallenges *WebAuthnRegisterChallengeQuery
+	withPasswords                  *PasswordQuery
+	withSessions                   *SessionQuery
+	withChallenges                 *ChallengeQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -69,28 +69,6 @@ func (uq *UserQuery) Unique(unique bool) *UserQuery {
 func (uq *UserQuery) Order(o ...OrderFunc) *UserQuery {
 	uq.order = append(uq.order, o...)
 	return uq
-}
-
-// QueryEmailChallenges chains the current query on the "emailChallenges" edge.
-func (uq *UserQuery) QueryEmailChallenges() *EmailChallengeQuery {
-	query := (&EmailChallengeClient{config: uq.config}).Query()
-	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
-		if err := uq.prepareQuery(ctx); err != nil {
-			return nil, err
-		}
-		selector := uq.sqlQuery(ctx)
-		if err := selector.Err(); err != nil {
-			return nil, err
-		}
-		step := sqlgraph.NewStep(
-			sqlgraph.From(user.Table, user.FieldID, selector),
-			sqlgraph.To(emailchallenge.Table, emailchallenge.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, user.EmailChallengesTable, user.EmailChallengesColumn),
-		)
-		fromU = sqlgraph.SetNeighbors(uq.driver.Dialect(), step)
-		return fromU, nil
-	}
-	return query
 }
 
 // QueryTotpCredential chains the current query on the "totpCredential" edge.
@@ -137,9 +115,9 @@ func (uq *UserQuery) QueryWebauthnCredentials() *WebAuthnCredentialQuery {
 	return query
 }
 
-// QueryWebauthnChallenges chains the current query on the "webauthnChallenges" edge.
-func (uq *UserQuery) QueryWebauthnChallenges() *WebAuthnChallengeQuery {
-	query := (&WebAuthnChallengeClient{config: uq.config}).Query()
+// QueryWebauthnRegisterChallenges chains the current query on the "webauthnRegisterChallenges" edge.
+func (uq *UserQuery) QueryWebauthnRegisterChallenges() *WebAuthnRegisterChallengeQuery {
+	query := (&WebAuthnRegisterChallengeClient{config: uq.config}).Query()
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
 		if err := uq.prepareQuery(ctx); err != nil {
 			return nil, err
@@ -150,8 +128,8 @@ func (uq *UserQuery) QueryWebauthnChallenges() *WebAuthnChallengeQuery {
 		}
 		step := sqlgraph.NewStep(
 			sqlgraph.From(user.Table, user.FieldID, selector),
-			sqlgraph.To(webauthnchallenge.Table, webauthnchallenge.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, user.WebauthnChallengesTable, user.WebauthnChallengesColumn),
+			sqlgraph.To(webauthnregisterchallenge.Table, webauthnregisterchallenge.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, user.WebauthnRegisterChallengesTable, user.WebauthnRegisterChallengesColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(uq.driver.Dialect(), step)
 		return fromU, nil
@@ -196,6 +174,28 @@ func (uq *UserQuery) QuerySessions() *SessionQuery {
 			sqlgraph.From(user.Table, user.FieldID, selector),
 			sqlgraph.To(session.Table, session.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, user.SessionsTable, user.SessionsColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(uq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryChallenges chains the current query on the "challenges" edge.
+func (uq *UserQuery) QueryChallenges() *ChallengeQuery {
+	query := (&ChallengeClient{config: uq.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := uq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := uq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(user.Table, user.FieldID, selector),
+			sqlgraph.To(challenge.Table, challenge.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, user.ChallengesTable, user.ChallengesColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(uq.driver.Dialect(), step)
 		return fromU, nil
@@ -388,32 +388,21 @@ func (uq *UserQuery) Clone() *UserQuery {
 		return nil
 	}
 	return &UserQuery{
-		config:                  uq.config,
-		ctx:                     uq.ctx.Clone(),
-		order:                   append([]OrderFunc{}, uq.order...),
-		inters:                  append([]Interceptor{}, uq.inters...),
-		predicates:              append([]predicate.User{}, uq.predicates...),
-		withEmailChallenges:     uq.withEmailChallenges.Clone(),
-		withTotpCredential:      uq.withTotpCredential.Clone(),
-		withWebauthnCredentials: uq.withWebauthnCredentials.Clone(),
-		withWebauthnChallenges:  uq.withWebauthnChallenges.Clone(),
-		withPasswords:           uq.withPasswords.Clone(),
-		withSessions:            uq.withSessions.Clone(),
+		config:                         uq.config,
+		ctx:                            uq.ctx.Clone(),
+		order:                          append([]OrderFunc{}, uq.order...),
+		inters:                         append([]Interceptor{}, uq.inters...),
+		predicates:                     append([]predicate.User{}, uq.predicates...),
+		withTotpCredential:             uq.withTotpCredential.Clone(),
+		withWebauthnCredentials:        uq.withWebauthnCredentials.Clone(),
+		withWebauthnRegisterChallenges: uq.withWebauthnRegisterChallenges.Clone(),
+		withPasswords:                  uq.withPasswords.Clone(),
+		withSessions:                   uq.withSessions.Clone(),
+		withChallenges:                 uq.withChallenges.Clone(),
 		// clone intermediate query.
 		sql:  uq.sql.Clone(),
 		path: uq.path,
 	}
-}
-
-// WithEmailChallenges tells the query-builder to eager-load the nodes that are connected to
-// the "emailChallenges" edge. The optional arguments are used to configure the query builder of the edge.
-func (uq *UserQuery) WithEmailChallenges(opts ...func(*EmailChallengeQuery)) *UserQuery {
-	query := (&EmailChallengeClient{config: uq.config}).Query()
-	for _, opt := range opts {
-		opt(query)
-	}
-	uq.withEmailChallenges = query
-	return uq
 }
 
 // WithTotpCredential tells the query-builder to eager-load the nodes that are connected to
@@ -438,14 +427,14 @@ func (uq *UserQuery) WithWebauthnCredentials(opts ...func(*WebAuthnCredentialQue
 	return uq
 }
 
-// WithWebauthnChallenges tells the query-builder to eager-load the nodes that are connected to
-// the "webauthnChallenges" edge. The optional arguments are used to configure the query builder of the edge.
-func (uq *UserQuery) WithWebauthnChallenges(opts ...func(*WebAuthnChallengeQuery)) *UserQuery {
-	query := (&WebAuthnChallengeClient{config: uq.config}).Query()
+// WithWebauthnRegisterChallenges tells the query-builder to eager-load the nodes that are connected to
+// the "webauthnRegisterChallenges" edge. The optional arguments are used to configure the query builder of the edge.
+func (uq *UserQuery) WithWebauthnRegisterChallenges(opts ...func(*WebAuthnRegisterChallengeQuery)) *UserQuery {
+	query := (&WebAuthnRegisterChallengeClient{config: uq.config}).Query()
 	for _, opt := range opts {
 		opt(query)
 	}
-	uq.withWebauthnChallenges = query
+	uq.withWebauthnRegisterChallenges = query
 	return uq
 }
 
@@ -468,6 +457,17 @@ func (uq *UserQuery) WithSessions(opts ...func(*SessionQuery)) *UserQuery {
 		opt(query)
 	}
 	uq.withSessions = query
+	return uq
+}
+
+// WithChallenges tells the query-builder to eager-load the nodes that are connected to
+// the "challenges" edge. The optional arguments are used to configure the query builder of the edge.
+func (uq *UserQuery) WithChallenges(opts ...func(*ChallengeQuery)) *UserQuery {
+	query := (&ChallengeClient{config: uq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	uq.withChallenges = query
 	return uq
 }
 
@@ -552,12 +552,12 @@ func (uq *UserQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*User, e
 		nodes       = []*User{}
 		_spec       = uq.querySpec()
 		loadedTypes = [6]bool{
-			uq.withEmailChallenges != nil,
 			uq.withTotpCredential != nil,
 			uq.withWebauthnCredentials != nil,
-			uq.withWebauthnChallenges != nil,
+			uq.withWebauthnRegisterChallenges != nil,
 			uq.withPasswords != nil,
 			uq.withSessions != nil,
+			uq.withChallenges != nil,
 		}
 	)
 	_spec.ScanValues = func(columns []string) ([]any, error) {
@@ -578,13 +578,6 @@ func (uq *UserQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*User, e
 	if len(nodes) == 0 {
 		return nodes, nil
 	}
-	if query := uq.withEmailChallenges; query != nil {
-		if err := uq.loadEmailChallenges(ctx, query, nodes,
-			func(n *User) { n.Edges.EmailChallenges = []*EmailChallenge{} },
-			func(n *User, e *EmailChallenge) { n.Edges.EmailChallenges = append(n.Edges.EmailChallenges, e) }); err != nil {
-			return nil, err
-		}
-	}
 	if query := uq.withTotpCredential; query != nil {
 		if err := uq.loadTotpCredential(ctx, query, nodes, nil,
 			func(n *User, e *TotpCredential) { n.Edges.TotpCredential = e }); err != nil {
@@ -600,11 +593,11 @@ func (uq *UserQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*User, e
 			return nil, err
 		}
 	}
-	if query := uq.withWebauthnChallenges; query != nil {
-		if err := uq.loadWebauthnChallenges(ctx, query, nodes,
-			func(n *User) { n.Edges.WebauthnChallenges = []*WebAuthnChallenge{} },
-			func(n *User, e *WebAuthnChallenge) {
-				n.Edges.WebauthnChallenges = append(n.Edges.WebauthnChallenges, e)
+	if query := uq.withWebauthnRegisterChallenges; query != nil {
+		if err := uq.loadWebauthnRegisterChallenges(ctx, query, nodes,
+			func(n *User) { n.Edges.WebauthnRegisterChallenges = []*WebAuthnRegisterChallenge{} },
+			func(n *User, e *WebAuthnRegisterChallenge) {
+				n.Edges.WebauthnRegisterChallenges = append(n.Edges.WebauthnRegisterChallenges, e)
 			}); err != nil {
 			return nil, err
 		}
@@ -623,40 +616,16 @@ func (uq *UserQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*User, e
 			return nil, err
 		}
 	}
+	if query := uq.withChallenges; query != nil {
+		if err := uq.loadChallenges(ctx, query, nodes,
+			func(n *User) { n.Edges.Challenges = []*Challenge{} },
+			func(n *User, e *Challenge) { n.Edges.Challenges = append(n.Edges.Challenges, e) }); err != nil {
+			return nil, err
+		}
+	}
 	return nodes, nil
 }
 
-func (uq *UserQuery) loadEmailChallenges(ctx context.Context, query *EmailChallengeQuery, nodes []*User, init func(*User), assign func(*User, *EmailChallenge)) error {
-	fks := make([]driver.Value, 0, len(nodes))
-	nodeids := make(map[uuid.UUID]*User)
-	for i := range nodes {
-		fks = append(fks, nodes[i].ID)
-		nodeids[nodes[i].ID] = nodes[i]
-		if init != nil {
-			init(nodes[i])
-		}
-	}
-	query.withFKs = true
-	query.Where(predicate.EmailChallenge(func(s *sql.Selector) {
-		s.Where(sql.InValues(user.EmailChallengesColumn, fks...))
-	}))
-	neighbors, err := query.All(ctx)
-	if err != nil {
-		return err
-	}
-	for _, n := range neighbors {
-		fk := n.user_email_challenges
-		if fk == nil {
-			return fmt.Errorf(`foreign-key "user_email_challenges" is nil for node %v`, n.ID)
-		}
-		node, ok := nodeids[*fk]
-		if !ok {
-			return fmt.Errorf(`unexpected foreign-key "user_email_challenges" returned %v for node %v`, *fk, n.ID)
-		}
-		assign(node, n)
-	}
-	return nil
-}
 func (uq *UserQuery) loadTotpCredential(ctx context.Context, query *TotpCredentialQuery, nodes []*User, init func(*User), assign func(*User, *TotpCredential)) error {
 	fks := make([]driver.Value, 0, len(nodes))
 	nodeids := make(map[uuid.UUID]*User)
@@ -716,7 +685,7 @@ func (uq *UserQuery) loadWebauthnCredentials(ctx context.Context, query *WebAuth
 	}
 	return nil
 }
-func (uq *UserQuery) loadWebauthnChallenges(ctx context.Context, query *WebAuthnChallengeQuery, nodes []*User, init func(*User), assign func(*User, *WebAuthnChallenge)) error {
+func (uq *UserQuery) loadWebauthnRegisterChallenges(ctx context.Context, query *WebAuthnRegisterChallengeQuery, nodes []*User, init func(*User), assign func(*User, *WebAuthnRegisterChallenge)) error {
 	fks := make([]driver.Value, 0, len(nodes))
 	nodeids := make(map[uuid.UUID]*User)
 	for i := range nodes {
@@ -727,21 +696,21 @@ func (uq *UserQuery) loadWebauthnChallenges(ctx context.Context, query *WebAuthn
 		}
 	}
 	query.withFKs = true
-	query.Where(predicate.WebAuthnChallenge(func(s *sql.Selector) {
-		s.Where(sql.InValues(user.WebauthnChallengesColumn, fks...))
+	query.Where(predicate.WebAuthnRegisterChallenge(func(s *sql.Selector) {
+		s.Where(sql.InValues(user.WebauthnRegisterChallengesColumn, fks...))
 	}))
 	neighbors, err := query.All(ctx)
 	if err != nil {
 		return err
 	}
 	for _, n := range neighbors {
-		fk := n.user_webauthn_challenges
+		fk := n.user_webauthn_register_challenges
 		if fk == nil {
-			return fmt.Errorf(`foreign-key "user_webauthn_challenges" is nil for node %v`, n.ID)
+			return fmt.Errorf(`foreign-key "user_webauthn_register_challenges" is nil for node %v`, n.ID)
 		}
 		node, ok := nodeids[*fk]
 		if !ok {
-			return fmt.Errorf(`unexpected foreign-key "user_webauthn_challenges" returned %v for node %v`, *fk, n.ID)
+			return fmt.Errorf(`unexpected foreign-key "user_webauthn_register_challenges" returned %v for node %v`, *fk, n.ID)
 		}
 		assign(node, n)
 	}
@@ -804,6 +773,37 @@ func (uq *UserQuery) loadSessions(ctx context.Context, query *SessionQuery, node
 		node, ok := nodeids[*fk]
 		if !ok {
 			return fmt.Errorf(`unexpected foreign-key "user_sessions" returned %v for node %v`, *fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (uq *UserQuery) loadChallenges(ctx context.Context, query *ChallengeQuery, nodes []*User, init func(*User), assign func(*User, *Challenge)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[uuid.UUID]*User)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	query.withFKs = true
+	query.Where(predicate.Challenge(func(s *sql.Selector) {
+		s.Where(sql.InValues(user.ChallengesColumn, fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.user_challenges
+		if fk == nil {
+			return fmt.Errorf(`foreign-key "user_challenges" is nil for node %v`, n.ID)
+		}
+		node, ok := nodeids[*fk]
+		if !ok {
+			return fmt.Errorf(`unexpected foreign-key "user_challenges" returned %v for node %v`, *fk, n.ID)
 		}
 		assign(node, n)
 	}

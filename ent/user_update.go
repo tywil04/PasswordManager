@@ -3,14 +3,14 @@
 package ent
 
 import (
-	"PasswordManager/ent/emailchallenge"
+	"PasswordManager/ent/challenge"
 	"PasswordManager/ent/password"
 	"PasswordManager/ent/predicate"
 	"PasswordManager/ent/session"
 	"PasswordManager/ent/totpcredential"
 	"PasswordManager/ent/user"
-	"PasswordManager/ent/webauthnchallenge"
 	"PasswordManager/ent/webauthncredential"
+	"PasswordManager/ent/webauthnregisterchallenge"
 	"context"
 	"errors"
 	"fmt"
@@ -64,16 +64,30 @@ func (uu *UserUpdate) SetProtectedDatabaseKeyIv(b []byte) *UserUpdate {
 	return uu
 }
 
-// SetDefault2FA sets the "default2FA" field.
-func (uu *UserUpdate) SetDefault2FA(u user.Default2FA) *UserUpdate {
-	uu.mutation.SetDefault2FA(u)
+// SetWebauthnEnabled sets the "webauthnEnabled" field.
+func (uu *UserUpdate) SetWebauthnEnabled(b bool) *UserUpdate {
+	uu.mutation.SetWebauthnEnabled(b)
 	return uu
 }
 
-// SetNillableDefault2FA sets the "default2FA" field if the given value is not nil.
-func (uu *UserUpdate) SetNillableDefault2FA(u *user.Default2FA) *UserUpdate {
-	if u != nil {
-		uu.SetDefault2FA(*u)
+// SetNillableWebauthnEnabled sets the "webauthnEnabled" field if the given value is not nil.
+func (uu *UserUpdate) SetNillableWebauthnEnabled(b *bool) *UserUpdate {
+	if b != nil {
+		uu.SetWebauthnEnabled(*b)
+	}
+	return uu
+}
+
+// SetTotpEnabled sets the "totpEnabled" field.
+func (uu *UserUpdate) SetTotpEnabled(b bool) *UserUpdate {
+	uu.mutation.SetTotpEnabled(b)
+	return uu
+}
+
+// SetNillableTotpEnabled sets the "totpEnabled" field if the given value is not nil.
+func (uu *UserUpdate) SetNillableTotpEnabled(b *bool) *UserUpdate {
+	if b != nil {
+		uu.SetTotpEnabled(*b)
 	}
 	return uu
 }
@@ -90,21 +104,6 @@ func (uu *UserUpdate) SetNillableVerified(b *bool) *UserUpdate {
 		uu.SetVerified(*b)
 	}
 	return uu
-}
-
-// AddEmailChallengeIDs adds the "emailChallenges" edge to the EmailChallenge entity by IDs.
-func (uu *UserUpdate) AddEmailChallengeIDs(ids ...uuid.UUID) *UserUpdate {
-	uu.mutation.AddEmailChallengeIDs(ids...)
-	return uu
-}
-
-// AddEmailChallenges adds the "emailChallenges" edges to the EmailChallenge entity.
-func (uu *UserUpdate) AddEmailChallenges(e ...*EmailChallenge) *UserUpdate {
-	ids := make([]uuid.UUID, len(e))
-	for i := range e {
-		ids[i] = e[i].ID
-	}
-	return uu.AddEmailChallengeIDs(ids...)
 }
 
 // SetTotpCredentialID sets the "totpCredential" edge to the TotpCredential entity by ID.
@@ -141,19 +140,19 @@ func (uu *UserUpdate) AddWebauthnCredentials(w ...*WebAuthnCredential) *UserUpda
 	return uu.AddWebauthnCredentialIDs(ids...)
 }
 
-// AddWebauthnChallengeIDs adds the "webauthnChallenges" edge to the WebAuthnChallenge entity by IDs.
-func (uu *UserUpdate) AddWebauthnChallengeIDs(ids ...uuid.UUID) *UserUpdate {
-	uu.mutation.AddWebauthnChallengeIDs(ids...)
+// AddWebauthnRegisterChallengeIDs adds the "webauthnRegisterChallenges" edge to the WebAuthnRegisterChallenge entity by IDs.
+func (uu *UserUpdate) AddWebauthnRegisterChallengeIDs(ids ...uuid.UUID) *UserUpdate {
+	uu.mutation.AddWebauthnRegisterChallengeIDs(ids...)
 	return uu
 }
 
-// AddWebauthnChallenges adds the "webauthnChallenges" edges to the WebAuthnChallenge entity.
-func (uu *UserUpdate) AddWebauthnChallenges(w ...*WebAuthnChallenge) *UserUpdate {
+// AddWebauthnRegisterChallenges adds the "webauthnRegisterChallenges" edges to the WebAuthnRegisterChallenge entity.
+func (uu *UserUpdate) AddWebauthnRegisterChallenges(w ...*WebAuthnRegisterChallenge) *UserUpdate {
 	ids := make([]uuid.UUID, len(w))
 	for i := range w {
 		ids[i] = w[i].ID
 	}
-	return uu.AddWebauthnChallengeIDs(ids...)
+	return uu.AddWebauthnRegisterChallengeIDs(ids...)
 }
 
 // AddPasswordIDs adds the "passwords" edge to the Password entity by IDs.
@@ -186,30 +185,24 @@ func (uu *UserUpdate) AddSessions(s ...*Session) *UserUpdate {
 	return uu.AddSessionIDs(ids...)
 }
 
+// AddChallengeIDs adds the "challenges" edge to the Challenge entity by IDs.
+func (uu *UserUpdate) AddChallengeIDs(ids ...uuid.UUID) *UserUpdate {
+	uu.mutation.AddChallengeIDs(ids...)
+	return uu
+}
+
+// AddChallenges adds the "challenges" edges to the Challenge entity.
+func (uu *UserUpdate) AddChallenges(c ...*Challenge) *UserUpdate {
+	ids := make([]uuid.UUID, len(c))
+	for i := range c {
+		ids[i] = c[i].ID
+	}
+	return uu.AddChallengeIDs(ids...)
+}
+
 // Mutation returns the UserMutation object of the builder.
 func (uu *UserUpdate) Mutation() *UserMutation {
 	return uu.mutation
-}
-
-// ClearEmailChallenges clears all "emailChallenges" edges to the EmailChallenge entity.
-func (uu *UserUpdate) ClearEmailChallenges() *UserUpdate {
-	uu.mutation.ClearEmailChallenges()
-	return uu
-}
-
-// RemoveEmailChallengeIDs removes the "emailChallenges" edge to EmailChallenge entities by IDs.
-func (uu *UserUpdate) RemoveEmailChallengeIDs(ids ...uuid.UUID) *UserUpdate {
-	uu.mutation.RemoveEmailChallengeIDs(ids...)
-	return uu
-}
-
-// RemoveEmailChallenges removes "emailChallenges" edges to EmailChallenge entities.
-func (uu *UserUpdate) RemoveEmailChallenges(e ...*EmailChallenge) *UserUpdate {
-	ids := make([]uuid.UUID, len(e))
-	for i := range e {
-		ids[i] = e[i].ID
-	}
-	return uu.RemoveEmailChallengeIDs(ids...)
 }
 
 // ClearTotpCredential clears the "totpCredential" edge to the TotpCredential entity.
@@ -239,25 +232,25 @@ func (uu *UserUpdate) RemoveWebauthnCredentials(w ...*WebAuthnCredential) *UserU
 	return uu.RemoveWebauthnCredentialIDs(ids...)
 }
 
-// ClearWebauthnChallenges clears all "webauthnChallenges" edges to the WebAuthnChallenge entity.
-func (uu *UserUpdate) ClearWebauthnChallenges() *UserUpdate {
-	uu.mutation.ClearWebauthnChallenges()
+// ClearWebauthnRegisterChallenges clears all "webauthnRegisterChallenges" edges to the WebAuthnRegisterChallenge entity.
+func (uu *UserUpdate) ClearWebauthnRegisterChallenges() *UserUpdate {
+	uu.mutation.ClearWebauthnRegisterChallenges()
 	return uu
 }
 
-// RemoveWebauthnChallengeIDs removes the "webauthnChallenges" edge to WebAuthnChallenge entities by IDs.
-func (uu *UserUpdate) RemoveWebauthnChallengeIDs(ids ...uuid.UUID) *UserUpdate {
-	uu.mutation.RemoveWebauthnChallengeIDs(ids...)
+// RemoveWebauthnRegisterChallengeIDs removes the "webauthnRegisterChallenges" edge to WebAuthnRegisterChallenge entities by IDs.
+func (uu *UserUpdate) RemoveWebauthnRegisterChallengeIDs(ids ...uuid.UUID) *UserUpdate {
+	uu.mutation.RemoveWebauthnRegisterChallengeIDs(ids...)
 	return uu
 }
 
-// RemoveWebauthnChallenges removes "webauthnChallenges" edges to WebAuthnChallenge entities.
-func (uu *UserUpdate) RemoveWebauthnChallenges(w ...*WebAuthnChallenge) *UserUpdate {
+// RemoveWebauthnRegisterChallenges removes "webauthnRegisterChallenges" edges to WebAuthnRegisterChallenge entities.
+func (uu *UserUpdate) RemoveWebauthnRegisterChallenges(w ...*WebAuthnRegisterChallenge) *UserUpdate {
 	ids := make([]uuid.UUID, len(w))
 	for i := range w {
 		ids[i] = w[i].ID
 	}
-	return uu.RemoveWebauthnChallengeIDs(ids...)
+	return uu.RemoveWebauthnRegisterChallengeIDs(ids...)
 }
 
 // ClearPasswords clears all "passwords" edges to the Password entity.
@@ -300,6 +293,27 @@ func (uu *UserUpdate) RemoveSessions(s ...*Session) *UserUpdate {
 		ids[i] = s[i].ID
 	}
 	return uu.RemoveSessionIDs(ids...)
+}
+
+// ClearChallenges clears all "challenges" edges to the Challenge entity.
+func (uu *UserUpdate) ClearChallenges() *UserUpdate {
+	uu.mutation.ClearChallenges()
+	return uu
+}
+
+// RemoveChallengeIDs removes the "challenges" edge to Challenge entities by IDs.
+func (uu *UserUpdate) RemoveChallengeIDs(ids ...uuid.UUID) *UserUpdate {
+	uu.mutation.RemoveChallengeIDs(ids...)
+	return uu
+}
+
+// RemoveChallenges removes "challenges" edges to Challenge entities.
+func (uu *UserUpdate) RemoveChallenges(c ...*Challenge) *UserUpdate {
+	ids := make([]uuid.UUID, len(c))
+	for i := range c {
+		ids[i] = c[i].ID
+	}
+	return uu.RemoveChallengeIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -356,11 +370,6 @@ func (uu *UserUpdate) check() error {
 			return &ValidationError{Name: "protectedDatabaseKeyIv", err: fmt.Errorf(`ent: validator failed for field "User.protectedDatabaseKeyIv": %w`, err)}
 		}
 	}
-	if v, ok := uu.mutation.Default2FA(); ok {
-		if err := user.Default2FAValidator(v); err != nil {
-			return &ValidationError{Name: "default2FA", err: fmt.Errorf(`ent: validator failed for field "User.default2FA": %w`, err)}
-		}
-	}
 	return nil
 }
 
@@ -400,65 +409,14 @@ func (uu *UserUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if value, ok := uu.mutation.ProtectedDatabaseKeyIv(); ok {
 		_spec.SetField(user.FieldProtectedDatabaseKeyIv, field.TypeBytes, value)
 	}
-	if value, ok := uu.mutation.Default2FA(); ok {
-		_spec.SetField(user.FieldDefault2FA, field.TypeEnum, value)
+	if value, ok := uu.mutation.WebauthnEnabled(); ok {
+		_spec.SetField(user.FieldWebauthnEnabled, field.TypeBool, value)
+	}
+	if value, ok := uu.mutation.TotpEnabled(); ok {
+		_spec.SetField(user.FieldTotpEnabled, field.TypeBool, value)
 	}
 	if value, ok := uu.mutation.Verified(); ok {
 		_spec.SetField(user.FieldVerified, field.TypeBool, value)
-	}
-	if uu.mutation.EmailChallengesCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   user.EmailChallengesTable,
-			Columns: []string{user.EmailChallengesColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeUUID,
-					Column: emailchallenge.FieldID,
-				},
-			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := uu.mutation.RemovedEmailChallengesIDs(); len(nodes) > 0 && !uu.mutation.EmailChallengesCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   user.EmailChallengesTable,
-			Columns: []string{user.EmailChallengesColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeUUID,
-					Column: emailchallenge.FieldID,
-				},
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := uu.mutation.EmailChallengesIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   user.EmailChallengesTable,
-			Columns: []string{user.EmailChallengesColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeUUID,
-					Column: emailchallenge.FieldID,
-				},
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
 	if uu.mutation.TotpCredentialCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -549,33 +507,33 @@ func (uu *UserUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if uu.mutation.WebauthnChallengesCleared() {
+	if uu.mutation.WebauthnRegisterChallengesCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   user.WebauthnChallengesTable,
-			Columns: []string{user.WebauthnChallengesColumn},
+			Table:   user.WebauthnRegisterChallengesTable,
+			Columns: []string{user.WebauthnRegisterChallengesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeUUID,
-					Column: webauthnchallenge.FieldID,
+					Column: webauthnregisterchallenge.FieldID,
 				},
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := uu.mutation.RemovedWebauthnChallengesIDs(); len(nodes) > 0 && !uu.mutation.WebauthnChallengesCleared() {
+	if nodes := uu.mutation.RemovedWebauthnRegisterChallengesIDs(); len(nodes) > 0 && !uu.mutation.WebauthnRegisterChallengesCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   user.WebauthnChallengesTable,
-			Columns: []string{user.WebauthnChallengesColumn},
+			Table:   user.WebauthnRegisterChallengesTable,
+			Columns: []string{user.WebauthnRegisterChallengesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeUUID,
-					Column: webauthnchallenge.FieldID,
+					Column: webauthnregisterchallenge.FieldID,
 				},
 			},
 		}
@@ -584,17 +542,17 @@ func (uu *UserUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := uu.mutation.WebauthnChallengesIDs(); len(nodes) > 0 {
+	if nodes := uu.mutation.WebauthnRegisterChallengesIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   user.WebauthnChallengesTable,
-			Columns: []string{user.WebauthnChallengesColumn},
+			Table:   user.WebauthnRegisterChallengesTable,
+			Columns: []string{user.WebauthnRegisterChallengesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeUUID,
-					Column: webauthnchallenge.FieldID,
+					Column: webauthnregisterchallenge.FieldID,
 				},
 			},
 		}
@@ -711,6 +669,60 @@ func (uu *UserUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if uu.mutation.ChallengesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.ChallengesTable,
+			Columns: []string{user.ChallengesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeUUID,
+					Column: challenge.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := uu.mutation.RemovedChallengesIDs(); len(nodes) > 0 && !uu.mutation.ChallengesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.ChallengesTable,
+			Columns: []string{user.ChallengesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeUUID,
+					Column: challenge.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := uu.mutation.ChallengesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.ChallengesTable,
+			Columns: []string{user.ChallengesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeUUID,
+					Column: challenge.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if n, err = sqlgraph.UpdateNodes(ctx, uu.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{user.Label}
@@ -761,16 +773,30 @@ func (uuo *UserUpdateOne) SetProtectedDatabaseKeyIv(b []byte) *UserUpdateOne {
 	return uuo
 }
 
-// SetDefault2FA sets the "default2FA" field.
-func (uuo *UserUpdateOne) SetDefault2FA(u user.Default2FA) *UserUpdateOne {
-	uuo.mutation.SetDefault2FA(u)
+// SetWebauthnEnabled sets the "webauthnEnabled" field.
+func (uuo *UserUpdateOne) SetWebauthnEnabled(b bool) *UserUpdateOne {
+	uuo.mutation.SetWebauthnEnabled(b)
 	return uuo
 }
 
-// SetNillableDefault2FA sets the "default2FA" field if the given value is not nil.
-func (uuo *UserUpdateOne) SetNillableDefault2FA(u *user.Default2FA) *UserUpdateOne {
-	if u != nil {
-		uuo.SetDefault2FA(*u)
+// SetNillableWebauthnEnabled sets the "webauthnEnabled" field if the given value is not nil.
+func (uuo *UserUpdateOne) SetNillableWebauthnEnabled(b *bool) *UserUpdateOne {
+	if b != nil {
+		uuo.SetWebauthnEnabled(*b)
+	}
+	return uuo
+}
+
+// SetTotpEnabled sets the "totpEnabled" field.
+func (uuo *UserUpdateOne) SetTotpEnabled(b bool) *UserUpdateOne {
+	uuo.mutation.SetTotpEnabled(b)
+	return uuo
+}
+
+// SetNillableTotpEnabled sets the "totpEnabled" field if the given value is not nil.
+func (uuo *UserUpdateOne) SetNillableTotpEnabled(b *bool) *UserUpdateOne {
+	if b != nil {
+		uuo.SetTotpEnabled(*b)
 	}
 	return uuo
 }
@@ -787,21 +813,6 @@ func (uuo *UserUpdateOne) SetNillableVerified(b *bool) *UserUpdateOne {
 		uuo.SetVerified(*b)
 	}
 	return uuo
-}
-
-// AddEmailChallengeIDs adds the "emailChallenges" edge to the EmailChallenge entity by IDs.
-func (uuo *UserUpdateOne) AddEmailChallengeIDs(ids ...uuid.UUID) *UserUpdateOne {
-	uuo.mutation.AddEmailChallengeIDs(ids...)
-	return uuo
-}
-
-// AddEmailChallenges adds the "emailChallenges" edges to the EmailChallenge entity.
-func (uuo *UserUpdateOne) AddEmailChallenges(e ...*EmailChallenge) *UserUpdateOne {
-	ids := make([]uuid.UUID, len(e))
-	for i := range e {
-		ids[i] = e[i].ID
-	}
-	return uuo.AddEmailChallengeIDs(ids...)
 }
 
 // SetTotpCredentialID sets the "totpCredential" edge to the TotpCredential entity by ID.
@@ -838,19 +849,19 @@ func (uuo *UserUpdateOne) AddWebauthnCredentials(w ...*WebAuthnCredential) *User
 	return uuo.AddWebauthnCredentialIDs(ids...)
 }
 
-// AddWebauthnChallengeIDs adds the "webauthnChallenges" edge to the WebAuthnChallenge entity by IDs.
-func (uuo *UserUpdateOne) AddWebauthnChallengeIDs(ids ...uuid.UUID) *UserUpdateOne {
-	uuo.mutation.AddWebauthnChallengeIDs(ids...)
+// AddWebauthnRegisterChallengeIDs adds the "webauthnRegisterChallenges" edge to the WebAuthnRegisterChallenge entity by IDs.
+func (uuo *UserUpdateOne) AddWebauthnRegisterChallengeIDs(ids ...uuid.UUID) *UserUpdateOne {
+	uuo.mutation.AddWebauthnRegisterChallengeIDs(ids...)
 	return uuo
 }
 
-// AddWebauthnChallenges adds the "webauthnChallenges" edges to the WebAuthnChallenge entity.
-func (uuo *UserUpdateOne) AddWebauthnChallenges(w ...*WebAuthnChallenge) *UserUpdateOne {
+// AddWebauthnRegisterChallenges adds the "webauthnRegisterChallenges" edges to the WebAuthnRegisterChallenge entity.
+func (uuo *UserUpdateOne) AddWebauthnRegisterChallenges(w ...*WebAuthnRegisterChallenge) *UserUpdateOne {
 	ids := make([]uuid.UUID, len(w))
 	for i := range w {
 		ids[i] = w[i].ID
 	}
-	return uuo.AddWebauthnChallengeIDs(ids...)
+	return uuo.AddWebauthnRegisterChallengeIDs(ids...)
 }
 
 // AddPasswordIDs adds the "passwords" edge to the Password entity by IDs.
@@ -883,30 +894,24 @@ func (uuo *UserUpdateOne) AddSessions(s ...*Session) *UserUpdateOne {
 	return uuo.AddSessionIDs(ids...)
 }
 
+// AddChallengeIDs adds the "challenges" edge to the Challenge entity by IDs.
+func (uuo *UserUpdateOne) AddChallengeIDs(ids ...uuid.UUID) *UserUpdateOne {
+	uuo.mutation.AddChallengeIDs(ids...)
+	return uuo
+}
+
+// AddChallenges adds the "challenges" edges to the Challenge entity.
+func (uuo *UserUpdateOne) AddChallenges(c ...*Challenge) *UserUpdateOne {
+	ids := make([]uuid.UUID, len(c))
+	for i := range c {
+		ids[i] = c[i].ID
+	}
+	return uuo.AddChallengeIDs(ids...)
+}
+
 // Mutation returns the UserMutation object of the builder.
 func (uuo *UserUpdateOne) Mutation() *UserMutation {
 	return uuo.mutation
-}
-
-// ClearEmailChallenges clears all "emailChallenges" edges to the EmailChallenge entity.
-func (uuo *UserUpdateOne) ClearEmailChallenges() *UserUpdateOne {
-	uuo.mutation.ClearEmailChallenges()
-	return uuo
-}
-
-// RemoveEmailChallengeIDs removes the "emailChallenges" edge to EmailChallenge entities by IDs.
-func (uuo *UserUpdateOne) RemoveEmailChallengeIDs(ids ...uuid.UUID) *UserUpdateOne {
-	uuo.mutation.RemoveEmailChallengeIDs(ids...)
-	return uuo
-}
-
-// RemoveEmailChallenges removes "emailChallenges" edges to EmailChallenge entities.
-func (uuo *UserUpdateOne) RemoveEmailChallenges(e ...*EmailChallenge) *UserUpdateOne {
-	ids := make([]uuid.UUID, len(e))
-	for i := range e {
-		ids[i] = e[i].ID
-	}
-	return uuo.RemoveEmailChallengeIDs(ids...)
 }
 
 // ClearTotpCredential clears the "totpCredential" edge to the TotpCredential entity.
@@ -936,25 +941,25 @@ func (uuo *UserUpdateOne) RemoveWebauthnCredentials(w ...*WebAuthnCredential) *U
 	return uuo.RemoveWebauthnCredentialIDs(ids...)
 }
 
-// ClearWebauthnChallenges clears all "webauthnChallenges" edges to the WebAuthnChallenge entity.
-func (uuo *UserUpdateOne) ClearWebauthnChallenges() *UserUpdateOne {
-	uuo.mutation.ClearWebauthnChallenges()
+// ClearWebauthnRegisterChallenges clears all "webauthnRegisterChallenges" edges to the WebAuthnRegisterChallenge entity.
+func (uuo *UserUpdateOne) ClearWebauthnRegisterChallenges() *UserUpdateOne {
+	uuo.mutation.ClearWebauthnRegisterChallenges()
 	return uuo
 }
 
-// RemoveWebauthnChallengeIDs removes the "webauthnChallenges" edge to WebAuthnChallenge entities by IDs.
-func (uuo *UserUpdateOne) RemoveWebauthnChallengeIDs(ids ...uuid.UUID) *UserUpdateOne {
-	uuo.mutation.RemoveWebauthnChallengeIDs(ids...)
+// RemoveWebauthnRegisterChallengeIDs removes the "webauthnRegisterChallenges" edge to WebAuthnRegisterChallenge entities by IDs.
+func (uuo *UserUpdateOne) RemoveWebauthnRegisterChallengeIDs(ids ...uuid.UUID) *UserUpdateOne {
+	uuo.mutation.RemoveWebauthnRegisterChallengeIDs(ids...)
 	return uuo
 }
 
-// RemoveWebauthnChallenges removes "webauthnChallenges" edges to WebAuthnChallenge entities.
-func (uuo *UserUpdateOne) RemoveWebauthnChallenges(w ...*WebAuthnChallenge) *UserUpdateOne {
+// RemoveWebauthnRegisterChallenges removes "webauthnRegisterChallenges" edges to WebAuthnRegisterChallenge entities.
+func (uuo *UserUpdateOne) RemoveWebauthnRegisterChallenges(w ...*WebAuthnRegisterChallenge) *UserUpdateOne {
 	ids := make([]uuid.UUID, len(w))
 	for i := range w {
 		ids[i] = w[i].ID
 	}
-	return uuo.RemoveWebauthnChallengeIDs(ids...)
+	return uuo.RemoveWebauthnRegisterChallengeIDs(ids...)
 }
 
 // ClearPasswords clears all "passwords" edges to the Password entity.
@@ -997,6 +1002,27 @@ func (uuo *UserUpdateOne) RemoveSessions(s ...*Session) *UserUpdateOne {
 		ids[i] = s[i].ID
 	}
 	return uuo.RemoveSessionIDs(ids...)
+}
+
+// ClearChallenges clears all "challenges" edges to the Challenge entity.
+func (uuo *UserUpdateOne) ClearChallenges() *UserUpdateOne {
+	uuo.mutation.ClearChallenges()
+	return uuo
+}
+
+// RemoveChallengeIDs removes the "challenges" edge to Challenge entities by IDs.
+func (uuo *UserUpdateOne) RemoveChallengeIDs(ids ...uuid.UUID) *UserUpdateOne {
+	uuo.mutation.RemoveChallengeIDs(ids...)
+	return uuo
+}
+
+// RemoveChallenges removes "challenges" edges to Challenge entities.
+func (uuo *UserUpdateOne) RemoveChallenges(c ...*Challenge) *UserUpdateOne {
+	ids := make([]uuid.UUID, len(c))
+	for i := range c {
+		ids[i] = c[i].ID
+	}
+	return uuo.RemoveChallengeIDs(ids...)
 }
 
 // Select allows selecting one or more fields (columns) of the returned entity.
@@ -1060,11 +1086,6 @@ func (uuo *UserUpdateOne) check() error {
 			return &ValidationError{Name: "protectedDatabaseKeyIv", err: fmt.Errorf(`ent: validator failed for field "User.protectedDatabaseKeyIv": %w`, err)}
 		}
 	}
-	if v, ok := uuo.mutation.Default2FA(); ok {
-		if err := user.Default2FAValidator(v); err != nil {
-			return &ValidationError{Name: "default2FA", err: fmt.Errorf(`ent: validator failed for field "User.default2FA": %w`, err)}
-		}
-	}
 	return nil
 }
 
@@ -1121,65 +1142,14 @@ func (uuo *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) 
 	if value, ok := uuo.mutation.ProtectedDatabaseKeyIv(); ok {
 		_spec.SetField(user.FieldProtectedDatabaseKeyIv, field.TypeBytes, value)
 	}
-	if value, ok := uuo.mutation.Default2FA(); ok {
-		_spec.SetField(user.FieldDefault2FA, field.TypeEnum, value)
+	if value, ok := uuo.mutation.WebauthnEnabled(); ok {
+		_spec.SetField(user.FieldWebauthnEnabled, field.TypeBool, value)
+	}
+	if value, ok := uuo.mutation.TotpEnabled(); ok {
+		_spec.SetField(user.FieldTotpEnabled, field.TypeBool, value)
 	}
 	if value, ok := uuo.mutation.Verified(); ok {
 		_spec.SetField(user.FieldVerified, field.TypeBool, value)
-	}
-	if uuo.mutation.EmailChallengesCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   user.EmailChallengesTable,
-			Columns: []string{user.EmailChallengesColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeUUID,
-					Column: emailchallenge.FieldID,
-				},
-			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := uuo.mutation.RemovedEmailChallengesIDs(); len(nodes) > 0 && !uuo.mutation.EmailChallengesCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   user.EmailChallengesTable,
-			Columns: []string{user.EmailChallengesColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeUUID,
-					Column: emailchallenge.FieldID,
-				},
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := uuo.mutation.EmailChallengesIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   user.EmailChallengesTable,
-			Columns: []string{user.EmailChallengesColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeUUID,
-					Column: emailchallenge.FieldID,
-				},
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
 	if uuo.mutation.TotpCredentialCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -1270,33 +1240,33 @@ func (uuo *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) 
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if uuo.mutation.WebauthnChallengesCleared() {
+	if uuo.mutation.WebauthnRegisterChallengesCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   user.WebauthnChallengesTable,
-			Columns: []string{user.WebauthnChallengesColumn},
+			Table:   user.WebauthnRegisterChallengesTable,
+			Columns: []string{user.WebauthnRegisterChallengesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeUUID,
-					Column: webauthnchallenge.FieldID,
+					Column: webauthnregisterchallenge.FieldID,
 				},
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := uuo.mutation.RemovedWebauthnChallengesIDs(); len(nodes) > 0 && !uuo.mutation.WebauthnChallengesCleared() {
+	if nodes := uuo.mutation.RemovedWebauthnRegisterChallengesIDs(); len(nodes) > 0 && !uuo.mutation.WebauthnRegisterChallengesCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   user.WebauthnChallengesTable,
-			Columns: []string{user.WebauthnChallengesColumn},
+			Table:   user.WebauthnRegisterChallengesTable,
+			Columns: []string{user.WebauthnRegisterChallengesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeUUID,
-					Column: webauthnchallenge.FieldID,
+					Column: webauthnregisterchallenge.FieldID,
 				},
 			},
 		}
@@ -1305,17 +1275,17 @@ func (uuo *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) 
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := uuo.mutation.WebauthnChallengesIDs(); len(nodes) > 0 {
+	if nodes := uuo.mutation.WebauthnRegisterChallengesIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   user.WebauthnChallengesTable,
-			Columns: []string{user.WebauthnChallengesColumn},
+			Table:   user.WebauthnRegisterChallengesTable,
+			Columns: []string{user.WebauthnRegisterChallengesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeUUID,
-					Column: webauthnchallenge.FieldID,
+					Column: webauthnregisterchallenge.FieldID,
 				},
 			},
 		}
@@ -1424,6 +1394,60 @@ func (uuo *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) 
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeUUID,
 					Column: session.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if uuo.mutation.ChallengesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.ChallengesTable,
+			Columns: []string{user.ChallengesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeUUID,
+					Column: challenge.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := uuo.mutation.RemovedChallengesIDs(); len(nodes) > 0 && !uuo.mutation.ChallengesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.ChallengesTable,
+			Columns: []string{user.ChallengesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeUUID,
+					Column: challenge.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := uuo.mutation.ChallengesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.ChallengesTable,
+			Columns: []string{user.ChallengesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeUUID,
+					Column: challenge.FieldID,
 				},
 			},
 		}

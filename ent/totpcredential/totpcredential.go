@@ -21,6 +21,8 @@ const (
 	FieldValidated = "validated"
 	// EdgeUser holds the string denoting the user edge name in mutations.
 	EdgeUser = "user"
+	// EdgeChallenge holds the string denoting the challenge edge name in mutations.
+	EdgeChallenge = "challenge"
 	// Table holds the table name of the totpcredential in the database.
 	Table = "totp_credentials"
 	// UserTable is the table that holds the user relation/edge.
@@ -30,6 +32,13 @@ const (
 	UserInverseTable = "users"
 	// UserColumn is the table column denoting the user relation/edge.
 	UserColumn = "user_totp_credential"
+	// ChallengeTable is the table that holds the challenge relation/edge.
+	ChallengeTable = "totp_credentials"
+	// ChallengeInverseTable is the table name for the Challenge entity.
+	// It exists in this package in order to avoid circular dependency with the "challenge" package.
+	ChallengeInverseTable = "challenges"
+	// ChallengeColumn is the table column denoting the challenge relation/edge.
+	ChallengeColumn = "challenge_totp_credential"
 )
 
 // Columns holds all SQL columns for totpcredential fields.
@@ -43,6 +52,7 @@ var Columns = []string{
 // ForeignKeys holds the SQL foreign-keys that are owned by the "totp_credentials"
 // table and are not defined as standalone fields in the schema.
 var ForeignKeys = []string{
+	"challenge_totp_credential",
 	"user_totp_credential",
 }
 

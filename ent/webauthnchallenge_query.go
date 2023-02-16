@@ -3,8 +3,8 @@
 package ent
 
 import (
+	"PasswordManager/ent/challenge"
 	"PasswordManager/ent/predicate"
-	"PasswordManager/ent/user"
 	"PasswordManager/ent/webauthnchallenge"
 	"context"
 	"fmt"
@@ -19,12 +19,12 @@ import (
 // WebAuthnChallengeQuery is the builder for querying WebAuthnChallenge entities.
 type WebAuthnChallengeQuery struct {
 	config
-	ctx        *QueryContext
-	order      []OrderFunc
-	inters     []Interceptor
-	predicates []predicate.WebAuthnChallenge
-	withUser   *UserQuery
-	withFKs    bool
+	ctx           *QueryContext
+	order         []OrderFunc
+	inters        []Interceptor
+	predicates    []predicate.WebAuthnChallenge
+	withChallenge *ChallengeQuery
+	withFKs       bool
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -61,9 +61,9 @@ func (wacq *WebAuthnChallengeQuery) Order(o ...OrderFunc) *WebAuthnChallengeQuer
 	return wacq
 }
 
-// QueryUser chains the current query on the "user" edge.
-func (wacq *WebAuthnChallengeQuery) QueryUser() *UserQuery {
-	query := (&UserClient{config: wacq.config}).Query()
+// QueryChallenge chains the current query on the "challenge" edge.
+func (wacq *WebAuthnChallengeQuery) QueryChallenge() *ChallengeQuery {
+	query := (&ChallengeClient{config: wacq.config}).Query()
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
 		if err := wacq.prepareQuery(ctx); err != nil {
 			return nil, err
@@ -74,8 +74,8 @@ func (wacq *WebAuthnChallengeQuery) QueryUser() *UserQuery {
 		}
 		step := sqlgraph.NewStep(
 			sqlgraph.From(webauthnchallenge.Table, webauthnchallenge.FieldID, selector),
-			sqlgraph.To(user.Table, user.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, webauthnchallenge.UserTable, webauthnchallenge.UserColumn),
+			sqlgraph.To(challenge.Table, challenge.FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, true, webauthnchallenge.ChallengeTable, webauthnchallenge.ChallengeColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(wacq.driver.Dialect(), step)
 		return fromU, nil
@@ -268,26 +268,26 @@ func (wacq *WebAuthnChallengeQuery) Clone() *WebAuthnChallengeQuery {
 		return nil
 	}
 	return &WebAuthnChallengeQuery{
-		config:     wacq.config,
-		ctx:        wacq.ctx.Clone(),
-		order:      append([]OrderFunc{}, wacq.order...),
-		inters:     append([]Interceptor{}, wacq.inters...),
-		predicates: append([]predicate.WebAuthnChallenge{}, wacq.predicates...),
-		withUser:   wacq.withUser.Clone(),
+		config:        wacq.config,
+		ctx:           wacq.ctx.Clone(),
+		order:         append([]OrderFunc{}, wacq.order...),
+		inters:        append([]Interceptor{}, wacq.inters...),
+		predicates:    append([]predicate.WebAuthnChallenge{}, wacq.predicates...),
+		withChallenge: wacq.withChallenge.Clone(),
 		// clone intermediate query.
 		sql:  wacq.sql.Clone(),
 		path: wacq.path,
 	}
 }
 
-// WithUser tells the query-builder to eager-load the nodes that are connected to
-// the "user" edge. The optional arguments are used to configure the query builder of the edge.
-func (wacq *WebAuthnChallengeQuery) WithUser(opts ...func(*UserQuery)) *WebAuthnChallengeQuery {
-	query := (&UserClient{config: wacq.config}).Query()
+// WithChallenge tells the query-builder to eager-load the nodes that are connected to
+// the "challenge" edge. The optional arguments are used to configure the query builder of the edge.
+func (wacq *WebAuthnChallengeQuery) WithChallenge(opts ...func(*ChallengeQuery)) *WebAuthnChallengeQuery {
+	query := (&ChallengeClient{config: wacq.config}).Query()
 	for _, opt := range opts {
 		opt(query)
 	}
-	wacq.withUser = query
+	wacq.withChallenge = query
 	return wacq
 }
 
@@ -297,12 +297,12 @@ func (wacq *WebAuthnChallengeQuery) WithUser(opts ...func(*UserQuery)) *WebAuthn
 // Example:
 //
 //	var v []struct {
-//		Challenge string `json:"challenge,omitempty"`
+//		SdChallenge string `json:"sdChallenge,omitempty"`
 //		Count int `json:"count,omitempty"`
 //	}
 //
 //	client.WebAuthnChallenge.Query().
-//		GroupBy(webauthnchallenge.FieldChallenge).
+//		GroupBy(webauthnchallenge.FieldSdChallenge).
 //		Aggregate(ent.Count()).
 //		Scan(ctx, &v)
 //
@@ -321,11 +321,11 @@ func (wacq *WebAuthnChallengeQuery) GroupBy(field string, fields ...string) *Web
 // Example:
 //
 //	var v []struct {
-//		Challenge string `json:"challenge,omitempty"`
+//		SdChallenge string `json:"sdChallenge,omitempty"`
 //	}
 //
 //	client.WebAuthnChallenge.Query().
-//		Select(webauthnchallenge.FieldChallenge).
+//		Select(webauthnchallenge.FieldSdChallenge).
 //		Scan(ctx, &v)
 //
 func (wacq *WebAuthnChallengeQuery) Select(fields ...string) *WebAuthnChallengeSelect {
@@ -373,10 +373,10 @@ func (wacq *WebAuthnChallengeQuery) sqlAll(ctx context.Context, hooks ...queryHo
 		withFKs     = wacq.withFKs
 		_spec       = wacq.querySpec()
 		loadedTypes = [1]bool{
-			wacq.withUser != nil,
+			wacq.withChallenge != nil,
 		}
 	)
-	if wacq.withUser != nil {
+	if wacq.withChallenge != nil {
 		withFKs = true
 	}
 	if withFKs {
@@ -400,23 +400,23 @@ func (wacq *WebAuthnChallengeQuery) sqlAll(ctx context.Context, hooks ...queryHo
 	if len(nodes) == 0 {
 		return nodes, nil
 	}
-	if query := wacq.withUser; query != nil {
-		if err := wacq.loadUser(ctx, query, nodes, nil,
-			func(n *WebAuthnChallenge, e *User) { n.Edges.User = e }); err != nil {
+	if query := wacq.withChallenge; query != nil {
+		if err := wacq.loadChallenge(ctx, query, nodes, nil,
+			func(n *WebAuthnChallenge, e *Challenge) { n.Edges.Challenge = e }); err != nil {
 			return nil, err
 		}
 	}
 	return nodes, nil
 }
 
-func (wacq *WebAuthnChallengeQuery) loadUser(ctx context.Context, query *UserQuery, nodes []*WebAuthnChallenge, init func(*WebAuthnChallenge), assign func(*WebAuthnChallenge, *User)) error {
+func (wacq *WebAuthnChallengeQuery) loadChallenge(ctx context.Context, query *ChallengeQuery, nodes []*WebAuthnChallenge, init func(*WebAuthnChallenge), assign func(*WebAuthnChallenge, *Challenge)) error {
 	ids := make([]uuid.UUID, 0, len(nodes))
 	nodeids := make(map[uuid.UUID][]*WebAuthnChallenge)
 	for i := range nodes {
-		if nodes[i].user_webauthn_challenges == nil {
+		if nodes[i].challenge_webauthn_challenge == nil {
 			continue
 		}
-		fk := *nodes[i].user_webauthn_challenges
+		fk := *nodes[i].challenge_webauthn_challenge
 		if _, ok := nodeids[fk]; !ok {
 			ids = append(ids, fk)
 		}
@@ -425,7 +425,7 @@ func (wacq *WebAuthnChallengeQuery) loadUser(ctx context.Context, query *UserQue
 	if len(ids) == 0 {
 		return nil
 	}
-	query.Where(user.IDIn(ids...))
+	query.Where(challenge.IDIn(ids...))
 	neighbors, err := query.All(ctx)
 	if err != nil {
 		return err
@@ -433,7 +433,7 @@ func (wacq *WebAuthnChallengeQuery) loadUser(ctx context.Context, query *UserQue
 	for _, n := range neighbors {
 		nodes, ok := nodeids[n.ID]
 		if !ok {
-			return fmt.Errorf(`unexpected foreign-key "user_webauthn_challenges" returned %v`, n.ID)
+			return fmt.Errorf(`unexpected foreign-key "challenge_webauthn_challenge" returned %v`, n.ID)
 		}
 		for i := range nodes {
 			assign(nodes[i], n)

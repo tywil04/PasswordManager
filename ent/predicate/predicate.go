@@ -9,6 +9,9 @@ import (
 // AdditionalField is the predicate function for additionalfield builders.
 type AdditionalField func(*sql.Selector)
 
+// Challenge is the predicate function for challenge builders.
+type Challenge func(*sql.Selector)
+
 // EmailChallenge is the predicate function for emailchallenge builders.
 type EmailChallenge func(*sql.Selector)
 
@@ -32,3 +35,6 @@ type WebAuthnChallenge func(*sql.Selector)
 
 // WebAuthnCredential is the predicate function for webauthncredential builders.
 type WebAuthnCredential func(*sql.Selector)
+
+// WebAuthnRegisterChallenge is the predicate function for webauthnregisterchallenge builders.
+type WebAuthnRegisterChallenge func(*sql.Selector)

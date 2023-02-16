@@ -3,6 +3,7 @@
 package ent
 
 import (
+	"PasswordManager/ent/challenge"
 	"PasswordManager/ent/totpcredential"
 	"PasswordManager/ent/user"
 	"context"
@@ -76,9 +77,36 @@ func (tcc *TotpCredentialCreate) SetUserID(id uuid.UUID) *TotpCredentialCreate {
 	return tcc
 }
 
+// SetNillableUserID sets the "user" edge to the User entity by ID if the given value is not nil.
+func (tcc *TotpCredentialCreate) SetNillableUserID(id *uuid.UUID) *TotpCredentialCreate {
+	if id != nil {
+		tcc = tcc.SetUserID(*id)
+	}
+	return tcc
+}
+
 // SetUser sets the "user" edge to the User entity.
 func (tcc *TotpCredentialCreate) SetUser(u *User) *TotpCredentialCreate {
 	return tcc.SetUserID(u.ID)
+}
+
+// SetChallengeID sets the "challenge" edge to the Challenge entity by ID.
+func (tcc *TotpCredentialCreate) SetChallengeID(id uuid.UUID) *TotpCredentialCreate {
+	tcc.mutation.SetChallengeID(id)
+	return tcc
+}
+
+// SetNillableChallengeID sets the "challenge" edge to the Challenge entity by ID if the given value is not nil.
+func (tcc *TotpCredentialCreate) SetNillableChallengeID(id *uuid.UUID) *TotpCredentialCreate {
+	if id != nil {
+		tcc = tcc.SetChallengeID(*id)
+	}
+	return tcc
+}
+
+// SetChallenge sets the "challenge" edge to the Challenge entity.
+func (tcc *TotpCredentialCreate) SetChallenge(c *Challenge) *TotpCredentialCreate {
+	return tcc.SetChallengeID(c.ID)
 }
 
 // Mutation returns the TotpCredentialMutation object of the builder.
@@ -145,9 +173,6 @@ func (tcc *TotpCredentialCreate) check() error {
 	}
 	if _, ok := tcc.mutation.Validated(); !ok {
 		return &ValidationError{Name: "validated", err: errors.New(`ent: missing required field "TotpCredential.validated"`)}
-	}
-	if _, ok := tcc.mutation.UserID(); !ok {
-		return &ValidationError{Name: "user", err: errors.New(`ent: missing required edge "TotpCredential.user"`)}
 	}
 	return nil
 }
@@ -220,6 +245,26 @@ func (tcc *TotpCredentialCreate) createSpec() (*TotpCredential, *sqlgraph.Create
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
 		_node.user_totp_credential = &nodes[0]
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := tcc.mutation.ChallengeIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: true,
+			Table:   totpcredential.ChallengeTable,
+			Columns: []string{totpcredential.ChallengeColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeUUID,
+					Column: challenge.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_node.challenge_totp_credential = &nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec

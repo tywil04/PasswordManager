@@ -3,9 +3,9 @@
 package ent
 
 import (
+	"PasswordManager/ent/challenge"
 	"PasswordManager/ent/emailchallenge"
 	"PasswordManager/ent/predicate"
-	"PasswordManager/ent/user"
 	"context"
 	"fmt"
 	"math"
@@ -19,12 +19,12 @@ import (
 // EmailChallengeQuery is the builder for querying EmailChallenge entities.
 type EmailChallengeQuery struct {
 	config
-	ctx        *QueryContext
-	order      []OrderFunc
-	inters     []Interceptor
-	predicates []predicate.EmailChallenge
-	withUser   *UserQuery
-	withFKs    bool
+	ctx           *QueryContext
+	order         []OrderFunc
+	inters        []Interceptor
+	predicates    []predicate.EmailChallenge
+	withChallenge *ChallengeQuery
+	withFKs       bool
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -61,9 +61,9 @@ func (ecq *EmailChallengeQuery) Order(o ...OrderFunc) *EmailChallengeQuery {
 	return ecq
 }
 
-// QueryUser chains the current query on the "user" edge.
-func (ecq *EmailChallengeQuery) QueryUser() *UserQuery {
-	query := (&UserClient{config: ecq.config}).Query()
+// QueryChallenge chains the current query on the "challenge" edge.
+func (ecq *EmailChallengeQuery) QueryChallenge() *ChallengeQuery {
+	query := (&ChallengeClient{config: ecq.config}).Query()
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
 		if err := ecq.prepareQuery(ctx); err != nil {
 			return nil, err
@@ -74,8 +74,8 @@ func (ecq *EmailChallengeQuery) QueryUser() *UserQuery {
 		}
 		step := sqlgraph.NewStep(
 			sqlgraph.From(emailchallenge.Table, emailchallenge.FieldID, selector),
-			sqlgraph.To(user.Table, user.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, emailchallenge.UserTable, emailchallenge.UserColumn),
+			sqlgraph.To(challenge.Table, challenge.FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, true, emailchallenge.ChallengeTable, emailchallenge.ChallengeColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(ecq.driver.Dialect(), step)
 		return fromU, nil
@@ -268,26 +268,26 @@ func (ecq *EmailChallengeQuery) Clone() *EmailChallengeQuery {
 		return nil
 	}
 	return &EmailChallengeQuery{
-		config:     ecq.config,
-		ctx:        ecq.ctx.Clone(),
-		order:      append([]OrderFunc{}, ecq.order...),
-		inters:     append([]Interceptor{}, ecq.inters...),
-		predicates: append([]predicate.EmailChallenge{}, ecq.predicates...),
-		withUser:   ecq.withUser.Clone(),
+		config:        ecq.config,
+		ctx:           ecq.ctx.Clone(),
+		order:         append([]OrderFunc{}, ecq.order...),
+		inters:        append([]Interceptor{}, ecq.inters...),
+		predicates:    append([]predicate.EmailChallenge{}, ecq.predicates...),
+		withChallenge: ecq.withChallenge.Clone(),
 		// clone intermediate query.
 		sql:  ecq.sql.Clone(),
 		path: ecq.path,
 	}
 }
 
-// WithUser tells the query-builder to eager-load the nodes that are connected to
-// the "user" edge. The optional arguments are used to configure the query builder of the edge.
-func (ecq *EmailChallengeQuery) WithUser(opts ...func(*UserQuery)) *EmailChallengeQuery {
-	query := (&UserClient{config: ecq.config}).Query()
+// WithChallenge tells the query-builder to eager-load the nodes that are connected to
+// the "challenge" edge. The optional arguments are used to configure the query builder of the edge.
+func (ecq *EmailChallengeQuery) WithChallenge(opts ...func(*ChallengeQuery)) *EmailChallengeQuery {
+	query := (&ChallengeClient{config: ecq.config}).Query()
 	for _, opt := range opts {
 		opt(query)
 	}
-	ecq.withUser = query
+	ecq.withChallenge = query
 	return ecq
 }
 
@@ -373,10 +373,10 @@ func (ecq *EmailChallengeQuery) sqlAll(ctx context.Context, hooks ...queryHook) 
 		withFKs     = ecq.withFKs
 		_spec       = ecq.querySpec()
 		loadedTypes = [1]bool{
-			ecq.withUser != nil,
+			ecq.withChallenge != nil,
 		}
 	)
-	if ecq.withUser != nil {
+	if ecq.withChallenge != nil {
 		withFKs = true
 	}
 	if withFKs {
@@ -400,23 +400,23 @@ func (ecq *EmailChallengeQuery) sqlAll(ctx context.Context, hooks ...queryHook) 
 	if len(nodes) == 0 {
 		return nodes, nil
 	}
-	if query := ecq.withUser; query != nil {
-		if err := ecq.loadUser(ctx, query, nodes, nil,
-			func(n *EmailChallenge, e *User) { n.Edges.User = e }); err != nil {
+	if query := ecq.withChallenge; query != nil {
+		if err := ecq.loadChallenge(ctx, query, nodes, nil,
+			func(n *EmailChallenge, e *Challenge) { n.Edges.Challenge = e }); err != nil {
 			return nil, err
 		}
 	}
 	return nodes, nil
 }
 
-func (ecq *EmailChallengeQuery) loadUser(ctx context.Context, query *UserQuery, nodes []*EmailChallenge, init func(*EmailChallenge), assign func(*EmailChallenge, *User)) error {
+func (ecq *EmailChallengeQuery) loadChallenge(ctx context.Context, query *ChallengeQuery, nodes []*EmailChallenge, init func(*EmailChallenge), assign func(*EmailChallenge, *Challenge)) error {
 	ids := make([]uuid.UUID, 0, len(nodes))
 	nodeids := make(map[uuid.UUID][]*EmailChallenge)
 	for i := range nodes {
-		if nodes[i].user_email_challenges == nil {
+		if nodes[i].challenge_email_challenge == nil {
 			continue
 		}
-		fk := *nodes[i].user_email_challenges
+		fk := *nodes[i].challenge_email_challenge
 		if _, ok := nodeids[fk]; !ok {
 			ids = append(ids, fk)
 		}
@@ -425,7 +425,7 @@ func (ecq *EmailChallengeQuery) loadUser(ctx context.Context, query *UserQuery, 
 	if len(ids) == 0 {
 		return nil
 	}
-	query.Where(user.IDIn(ids...))
+	query.Where(challenge.IDIn(ids...))
 	neighbors, err := query.All(ctx)
 	if err != nil {
 		return err
@@ -433,7 +433,7 @@ func (ecq *EmailChallengeQuery) loadUser(ctx context.Context, query *UserQuery, 
 	for _, n := range neighbors {
 		nodes, ok := nodeids[n.ID]
 		if !ok {
-			return fmt.Errorf(`unexpected foreign-key "user_email_challenges" returned %v`, n.ID)
+			return fmt.Errorf(`unexpected foreign-key "challenge_email_challenge" returned %v`, n.ID)
 		}
 		for i := range nodes {
 			assign(nodes[i], n)

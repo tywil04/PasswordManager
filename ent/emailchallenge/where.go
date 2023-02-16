@@ -4,7 +4,6 @@ package emailchallenge
 
 import (
 	"PasswordManager/ent/predicate"
-	"time"
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
@@ -59,11 +58,6 @@ func IDLTE(id uuid.UUID) predicate.EmailChallenge {
 // Code applies equality check predicate on the "code" field. It's identical to CodeEQ.
 func Code(v string) predicate.EmailChallenge {
 	return predicate.EmailChallenge(sql.FieldEQ(FieldCode, v))
-}
-
-// Expiry applies equality check predicate on the "expiry" field. It's identical to ExpiryEQ.
-func Expiry(v time.Time) predicate.EmailChallenge {
-	return predicate.EmailChallenge(sql.FieldEQ(FieldExpiry, v))
 }
 
 // CodeEQ applies the EQ predicate on the "code" field.
@@ -121,6 +115,16 @@ func CodeHasSuffix(v string) predicate.EmailChallenge {
 	return predicate.EmailChallenge(sql.FieldHasSuffix(FieldCode, v))
 }
 
+// CodeIsNil applies the IsNil predicate on the "code" field.
+func CodeIsNil() predicate.EmailChallenge {
+	return predicate.EmailChallenge(sql.FieldIsNull(FieldCode))
+}
+
+// CodeNotNil applies the NotNil predicate on the "code" field.
+func CodeNotNil() predicate.EmailChallenge {
+	return predicate.EmailChallenge(sql.FieldNotNull(FieldCode))
+}
+
 // CodeEqualFold applies the EqualFold predicate on the "code" field.
 func CodeEqualFold(v string) predicate.EmailChallenge {
 	return predicate.EmailChallenge(sql.FieldEqualFold(FieldCode, v))
@@ -131,84 +135,24 @@ func CodeContainsFold(v string) predicate.EmailChallenge {
 	return predicate.EmailChallenge(sql.FieldContainsFold(FieldCode, v))
 }
 
-// ExpiryEQ applies the EQ predicate on the "expiry" field.
-func ExpiryEQ(v time.Time) predicate.EmailChallenge {
-	return predicate.EmailChallenge(sql.FieldEQ(FieldExpiry, v))
-}
-
-// ExpiryNEQ applies the NEQ predicate on the "expiry" field.
-func ExpiryNEQ(v time.Time) predicate.EmailChallenge {
-	return predicate.EmailChallenge(sql.FieldNEQ(FieldExpiry, v))
-}
-
-// ExpiryIn applies the In predicate on the "expiry" field.
-func ExpiryIn(vs ...time.Time) predicate.EmailChallenge {
-	return predicate.EmailChallenge(sql.FieldIn(FieldExpiry, vs...))
-}
-
-// ExpiryNotIn applies the NotIn predicate on the "expiry" field.
-func ExpiryNotIn(vs ...time.Time) predicate.EmailChallenge {
-	return predicate.EmailChallenge(sql.FieldNotIn(FieldExpiry, vs...))
-}
-
-// ExpiryGT applies the GT predicate on the "expiry" field.
-func ExpiryGT(v time.Time) predicate.EmailChallenge {
-	return predicate.EmailChallenge(sql.FieldGT(FieldExpiry, v))
-}
-
-// ExpiryGTE applies the GTE predicate on the "expiry" field.
-func ExpiryGTE(v time.Time) predicate.EmailChallenge {
-	return predicate.EmailChallenge(sql.FieldGTE(FieldExpiry, v))
-}
-
-// ExpiryLT applies the LT predicate on the "expiry" field.
-func ExpiryLT(v time.Time) predicate.EmailChallenge {
-	return predicate.EmailChallenge(sql.FieldLT(FieldExpiry, v))
-}
-
-// ExpiryLTE applies the LTE predicate on the "expiry" field.
-func ExpiryLTE(v time.Time) predicate.EmailChallenge {
-	return predicate.EmailChallenge(sql.FieldLTE(FieldExpiry, v))
-}
-
-// ForEQ applies the EQ predicate on the "for" field.
-func ForEQ(v For) predicate.EmailChallenge {
-	return predicate.EmailChallenge(sql.FieldEQ(FieldFor, v))
-}
-
-// ForNEQ applies the NEQ predicate on the "for" field.
-func ForNEQ(v For) predicate.EmailChallenge {
-	return predicate.EmailChallenge(sql.FieldNEQ(FieldFor, v))
-}
-
-// ForIn applies the In predicate on the "for" field.
-func ForIn(vs ...For) predicate.EmailChallenge {
-	return predicate.EmailChallenge(sql.FieldIn(FieldFor, vs...))
-}
-
-// ForNotIn applies the NotIn predicate on the "for" field.
-func ForNotIn(vs ...For) predicate.EmailChallenge {
-	return predicate.EmailChallenge(sql.FieldNotIn(FieldFor, vs...))
-}
-
-// HasUser applies the HasEdge predicate on the "user" edge.
-func HasUser() predicate.EmailChallenge {
+// HasChallenge applies the HasEdge predicate on the "challenge" edge.
+func HasChallenge() predicate.EmailChallenge {
 	return predicate.EmailChallenge(func(s *sql.Selector) {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, UserTable, UserColumn),
+			sqlgraph.Edge(sqlgraph.O2O, true, ChallengeTable, ChallengeColumn),
 		)
 		sqlgraph.HasNeighbors(s, step)
 	})
 }
 
-// HasUserWith applies the HasEdge predicate on the "user" edge with a given conditions (other predicates).
-func HasUserWith(preds ...predicate.User) predicate.EmailChallenge {
+// HasChallengeWith applies the HasEdge predicate on the "challenge" edge with a given conditions (other predicates).
+func HasChallengeWith(preds ...predicate.Challenge) predicate.EmailChallenge {
 	return predicate.EmailChallenge(func(s *sql.Selector) {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
-			sqlgraph.To(UserInverseTable, FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, UserTable, UserColumn),
+			sqlgraph.To(ChallengeInverseTable, FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, true, ChallengeTable, ChallengeColumn),
 		)
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {

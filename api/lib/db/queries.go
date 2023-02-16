@@ -5,8 +5,10 @@ import (
 	"PasswordManager/ent/password"
 	"PasswordManager/ent/session"
 	"PasswordManager/ent/user"
-	"PasswordManager/ent/webauthnchallenge"
 	"PasswordManager/ent/webauthncredential"
+	"PasswordManager/ent/webauthnregisterchallenge"
+	"errors"
+	"time"
 
 	"github.com/google/uuid"
 )
@@ -83,10 +85,41 @@ func DeleteUserWebauthnCredentialViaId(user *ent.User, webauthnCredentialId uuid
 	return DeleteWebauthnCredential(webauthnCredential)
 }
 
-// Webauthn Challenge
+// Challenges
+func GetUnexpiredChallengeViaId(challengeId uuid.UUID) (*ent.Challenge, error) {
+	challenge, challengeErr := Client.Challenge.Get(Context, challengeId)
+	if challengeErr != nil {
+		return nil, challengeErr
+	}
 
-func GetWebauthnChallenge(webauthnChallengeId uuid.UUID) (*ent.WebAuthnChallenge, error) {
-	return Client.WebAuthnChallenge.Get(Context, webauthnChallengeId)
+	if challenge.Expiry.Before(time.Now()) {
+		return nil, errors.New("Challenge Expired")
+	}
+
+	return challenge, challengeErr
+}
+
+func GetChallengeUser(challenge *ent.Challenge) (*ent.User, error) {
+	return challenge.QueryUser().First(Context)
+}
+
+func DeleteChallenge(challenge *ent.Challenge) error {
+	emailChallenge, ecErr := GetChallengeEmailChallenge(challenge)
+	if ecErr == nil {
+		DeleteEmailChallenge(emailChallenge)
+	}
+
+	webauthnChallenge, wcErr := GetChallengeWebauthnChallenge(challenge)
+	if wcErr == nil {
+		DeleteWebauthnChallenge(webauthnChallenge)
+	}
+
+	return Client.Challenge.DeleteOne(challenge).Exec(Context)
+}
+
+// Webauthn Challenge
+func GetChallengeWebauthnChallenge(challenge *ent.Challenge) (*ent.WebAuthnChallenge, error) {
+	return challenge.QueryWebauthnChallenge().Unique(true).First(Context)
 }
 
 func DeleteWebauthnChallengeViaId(webauthnChallengeId uuid.UUID) error {
@@ -97,35 +130,23 @@ func DeleteWebauthnChallenge(webauthnChallenge *ent.WebAuthnChallenge) error {
 	return Client.WebAuthnChallenge.DeleteOne(webauthnChallenge).Exec(Context)
 }
 
-func GetUserWebauthnChallenges(user *ent.User) ([]*ent.WebAuthnChallenge, error) {
-	return user.QueryWebauthnChallenges().All(Context)
-}
-
-func GetUserWebauthnChallenge(user *ent.User, webauthnChallengeId uuid.UUID) (*ent.WebAuthnChallenge, error) {
-	return user.QueryWebauthnChallenges().Where(webauthnchallenge.IDEQ(webauthnChallengeId)).Unique(true).First(Context)
-}
-
-func GetWebauthnChallengeUser(webauthnChallenge *ent.WebAuthnChallenge) (*ent.User, error) {
-	return webauthnChallenge.QueryUser().Unique(true).First(Context)
+// Webauthn Register Challenges
+func GetUserWebauthnRegisterChallengeViaId(user *ent.User, webauthnRegisterChallengeId uuid.UUID) (*ent.WebAuthnRegisterChallenge, error) {
+	return user.QueryWebauthnRegisterChallenges().Where(webauthnregisterchallenge.IDEQ(webauthnRegisterChallengeId)).Unique(true).First(Context)
 }
 
 // Totp Challenges
-func GetTotpCredentialViaId(totpCredentialId uuid.UUID) (*ent.TotpCredential, error) {
-	return Client.TotpCredential.Get(Context, totpCredentialId)
+func GetChallengeTotpCredential(challenge *ent.Challenge) (*ent.TotpCredential, error) {
+	return challenge.QueryTotpCredential().Unique(true).First(Context)
 }
 
 func GetUserTotpCredential(user *ent.User) (*ent.TotpCredential, error) {
-	return user.QueryTotpCredential().First(Context)
-}
-
-func GetTotpCredentialUser(totpCredential *ent.TotpCredential) (*ent.User, error) {
-	return totpCredential.QueryUser().First(Context)
+	return user.QueryTotpCredential().Unique(true).First(Context)
 }
 
 // Email Challenges
-
-func GetEmailChallenge(emailChallengeId uuid.UUID) (*ent.EmailChallenge, error) {
-	return Client.EmailChallenge.Get(Context, emailChallengeId)
+func GetChallengeEmailChallenge(challenge *ent.Challenge) (*ent.EmailChallenge, error) {
+	return challenge.QueryEmailChallenge().Unique(true).First(Context)
 }
 
 func DeleteEmailChallengeViaId(emailChallengeId uuid.UUID) error {
@@ -134,10 +155,6 @@ func DeleteEmailChallengeViaId(emailChallengeId uuid.UUID) error {
 
 func DeleteEmailChallenge(emailChallenge *ent.EmailChallenge) error {
 	return Client.EmailChallenge.DeleteOne(emailChallenge).Exec(Context)
-}
-
-func GetEmailChallengeUser(emailChallenge *ent.EmailChallenge) (*ent.User, error) {
-	return emailChallenge.QueryUser().Unique(true).First(Context)
 }
 
 // Session

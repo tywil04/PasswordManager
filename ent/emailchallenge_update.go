@@ -3,13 +3,12 @@
 package ent
 
 import (
+	"PasswordManager/ent/challenge"
 	"PasswordManager/ent/emailchallenge"
 	"PasswordManager/ent/predicate"
-	"PasswordManager/ent/user"
 	"context"
 	"errors"
 	"fmt"
-	"time"
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
@@ -36,35 +35,37 @@ func (ecu *EmailChallengeUpdate) SetCode(s string) *EmailChallengeUpdate {
 	return ecu
 }
 
-// SetExpiry sets the "expiry" field.
-func (ecu *EmailChallengeUpdate) SetExpiry(t time.Time) *EmailChallengeUpdate {
-	ecu.mutation.SetExpiry(t)
-	return ecu
-}
-
-// SetNillableExpiry sets the "expiry" field if the given value is not nil.
-func (ecu *EmailChallengeUpdate) SetNillableExpiry(t *time.Time) *EmailChallengeUpdate {
-	if t != nil {
-		ecu.SetExpiry(*t)
+// SetNillableCode sets the "code" field if the given value is not nil.
+func (ecu *EmailChallengeUpdate) SetNillableCode(s *string) *EmailChallengeUpdate {
+	if s != nil {
+		ecu.SetCode(*s)
 	}
 	return ecu
 }
 
-// SetFor sets the "for" field.
-func (ecu *EmailChallengeUpdate) SetFor(e emailchallenge.For) *EmailChallengeUpdate {
-	ecu.mutation.SetFor(e)
+// ClearCode clears the value of the "code" field.
+func (ecu *EmailChallengeUpdate) ClearCode() *EmailChallengeUpdate {
+	ecu.mutation.ClearCode()
 	return ecu
 }
 
-// SetUserID sets the "user" edge to the User entity by ID.
-func (ecu *EmailChallengeUpdate) SetUserID(id uuid.UUID) *EmailChallengeUpdate {
-	ecu.mutation.SetUserID(id)
+// SetChallengeID sets the "challenge" edge to the Challenge entity by ID.
+func (ecu *EmailChallengeUpdate) SetChallengeID(id uuid.UUID) *EmailChallengeUpdate {
+	ecu.mutation.SetChallengeID(id)
 	return ecu
 }
 
-// SetUser sets the "user" edge to the User entity.
-func (ecu *EmailChallengeUpdate) SetUser(u *User) *EmailChallengeUpdate {
-	return ecu.SetUserID(u.ID)
+// SetNillableChallengeID sets the "challenge" edge to the Challenge entity by ID if the given value is not nil.
+func (ecu *EmailChallengeUpdate) SetNillableChallengeID(id *uuid.UUID) *EmailChallengeUpdate {
+	if id != nil {
+		ecu = ecu.SetChallengeID(*id)
+	}
+	return ecu
+}
+
+// SetChallenge sets the "challenge" edge to the Challenge entity.
+func (ecu *EmailChallengeUpdate) SetChallenge(c *Challenge) *EmailChallengeUpdate {
+	return ecu.SetChallengeID(c.ID)
 }
 
 // Mutation returns the EmailChallengeMutation object of the builder.
@@ -72,9 +73,9 @@ func (ecu *EmailChallengeUpdate) Mutation() *EmailChallengeMutation {
 	return ecu.mutation
 }
 
-// ClearUser clears the "user" edge to the User entity.
-func (ecu *EmailChallengeUpdate) ClearUser() *EmailChallengeUpdate {
-	ecu.mutation.ClearUser()
+// ClearChallenge clears the "challenge" edge to the Challenge entity.
+func (ecu *EmailChallengeUpdate) ClearChallenge() *EmailChallengeUpdate {
+	ecu.mutation.ClearChallenge()
 	return ecu
 }
 
@@ -105,28 +106,7 @@ func (ecu *EmailChallengeUpdate) ExecX(ctx context.Context) {
 	}
 }
 
-// check runs all checks and user-defined validators on the builder.
-func (ecu *EmailChallengeUpdate) check() error {
-	if v, ok := ecu.mutation.Code(); ok {
-		if err := emailchallenge.CodeValidator(v); err != nil {
-			return &ValidationError{Name: "code", err: fmt.Errorf(`ent: validator failed for field "EmailChallenge.code": %w`, err)}
-		}
-	}
-	if v, ok := ecu.mutation.For(); ok {
-		if err := emailchallenge.ForValidator(v); err != nil {
-			return &ValidationError{Name: "for", err: fmt.Errorf(`ent: validator failed for field "EmailChallenge.for": %w`, err)}
-		}
-	}
-	if _, ok := ecu.mutation.UserID(); ecu.mutation.UserCleared() && !ok {
-		return errors.New(`ent: clearing a required unique edge "EmailChallenge.user"`)
-	}
-	return nil
-}
-
 func (ecu *EmailChallengeUpdate) sqlSave(ctx context.Context) (n int, err error) {
-	if err := ecu.check(); err != nil {
-		return n, err
-	}
 	_spec := &sqlgraph.UpdateSpec{
 		Node: &sqlgraph.NodeSpec{
 			Table:   emailchallenge.Table,
@@ -147,39 +127,36 @@ func (ecu *EmailChallengeUpdate) sqlSave(ctx context.Context) (n int, err error)
 	if value, ok := ecu.mutation.Code(); ok {
 		_spec.SetField(emailchallenge.FieldCode, field.TypeString, value)
 	}
-	if value, ok := ecu.mutation.Expiry(); ok {
-		_spec.SetField(emailchallenge.FieldExpiry, field.TypeTime, value)
+	if ecu.mutation.CodeCleared() {
+		_spec.ClearField(emailchallenge.FieldCode, field.TypeString)
 	}
-	if value, ok := ecu.mutation.For(); ok {
-		_spec.SetField(emailchallenge.FieldFor, field.TypeEnum, value)
-	}
-	if ecu.mutation.UserCleared() {
+	if ecu.mutation.ChallengeCleared() {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
+			Rel:     sqlgraph.O2O,
 			Inverse: true,
-			Table:   emailchallenge.UserTable,
-			Columns: []string{emailchallenge.UserColumn},
+			Table:   emailchallenge.ChallengeTable,
+			Columns: []string{emailchallenge.ChallengeColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeUUID,
-					Column: user.FieldID,
+					Column: challenge.FieldID,
 				},
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := ecu.mutation.UserIDs(); len(nodes) > 0 {
+	if nodes := ecu.mutation.ChallengeIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
+			Rel:     sqlgraph.O2O,
 			Inverse: true,
-			Table:   emailchallenge.UserTable,
-			Columns: []string{emailchallenge.UserColumn},
+			Table:   emailchallenge.ChallengeTable,
+			Columns: []string{emailchallenge.ChallengeColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeUUID,
-					Column: user.FieldID,
+					Column: challenge.FieldID,
 				},
 			},
 		}
@@ -214,35 +191,37 @@ func (ecuo *EmailChallengeUpdateOne) SetCode(s string) *EmailChallengeUpdateOne 
 	return ecuo
 }
 
-// SetExpiry sets the "expiry" field.
-func (ecuo *EmailChallengeUpdateOne) SetExpiry(t time.Time) *EmailChallengeUpdateOne {
-	ecuo.mutation.SetExpiry(t)
-	return ecuo
-}
-
-// SetNillableExpiry sets the "expiry" field if the given value is not nil.
-func (ecuo *EmailChallengeUpdateOne) SetNillableExpiry(t *time.Time) *EmailChallengeUpdateOne {
-	if t != nil {
-		ecuo.SetExpiry(*t)
+// SetNillableCode sets the "code" field if the given value is not nil.
+func (ecuo *EmailChallengeUpdateOne) SetNillableCode(s *string) *EmailChallengeUpdateOne {
+	if s != nil {
+		ecuo.SetCode(*s)
 	}
 	return ecuo
 }
 
-// SetFor sets the "for" field.
-func (ecuo *EmailChallengeUpdateOne) SetFor(e emailchallenge.For) *EmailChallengeUpdateOne {
-	ecuo.mutation.SetFor(e)
+// ClearCode clears the value of the "code" field.
+func (ecuo *EmailChallengeUpdateOne) ClearCode() *EmailChallengeUpdateOne {
+	ecuo.mutation.ClearCode()
 	return ecuo
 }
 
-// SetUserID sets the "user" edge to the User entity by ID.
-func (ecuo *EmailChallengeUpdateOne) SetUserID(id uuid.UUID) *EmailChallengeUpdateOne {
-	ecuo.mutation.SetUserID(id)
+// SetChallengeID sets the "challenge" edge to the Challenge entity by ID.
+func (ecuo *EmailChallengeUpdateOne) SetChallengeID(id uuid.UUID) *EmailChallengeUpdateOne {
+	ecuo.mutation.SetChallengeID(id)
 	return ecuo
 }
 
-// SetUser sets the "user" edge to the User entity.
-func (ecuo *EmailChallengeUpdateOne) SetUser(u *User) *EmailChallengeUpdateOne {
-	return ecuo.SetUserID(u.ID)
+// SetNillableChallengeID sets the "challenge" edge to the Challenge entity by ID if the given value is not nil.
+func (ecuo *EmailChallengeUpdateOne) SetNillableChallengeID(id *uuid.UUID) *EmailChallengeUpdateOne {
+	if id != nil {
+		ecuo = ecuo.SetChallengeID(*id)
+	}
+	return ecuo
+}
+
+// SetChallenge sets the "challenge" edge to the Challenge entity.
+func (ecuo *EmailChallengeUpdateOne) SetChallenge(c *Challenge) *EmailChallengeUpdateOne {
+	return ecuo.SetChallengeID(c.ID)
 }
 
 // Mutation returns the EmailChallengeMutation object of the builder.
@@ -250,9 +229,9 @@ func (ecuo *EmailChallengeUpdateOne) Mutation() *EmailChallengeMutation {
 	return ecuo.mutation
 }
 
-// ClearUser clears the "user" edge to the User entity.
-func (ecuo *EmailChallengeUpdateOne) ClearUser() *EmailChallengeUpdateOne {
-	ecuo.mutation.ClearUser()
+// ClearChallenge clears the "challenge" edge to the Challenge entity.
+func (ecuo *EmailChallengeUpdateOne) ClearChallenge() *EmailChallengeUpdateOne {
+	ecuo.mutation.ClearChallenge()
 	return ecuo
 }
 
@@ -290,28 +269,7 @@ func (ecuo *EmailChallengeUpdateOne) ExecX(ctx context.Context) {
 	}
 }
 
-// check runs all checks and user-defined validators on the builder.
-func (ecuo *EmailChallengeUpdateOne) check() error {
-	if v, ok := ecuo.mutation.Code(); ok {
-		if err := emailchallenge.CodeValidator(v); err != nil {
-			return &ValidationError{Name: "code", err: fmt.Errorf(`ent: validator failed for field "EmailChallenge.code": %w`, err)}
-		}
-	}
-	if v, ok := ecuo.mutation.For(); ok {
-		if err := emailchallenge.ForValidator(v); err != nil {
-			return &ValidationError{Name: "for", err: fmt.Errorf(`ent: validator failed for field "EmailChallenge.for": %w`, err)}
-		}
-	}
-	if _, ok := ecuo.mutation.UserID(); ecuo.mutation.UserCleared() && !ok {
-		return errors.New(`ent: clearing a required unique edge "EmailChallenge.user"`)
-	}
-	return nil
-}
-
 func (ecuo *EmailChallengeUpdateOne) sqlSave(ctx context.Context) (_node *EmailChallenge, err error) {
-	if err := ecuo.check(); err != nil {
-		return _node, err
-	}
 	_spec := &sqlgraph.UpdateSpec{
 		Node: &sqlgraph.NodeSpec{
 			Table:   emailchallenge.Table,
@@ -349,39 +307,36 @@ func (ecuo *EmailChallengeUpdateOne) sqlSave(ctx context.Context) (_node *EmailC
 	if value, ok := ecuo.mutation.Code(); ok {
 		_spec.SetField(emailchallenge.FieldCode, field.TypeString, value)
 	}
-	if value, ok := ecuo.mutation.Expiry(); ok {
-		_spec.SetField(emailchallenge.FieldExpiry, field.TypeTime, value)
+	if ecuo.mutation.CodeCleared() {
+		_spec.ClearField(emailchallenge.FieldCode, field.TypeString)
 	}
-	if value, ok := ecuo.mutation.For(); ok {
-		_spec.SetField(emailchallenge.FieldFor, field.TypeEnum, value)
-	}
-	if ecuo.mutation.UserCleared() {
+	if ecuo.mutation.ChallengeCleared() {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
+			Rel:     sqlgraph.O2O,
 			Inverse: true,
-			Table:   emailchallenge.UserTable,
-			Columns: []string{emailchallenge.UserColumn},
+			Table:   emailchallenge.ChallengeTable,
+			Columns: []string{emailchallenge.ChallengeColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeUUID,
-					Column: user.FieldID,
+					Column: challenge.FieldID,
 				},
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := ecuo.mutation.UserIDs(); len(nodes) > 0 {
+	if nodes := ecuo.mutation.ChallengeIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
+			Rel:     sqlgraph.O2O,
 			Inverse: true,
-			Table:   emailchallenge.UserTable,
-			Columns: []string{emailchallenge.UserColumn},
+			Table:   emailchallenge.ChallengeTable,
+			Columns: []string{emailchallenge.ChallengeColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeUUID,
-					Column: user.FieldID,
+					Column: challenge.FieldID,
 				},
 			},
 		}

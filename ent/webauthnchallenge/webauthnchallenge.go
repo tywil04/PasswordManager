@@ -11,8 +11,8 @@ const (
 	Label = "web_authn_challenge"
 	// FieldID holds the string denoting the id field in the database.
 	FieldID = "id"
-	// FieldChallenge holds the string denoting the challenge field in the database.
-	FieldChallenge = "challenge"
+	// FieldSdChallenge holds the string denoting the sdchallenge field in the database.
+	FieldSdChallenge = "sd_challenge"
 	// FieldUserId holds the string denoting the userid field in the database.
 	FieldUserId = "user_id"
 	// FieldAllowedCredentialIds holds the string denoting the allowedcredentialids field in the database.
@@ -21,23 +21,23 @@ const (
 	FieldUserVerification = "user_verification"
 	// FieldExtensions holds the string denoting the extensions field in the database.
 	FieldExtensions = "extensions"
-	// EdgeUser holds the string denoting the user edge name in mutations.
-	EdgeUser = "user"
+	// EdgeChallenge holds the string denoting the challenge edge name in mutations.
+	EdgeChallenge = "challenge"
 	// Table holds the table name of the webauthnchallenge in the database.
 	Table = "web_authn_challenges"
-	// UserTable is the table that holds the user relation/edge.
-	UserTable = "web_authn_challenges"
-	// UserInverseTable is the table name for the User entity.
-	// It exists in this package in order to avoid circular dependency with the "user" package.
-	UserInverseTable = "users"
-	// UserColumn is the table column denoting the user relation/edge.
-	UserColumn = "user_webauthn_challenges"
+	// ChallengeTable is the table that holds the challenge relation/edge.
+	ChallengeTable = "web_authn_challenges"
+	// ChallengeInverseTable is the table name for the Challenge entity.
+	// It exists in this package in order to avoid circular dependency with the "challenge" package.
+	ChallengeInverseTable = "challenges"
+	// ChallengeColumn is the table column denoting the challenge relation/edge.
+	ChallengeColumn = "challenge_webauthn_challenge"
 )
 
 // Columns holds all SQL columns for webauthnchallenge fields.
 var Columns = []string{
 	FieldID,
-	FieldChallenge,
+	FieldSdChallenge,
 	FieldUserId,
 	FieldAllowedCredentialIds,
 	FieldUserVerification,
@@ -47,7 +47,7 @@ var Columns = []string{
 // ForeignKeys holds the SQL foreign-keys that are owned by the "web_authn_challenges"
 // table and are not defined as standalone fields in the schema.
 var ForeignKeys = []string{
-	"user_webauthn_challenges",
+	"challenge_webauthn_challenge",
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).

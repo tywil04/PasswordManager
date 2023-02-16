@@ -3,8 +3,6 @@
 package user
 
 import (
-	"fmt"
-
 	"github.com/google/uuid"
 )
 
@@ -23,31 +21,26 @@ const (
 	FieldProtectedDatabaseKey = "protected_database_key"
 	// FieldProtectedDatabaseKeyIv holds the string denoting the protecteddatabasekeyiv field in the database.
 	FieldProtectedDatabaseKeyIv = "protected_database_key_iv"
-	// FieldDefault2FA holds the string denoting the default2fa field in the database.
-	FieldDefault2FA = "default2fa"
+	// FieldWebauthnEnabled holds the string denoting the webauthnenabled field in the database.
+	FieldWebauthnEnabled = "webauthn_enabled"
+	// FieldTotpEnabled holds the string denoting the totpenabled field in the database.
+	FieldTotpEnabled = "totp_enabled"
 	// FieldVerified holds the string denoting the verified field in the database.
 	FieldVerified = "verified"
-	// EdgeEmailChallenges holds the string denoting the emailchallenges edge name in mutations.
-	EdgeEmailChallenges = "emailChallenges"
 	// EdgeTotpCredential holds the string denoting the totpcredential edge name in mutations.
 	EdgeTotpCredential = "totpCredential"
 	// EdgeWebauthnCredentials holds the string denoting the webauthncredentials edge name in mutations.
 	EdgeWebauthnCredentials = "webauthnCredentials"
-	// EdgeWebauthnChallenges holds the string denoting the webauthnchallenges edge name in mutations.
-	EdgeWebauthnChallenges = "webauthnChallenges"
+	// EdgeWebauthnRegisterChallenges holds the string denoting the webauthnregisterchallenges edge name in mutations.
+	EdgeWebauthnRegisterChallenges = "webauthnRegisterChallenges"
 	// EdgePasswords holds the string denoting the passwords edge name in mutations.
 	EdgePasswords = "passwords"
 	// EdgeSessions holds the string denoting the sessions edge name in mutations.
 	EdgeSessions = "sessions"
+	// EdgeChallenges holds the string denoting the challenges edge name in mutations.
+	EdgeChallenges = "challenges"
 	// Table holds the table name of the user in the database.
 	Table = "users"
-	// EmailChallengesTable is the table that holds the emailChallenges relation/edge.
-	EmailChallengesTable = "email_challenges"
-	// EmailChallengesInverseTable is the table name for the EmailChallenge entity.
-	// It exists in this package in order to avoid circular dependency with the "emailchallenge" package.
-	EmailChallengesInverseTable = "email_challenges"
-	// EmailChallengesColumn is the table column denoting the emailChallenges relation/edge.
-	EmailChallengesColumn = "user_email_challenges"
 	// TotpCredentialTable is the table that holds the totpCredential relation/edge.
 	TotpCredentialTable = "totp_credentials"
 	// TotpCredentialInverseTable is the table name for the TotpCredential entity.
@@ -62,13 +55,13 @@ const (
 	WebauthnCredentialsInverseTable = "web_authn_credentials"
 	// WebauthnCredentialsColumn is the table column denoting the webauthnCredentials relation/edge.
 	WebauthnCredentialsColumn = "user_webauthn_credentials"
-	// WebauthnChallengesTable is the table that holds the webauthnChallenges relation/edge.
-	WebauthnChallengesTable = "web_authn_challenges"
-	// WebauthnChallengesInverseTable is the table name for the WebAuthnChallenge entity.
-	// It exists in this package in order to avoid circular dependency with the "webauthnchallenge" package.
-	WebauthnChallengesInverseTable = "web_authn_challenges"
-	// WebauthnChallengesColumn is the table column denoting the webauthnChallenges relation/edge.
-	WebauthnChallengesColumn = "user_webauthn_challenges"
+	// WebauthnRegisterChallengesTable is the table that holds the webauthnRegisterChallenges relation/edge.
+	WebauthnRegisterChallengesTable = "web_authn_register_challenges"
+	// WebauthnRegisterChallengesInverseTable is the table name for the WebAuthnRegisterChallenge entity.
+	// It exists in this package in order to avoid circular dependency with the "webauthnregisterchallenge" package.
+	WebauthnRegisterChallengesInverseTable = "web_authn_register_challenges"
+	// WebauthnRegisterChallengesColumn is the table column denoting the webauthnRegisterChallenges relation/edge.
+	WebauthnRegisterChallengesColumn = "user_webauthn_register_challenges"
 	// PasswordsTable is the table that holds the passwords relation/edge.
 	PasswordsTable = "passwords"
 	// PasswordsInverseTable is the table name for the Password entity.
@@ -83,6 +76,13 @@ const (
 	SessionsInverseTable = "sessions"
 	// SessionsColumn is the table column denoting the sessions relation/edge.
 	SessionsColumn = "user_sessions"
+	// ChallengesTable is the table that holds the challenges relation/edge.
+	ChallengesTable = "challenges"
+	// ChallengesInverseTable is the table name for the Challenge entity.
+	// It exists in this package in order to avoid circular dependency with the "challenge" package.
+	ChallengesInverseTable = "challenges"
+	// ChallengesColumn is the table column denoting the challenges relation/edge.
+	ChallengesColumn = "user_challenges"
 )
 
 // Columns holds all SQL columns for user fields.
@@ -93,7 +93,8 @@ var Columns = []string{
 	FieldStrengthenedMasterHashSalt,
 	FieldProtectedDatabaseKey,
 	FieldProtectedDatabaseKeyIv,
-	FieldDefault2FA,
+	FieldWebauthnEnabled,
+	FieldTotpEnabled,
 	FieldVerified,
 }
 
@@ -118,35 +119,12 @@ var (
 	ProtectedDatabaseKeyValidator func([]byte) error
 	// ProtectedDatabaseKeyIvValidator is a validator for the "protectedDatabaseKeyIv" field. It is called by the builders before save.
 	ProtectedDatabaseKeyIvValidator func([]byte) error
+	// DefaultWebauthnEnabled holds the default value on creation for the "webauthnEnabled" field.
+	DefaultWebauthnEnabled bool
+	// DefaultTotpEnabled holds the default value on creation for the "totpEnabled" field.
+	DefaultTotpEnabled bool
 	// DefaultVerified holds the default value on creation for the "verified" field.
 	DefaultVerified bool
 	// DefaultID holds the default value on creation for the "id" field.
 	DefaultID func() uuid.UUID
 )
-
-// Default2FA defines the type for the "default2FA" enum field.
-type Default2FA string
-
-// Default2FAEmail is the default value of the Default2FA enum.
-const DefaultDefault2FA = Default2FAEmail
-
-// Default2FA values.
-const (
-	Default2FAEmail    Default2FA = "email"
-	Default2FAWebauthn Default2FA = "webauthn"
-	Default2FATotp     Default2FA = "totp"
-)
-
-func (d Default2FA) String() string {
-	return string(d)
-}
-
-// Default2FAValidator is a validator for the "default2FA" field enum values. It is called by the builders before save.
-func Default2FAValidator(d Default2FA) error {
-	switch d {
-	case Default2FAEmail, Default2FAWebauthn, Default2FATotp:
-		return nil
-	default:
-		return fmt.Errorf("user: invalid enum value for default2FA field: %q", d)
-	}
-}

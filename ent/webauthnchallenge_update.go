@@ -3,8 +3,8 @@
 package ent
 
 import (
+	"PasswordManager/ent/challenge"
 	"PasswordManager/ent/predicate"
-	"PasswordManager/ent/user"
 	"PasswordManager/ent/webauthnchallenge"
 	"context"
 	"errors"
@@ -30,23 +30,23 @@ func (wacu *WebAuthnChallengeUpdate) Where(ps ...predicate.WebAuthnChallenge) *W
 	return wacu
 }
 
-// SetChallenge sets the "challenge" field.
-func (wacu *WebAuthnChallengeUpdate) SetChallenge(s string) *WebAuthnChallengeUpdate {
-	wacu.mutation.SetChallenge(s)
+// SetSdChallenge sets the "sdChallenge" field.
+func (wacu *WebAuthnChallengeUpdate) SetSdChallenge(s string) *WebAuthnChallengeUpdate {
+	wacu.mutation.SetSdChallenge(s)
 	return wacu
 }
 
-// SetNillableChallenge sets the "challenge" field if the given value is not nil.
-func (wacu *WebAuthnChallengeUpdate) SetNillableChallenge(s *string) *WebAuthnChallengeUpdate {
+// SetNillableSdChallenge sets the "sdChallenge" field if the given value is not nil.
+func (wacu *WebAuthnChallengeUpdate) SetNillableSdChallenge(s *string) *WebAuthnChallengeUpdate {
 	if s != nil {
-		wacu.SetChallenge(*s)
+		wacu.SetSdChallenge(*s)
 	}
 	return wacu
 }
 
-// ClearChallenge clears the value of the "challenge" field.
-func (wacu *WebAuthnChallengeUpdate) ClearChallenge() *WebAuthnChallengeUpdate {
-	wacu.mutation.ClearChallenge()
+// ClearSdChallenge clears the value of the "sdChallenge" field.
+func (wacu *WebAuthnChallengeUpdate) ClearSdChallenge() *WebAuthnChallengeUpdate {
+	wacu.mutation.ClearSdChallenge()
 	return wacu
 }
 
@@ -112,15 +112,23 @@ func (wacu *WebAuthnChallengeUpdate) ClearExtensions() *WebAuthnChallengeUpdate 
 	return wacu
 }
 
-// SetUserID sets the "user" edge to the User entity by ID.
-func (wacu *WebAuthnChallengeUpdate) SetUserID(id uuid.UUID) *WebAuthnChallengeUpdate {
-	wacu.mutation.SetUserID(id)
+// SetChallengeID sets the "challenge" edge to the Challenge entity by ID.
+func (wacu *WebAuthnChallengeUpdate) SetChallengeID(id uuid.UUID) *WebAuthnChallengeUpdate {
+	wacu.mutation.SetChallengeID(id)
 	return wacu
 }
 
-// SetUser sets the "user" edge to the User entity.
-func (wacu *WebAuthnChallengeUpdate) SetUser(u *User) *WebAuthnChallengeUpdate {
-	return wacu.SetUserID(u.ID)
+// SetNillableChallengeID sets the "challenge" edge to the Challenge entity by ID if the given value is not nil.
+func (wacu *WebAuthnChallengeUpdate) SetNillableChallengeID(id *uuid.UUID) *WebAuthnChallengeUpdate {
+	if id != nil {
+		wacu = wacu.SetChallengeID(*id)
+	}
+	return wacu
+}
+
+// SetChallenge sets the "challenge" edge to the Challenge entity.
+func (wacu *WebAuthnChallengeUpdate) SetChallenge(c *Challenge) *WebAuthnChallengeUpdate {
+	return wacu.SetChallengeID(c.ID)
 }
 
 // Mutation returns the WebAuthnChallengeMutation object of the builder.
@@ -128,9 +136,9 @@ func (wacu *WebAuthnChallengeUpdate) Mutation() *WebAuthnChallengeMutation {
 	return wacu.mutation
 }
 
-// ClearUser clears the "user" edge to the User entity.
-func (wacu *WebAuthnChallengeUpdate) ClearUser() *WebAuthnChallengeUpdate {
-	wacu.mutation.ClearUser()
+// ClearChallenge clears the "challenge" edge to the Challenge entity.
+func (wacu *WebAuthnChallengeUpdate) ClearChallenge() *WebAuthnChallengeUpdate {
+	wacu.mutation.ClearChallenge()
 	return wacu
 }
 
@@ -161,18 +169,7 @@ func (wacu *WebAuthnChallengeUpdate) ExecX(ctx context.Context) {
 	}
 }
 
-// check runs all checks and user-defined validators on the builder.
-func (wacu *WebAuthnChallengeUpdate) check() error {
-	if _, ok := wacu.mutation.UserID(); wacu.mutation.UserCleared() && !ok {
-		return errors.New(`ent: clearing a required unique edge "WebAuthnChallenge.user"`)
-	}
-	return nil
-}
-
 func (wacu *WebAuthnChallengeUpdate) sqlSave(ctx context.Context) (n int, err error) {
-	if err := wacu.check(); err != nil {
-		return n, err
-	}
 	_spec := &sqlgraph.UpdateSpec{
 		Node: &sqlgraph.NodeSpec{
 			Table:   webauthnchallenge.Table,
@@ -190,11 +187,11 @@ func (wacu *WebAuthnChallengeUpdate) sqlSave(ctx context.Context) (n int, err er
 			}
 		}
 	}
-	if value, ok := wacu.mutation.Challenge(); ok {
-		_spec.SetField(webauthnchallenge.FieldChallenge, field.TypeString, value)
+	if value, ok := wacu.mutation.SdChallenge(); ok {
+		_spec.SetField(webauthnchallenge.FieldSdChallenge, field.TypeString, value)
 	}
-	if wacu.mutation.ChallengeCleared() {
-		_spec.ClearField(webauthnchallenge.FieldChallenge, field.TypeString)
+	if wacu.mutation.SdChallengeCleared() {
+		_spec.ClearField(webauthnchallenge.FieldSdChallenge, field.TypeString)
 	}
 	if value, ok := wacu.mutation.UserId(); ok {
 		_spec.SetField(webauthnchallenge.FieldUserId, field.TypeBytes, value)
@@ -225,33 +222,33 @@ func (wacu *WebAuthnChallengeUpdate) sqlSave(ctx context.Context) (n int, err er
 	if wacu.mutation.ExtensionsCleared() {
 		_spec.ClearField(webauthnchallenge.FieldExtensions, field.TypeJSON)
 	}
-	if wacu.mutation.UserCleared() {
+	if wacu.mutation.ChallengeCleared() {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
+			Rel:     sqlgraph.O2O,
 			Inverse: true,
-			Table:   webauthnchallenge.UserTable,
-			Columns: []string{webauthnchallenge.UserColumn},
+			Table:   webauthnchallenge.ChallengeTable,
+			Columns: []string{webauthnchallenge.ChallengeColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeUUID,
-					Column: user.FieldID,
+					Column: challenge.FieldID,
 				},
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := wacu.mutation.UserIDs(); len(nodes) > 0 {
+	if nodes := wacu.mutation.ChallengeIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
+			Rel:     sqlgraph.O2O,
 			Inverse: true,
-			Table:   webauthnchallenge.UserTable,
-			Columns: []string{webauthnchallenge.UserColumn},
+			Table:   webauthnchallenge.ChallengeTable,
+			Columns: []string{webauthnchallenge.ChallengeColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeUUID,
-					Column: user.FieldID,
+					Column: challenge.FieldID,
 				},
 			},
 		}
@@ -280,23 +277,23 @@ type WebAuthnChallengeUpdateOne struct {
 	mutation *WebAuthnChallengeMutation
 }
 
-// SetChallenge sets the "challenge" field.
-func (wacuo *WebAuthnChallengeUpdateOne) SetChallenge(s string) *WebAuthnChallengeUpdateOne {
-	wacuo.mutation.SetChallenge(s)
+// SetSdChallenge sets the "sdChallenge" field.
+func (wacuo *WebAuthnChallengeUpdateOne) SetSdChallenge(s string) *WebAuthnChallengeUpdateOne {
+	wacuo.mutation.SetSdChallenge(s)
 	return wacuo
 }
 
-// SetNillableChallenge sets the "challenge" field if the given value is not nil.
-func (wacuo *WebAuthnChallengeUpdateOne) SetNillableChallenge(s *string) *WebAuthnChallengeUpdateOne {
+// SetNillableSdChallenge sets the "sdChallenge" field if the given value is not nil.
+func (wacuo *WebAuthnChallengeUpdateOne) SetNillableSdChallenge(s *string) *WebAuthnChallengeUpdateOne {
 	if s != nil {
-		wacuo.SetChallenge(*s)
+		wacuo.SetSdChallenge(*s)
 	}
 	return wacuo
 }
 
-// ClearChallenge clears the value of the "challenge" field.
-func (wacuo *WebAuthnChallengeUpdateOne) ClearChallenge() *WebAuthnChallengeUpdateOne {
-	wacuo.mutation.ClearChallenge()
+// ClearSdChallenge clears the value of the "sdChallenge" field.
+func (wacuo *WebAuthnChallengeUpdateOne) ClearSdChallenge() *WebAuthnChallengeUpdateOne {
+	wacuo.mutation.ClearSdChallenge()
 	return wacuo
 }
 
@@ -362,15 +359,23 @@ func (wacuo *WebAuthnChallengeUpdateOne) ClearExtensions() *WebAuthnChallengeUpd
 	return wacuo
 }
 
-// SetUserID sets the "user" edge to the User entity by ID.
-func (wacuo *WebAuthnChallengeUpdateOne) SetUserID(id uuid.UUID) *WebAuthnChallengeUpdateOne {
-	wacuo.mutation.SetUserID(id)
+// SetChallengeID sets the "challenge" edge to the Challenge entity by ID.
+func (wacuo *WebAuthnChallengeUpdateOne) SetChallengeID(id uuid.UUID) *WebAuthnChallengeUpdateOne {
+	wacuo.mutation.SetChallengeID(id)
 	return wacuo
 }
 
-// SetUser sets the "user" edge to the User entity.
-func (wacuo *WebAuthnChallengeUpdateOne) SetUser(u *User) *WebAuthnChallengeUpdateOne {
-	return wacuo.SetUserID(u.ID)
+// SetNillableChallengeID sets the "challenge" edge to the Challenge entity by ID if the given value is not nil.
+func (wacuo *WebAuthnChallengeUpdateOne) SetNillableChallengeID(id *uuid.UUID) *WebAuthnChallengeUpdateOne {
+	if id != nil {
+		wacuo = wacuo.SetChallengeID(*id)
+	}
+	return wacuo
+}
+
+// SetChallenge sets the "challenge" edge to the Challenge entity.
+func (wacuo *WebAuthnChallengeUpdateOne) SetChallenge(c *Challenge) *WebAuthnChallengeUpdateOne {
+	return wacuo.SetChallengeID(c.ID)
 }
 
 // Mutation returns the WebAuthnChallengeMutation object of the builder.
@@ -378,9 +383,9 @@ func (wacuo *WebAuthnChallengeUpdateOne) Mutation() *WebAuthnChallengeMutation {
 	return wacuo.mutation
 }
 
-// ClearUser clears the "user" edge to the User entity.
-func (wacuo *WebAuthnChallengeUpdateOne) ClearUser() *WebAuthnChallengeUpdateOne {
-	wacuo.mutation.ClearUser()
+// ClearChallenge clears the "challenge" edge to the Challenge entity.
+func (wacuo *WebAuthnChallengeUpdateOne) ClearChallenge() *WebAuthnChallengeUpdateOne {
+	wacuo.mutation.ClearChallenge()
 	return wacuo
 }
 
@@ -418,18 +423,7 @@ func (wacuo *WebAuthnChallengeUpdateOne) ExecX(ctx context.Context) {
 	}
 }
 
-// check runs all checks and user-defined validators on the builder.
-func (wacuo *WebAuthnChallengeUpdateOne) check() error {
-	if _, ok := wacuo.mutation.UserID(); wacuo.mutation.UserCleared() && !ok {
-		return errors.New(`ent: clearing a required unique edge "WebAuthnChallenge.user"`)
-	}
-	return nil
-}
-
 func (wacuo *WebAuthnChallengeUpdateOne) sqlSave(ctx context.Context) (_node *WebAuthnChallenge, err error) {
-	if err := wacuo.check(); err != nil {
-		return _node, err
-	}
 	_spec := &sqlgraph.UpdateSpec{
 		Node: &sqlgraph.NodeSpec{
 			Table:   webauthnchallenge.Table,
@@ -464,11 +458,11 @@ func (wacuo *WebAuthnChallengeUpdateOne) sqlSave(ctx context.Context) (_node *We
 			}
 		}
 	}
-	if value, ok := wacuo.mutation.Challenge(); ok {
-		_spec.SetField(webauthnchallenge.FieldChallenge, field.TypeString, value)
+	if value, ok := wacuo.mutation.SdChallenge(); ok {
+		_spec.SetField(webauthnchallenge.FieldSdChallenge, field.TypeString, value)
 	}
-	if wacuo.mutation.ChallengeCleared() {
-		_spec.ClearField(webauthnchallenge.FieldChallenge, field.TypeString)
+	if wacuo.mutation.SdChallengeCleared() {
+		_spec.ClearField(webauthnchallenge.FieldSdChallenge, field.TypeString)
 	}
 	if value, ok := wacuo.mutation.UserId(); ok {
 		_spec.SetField(webauthnchallenge.FieldUserId, field.TypeBytes, value)
@@ -499,33 +493,33 @@ func (wacuo *WebAuthnChallengeUpdateOne) sqlSave(ctx context.Context) (_node *We
 	if wacuo.mutation.ExtensionsCleared() {
 		_spec.ClearField(webauthnchallenge.FieldExtensions, field.TypeJSON)
 	}
-	if wacuo.mutation.UserCleared() {
+	if wacuo.mutation.ChallengeCleared() {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
+			Rel:     sqlgraph.O2O,
 			Inverse: true,
-			Table:   webauthnchallenge.UserTable,
-			Columns: []string{webauthnchallenge.UserColumn},
+			Table:   webauthnchallenge.ChallengeTable,
+			Columns: []string{webauthnchallenge.ChallengeColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeUUID,
-					Column: user.FieldID,
+					Column: challenge.FieldID,
 				},
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := wacuo.mutation.UserIDs(); len(nodes) > 0 {
+	if nodes := wacuo.mutation.ChallengeIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
+			Rel:     sqlgraph.O2O,
 			Inverse: true,
-			Table:   webauthnchallenge.UserTable,
-			Columns: []string{webauthnchallenge.UserColumn},
+			Table:   webauthnchallenge.ChallengeTable,
+			Columns: []string{webauthnchallenge.ChallengeColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeUUID,
-					Column: user.FieldID,
+					Column: challenge.FieldID,
 				},
 			},
 		}

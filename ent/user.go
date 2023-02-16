@@ -27,8 +27,10 @@ type User struct {
 	ProtectedDatabaseKey []byte `json:"-"`
 	// ProtectedDatabaseKeyIv holds the value of the "protectedDatabaseKeyIv" field.
 	ProtectedDatabaseKeyIv []byte `json:"-"`
-	// Default2FA holds the value of the "default2FA" field.
-	Default2FA user.Default2FA `json:"default2FA,omitempty"`
+	// WebauthnEnabled holds the value of the "webauthnEnabled" field.
+	WebauthnEnabled bool `json:"webauthnEnabled,omitempty"`
+	// TotpEnabled holds the value of the "totpEnabled" field.
+	TotpEnabled bool `json:"totpEnabled,omitempty"`
 	// Verified holds the value of the "verified" field.
 	Verified bool `json:"verified,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
@@ -38,36 +40,27 @@ type User struct {
 
 // UserEdges holds the relations/edges for other nodes in the graph.
 type UserEdges struct {
-	// EmailChallenges holds the value of the emailChallenges edge.
-	EmailChallenges []*EmailChallenge `json:"emailChallenges,omitempty"`
 	// TotpCredential holds the value of the totpCredential edge.
 	TotpCredential *TotpCredential `json:"totpCredential,omitempty"`
 	// WebauthnCredentials holds the value of the webauthnCredentials edge.
 	WebauthnCredentials []*WebAuthnCredential `json:"webauthnCredentials,omitempty"`
-	// WebauthnChallenges holds the value of the webauthnChallenges edge.
-	WebauthnChallenges []*WebAuthnChallenge `json:"webauthnChallenges,omitempty"`
+	// WebauthnRegisterChallenges holds the value of the webauthnRegisterChallenges edge.
+	WebauthnRegisterChallenges []*WebAuthnRegisterChallenge `json:"webauthnRegisterChallenges,omitempty"`
 	// Passwords holds the value of the passwords edge.
 	Passwords []*Password `json:"passwords,omitempty"`
 	// Sessions holds the value of the sessions edge.
 	Sessions []*Session `json:"sessions,omitempty"`
+	// Challenges holds the value of the challenges edge.
+	Challenges []*Challenge `json:"challenges,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
 	loadedTypes [6]bool
 }
 
-// EmailChallengesOrErr returns the EmailChallenges value or an error if the edge
-// was not loaded in eager-loading.
-func (e UserEdges) EmailChallengesOrErr() ([]*EmailChallenge, error) {
-	if e.loadedTypes[0] {
-		return e.EmailChallenges, nil
-	}
-	return nil, &NotLoadedError{edge: "emailChallenges"}
-}
-
 // TotpCredentialOrErr returns the TotpCredential value or an error if the edge
 // was not loaded in eager-loading, or loaded but was not found.
 func (e UserEdges) TotpCredentialOrErr() (*TotpCredential, error) {
-	if e.loadedTypes[1] {
+	if e.loadedTypes[0] {
 		if e.TotpCredential == nil {
 			// Edge was loaded but was not found.
 			return nil, &NotFoundError{label: totpcredential.Label}
@@ -80,25 +73,25 @@ func (e UserEdges) TotpCredentialOrErr() (*TotpCredential, error) {
 // WebauthnCredentialsOrErr returns the WebauthnCredentials value or an error if the edge
 // was not loaded in eager-loading.
 func (e UserEdges) WebauthnCredentialsOrErr() ([]*WebAuthnCredential, error) {
-	if e.loadedTypes[2] {
+	if e.loadedTypes[1] {
 		return e.WebauthnCredentials, nil
 	}
 	return nil, &NotLoadedError{edge: "webauthnCredentials"}
 }
 
-// WebauthnChallengesOrErr returns the WebauthnChallenges value or an error if the edge
+// WebauthnRegisterChallengesOrErr returns the WebauthnRegisterChallenges value or an error if the edge
 // was not loaded in eager-loading.
-func (e UserEdges) WebauthnChallengesOrErr() ([]*WebAuthnChallenge, error) {
-	if e.loadedTypes[3] {
-		return e.WebauthnChallenges, nil
+func (e UserEdges) WebauthnRegisterChallengesOrErr() ([]*WebAuthnRegisterChallenge, error) {
+	if e.loadedTypes[2] {
+		return e.WebauthnRegisterChallenges, nil
 	}
-	return nil, &NotLoadedError{edge: "webauthnChallenges"}
+	return nil, &NotLoadedError{edge: "webauthnRegisterChallenges"}
 }
 
 // PasswordsOrErr returns the Passwords value or an error if the edge
 // was not loaded in eager-loading.
 func (e UserEdges) PasswordsOrErr() ([]*Password, error) {
-	if e.loadedTypes[4] {
+	if e.loadedTypes[3] {
 		return e.Passwords, nil
 	}
 	return nil, &NotLoadedError{edge: "passwords"}
@@ -107,10 +100,19 @@ func (e UserEdges) PasswordsOrErr() ([]*Password, error) {
 // SessionsOrErr returns the Sessions value or an error if the edge
 // was not loaded in eager-loading.
 func (e UserEdges) SessionsOrErr() ([]*Session, error) {
-	if e.loadedTypes[5] {
+	if e.loadedTypes[4] {
 		return e.Sessions, nil
 	}
 	return nil, &NotLoadedError{edge: "sessions"}
+}
+
+// ChallengesOrErr returns the Challenges value or an error if the edge
+// was not loaded in eager-loading.
+func (e UserEdges) ChallengesOrErr() ([]*Challenge, error) {
+	if e.loadedTypes[5] {
+		return e.Challenges, nil
+	}
+	return nil, &NotLoadedError{edge: "challenges"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -120,9 +122,9 @@ func (*User) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case user.FieldStrengthenedMasterHash, user.FieldStrengthenedMasterHashSalt, user.FieldProtectedDatabaseKey, user.FieldProtectedDatabaseKeyIv:
 			values[i] = new([]byte)
-		case user.FieldVerified:
+		case user.FieldWebauthnEnabled, user.FieldTotpEnabled, user.FieldVerified:
 			values[i] = new(sql.NullBool)
-		case user.FieldEmail, user.FieldDefault2FA:
+		case user.FieldEmail:
 			values[i] = new(sql.NullString)
 		case user.FieldID:
 			values[i] = new(uuid.UUID)
@@ -177,11 +179,17 @@ func (u *User) assignValues(columns []string, values []any) error {
 			} else if value != nil {
 				u.ProtectedDatabaseKeyIv = *value
 			}
-		case user.FieldDefault2FA:
-			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field default2FA", values[i])
+		case user.FieldWebauthnEnabled:
+			if value, ok := values[i].(*sql.NullBool); !ok {
+				return fmt.Errorf("unexpected type %T for field webauthnEnabled", values[i])
 			} else if value.Valid {
-				u.Default2FA = user.Default2FA(value.String)
+				u.WebauthnEnabled = value.Bool
+			}
+		case user.FieldTotpEnabled:
+			if value, ok := values[i].(*sql.NullBool); !ok {
+				return fmt.Errorf("unexpected type %T for field totpEnabled", values[i])
+			} else if value.Valid {
+				u.TotpEnabled = value.Bool
 			}
 		case user.FieldVerified:
 			if value, ok := values[i].(*sql.NullBool); !ok {
@@ -194,11 +202,6 @@ func (u *User) assignValues(columns []string, values []any) error {
 	return nil
 }
 
-// QueryEmailChallenges queries the "emailChallenges" edge of the User entity.
-func (u *User) QueryEmailChallenges() *EmailChallengeQuery {
-	return NewUserClient(u.config).QueryEmailChallenges(u)
-}
-
 // QueryTotpCredential queries the "totpCredential" edge of the User entity.
 func (u *User) QueryTotpCredential() *TotpCredentialQuery {
 	return NewUserClient(u.config).QueryTotpCredential(u)
@@ -209,9 +212,9 @@ func (u *User) QueryWebauthnCredentials() *WebAuthnCredentialQuery {
 	return NewUserClient(u.config).QueryWebauthnCredentials(u)
 }
 
-// QueryWebauthnChallenges queries the "webauthnChallenges" edge of the User entity.
-func (u *User) QueryWebauthnChallenges() *WebAuthnChallengeQuery {
-	return NewUserClient(u.config).QueryWebauthnChallenges(u)
+// QueryWebauthnRegisterChallenges queries the "webauthnRegisterChallenges" edge of the User entity.
+func (u *User) QueryWebauthnRegisterChallenges() *WebAuthnRegisterChallengeQuery {
+	return NewUserClient(u.config).QueryWebauthnRegisterChallenges(u)
 }
 
 // QueryPasswords queries the "passwords" edge of the User entity.
@@ -222,6 +225,11 @@ func (u *User) QueryPasswords() *PasswordQuery {
 // QuerySessions queries the "sessions" edge of the User entity.
 func (u *User) QuerySessions() *SessionQuery {
 	return NewUserClient(u.config).QuerySessions(u)
+}
+
+// QueryChallenges queries the "challenges" edge of the User entity.
+func (u *User) QueryChallenges() *ChallengeQuery {
+	return NewUserClient(u.config).QueryChallenges(u)
 }
 
 // Update returns a builder for updating this User.
@@ -258,8 +266,11 @@ func (u *User) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("protectedDatabaseKeyIv=<sensitive>")
 	builder.WriteString(", ")
-	builder.WriteString("default2FA=")
-	builder.WriteString(fmt.Sprintf("%v", u.Default2FA))
+	builder.WriteString("webauthnEnabled=")
+	builder.WriteString(fmt.Sprintf("%v", u.WebauthnEnabled))
+	builder.WriteString(", ")
+	builder.WriteString("totpEnabled=")
+	builder.WriteString(fmt.Sprintf("%v", u.TotpEnabled))
 	builder.WriteString(", ")
 	builder.WriteString("verified=")
 	builder.WriteString(fmt.Sprintf("%v", u.Verified))

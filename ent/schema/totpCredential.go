@@ -24,7 +24,8 @@ func (TotpCredential) Fields() []ent.Field {
 
 func (TotpCredential) Edges() []ent.Edge {
 	return []ent.Edge{
-		edge.From("user", User.Type).Ref("totpCredential").Unique().Required(),
+		edge.From("user", User.Type).Ref("totpCredential").Unique(),
+		edge.From("challenge", Challenge.Type).Ref("totpCredential").Unique(),
 	}
 }
 

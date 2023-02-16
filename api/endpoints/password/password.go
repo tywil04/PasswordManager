@@ -9,6 +9,7 @@ import (
 	"github.com/google/uuid"
 
 	"PasswordManager/api/lib/db"
+	"PasswordManager/api/lib/helpers"
 	"PasswordManager/ent"
 )
 
@@ -47,14 +48,14 @@ func Get(c *gin.Context) {
 
 	bindingErr := c.Bind(&input)
 	if bindingErr != nil {
-		c.JSON(400, gin.H{"error": gin.H{"code": "errParsingBody", "message": "Unable to parse body, expected json structure."}})
+		c.JSON(400, helpers.ErrorInvalid("body"))
 		return
 	}
 
 	if input.PasswordId == "" {
 		passwords, passwordsErr := db.GetUserPasswords(authedUser)
 		if passwordsErr != nil {
-			c.JSON(500, gin.H{"error": gin.H{"code": "errUnknown", "message": "An unknown error has occured. Please try again later."}})
+			c.JSON(500, helpers.ErrorUnknown())
 			return
 		}
 
@@ -62,13 +63,13 @@ func Get(c *gin.Context) {
 		for index, password := range passwords {
 			additionalFields, afErr := db.GetPasswordAdditionalFields(password)
 			if afErr != nil {
-				c.JSON(500, gin.H{"error": gin.H{"code": "errUnknown", "message": "An unknown error has occured. Please try again later."}})
+				c.JSON(500, helpers.ErrorUnknown())
 				return
 			}
 
 			urls, uErr := db.GetPasswordUrls(password)
 			if uErr != nil {
-				c.JSON(500, gin.H{"error": gin.H{"code": "errUnknown", "message": "An unknown error has occured. Please try again later."}})
+				c.JSON(500, helpers.ErrorUnknown())
 				return
 			}
 
@@ -108,25 +109,25 @@ func Get(c *gin.Context) {
 	} else {
 		decodedPasswordId, dpiErr := uuid.Parse(input.PasswordId)
 		if dpiErr != nil {
-			c.JSON(400, gin.H{"error": gin.H{"code": "errParsingPasswordId", "message": "Unable to parse 'passwordId', expected uuid."}})
+			c.JSON(400, helpers.ErrorInvalid("passwordId"))
 			return
 		}
 
 		password, passwordErr := db.GetUserPassword(authedUser, decodedPasswordId)
 		if passwordErr != nil {
-			c.JSON(400, gin.H{"error": gin.H{"code": "errPasswordNotFound", "message": "Unable to find valid password using 'passwordId'."}})
+			c.JSON(400, helpers.ErrorInvalid("password"))
 			return
 		}
 
 		additionalFields, afErr := db.GetPasswordAdditionalFields(password)
 		if afErr != nil {
-			c.JSON(500, gin.H{"error": gin.H{"code": "errUnknown", "message": "An unknown error has occured. Please try again later."}})
+			c.JSON(500, helpers.ErrorUnknown())
 			return
 		}
 
 		urls, uErr := db.GetPasswordUrls(password)
 		if uErr != nil {
-			c.JSON(500, gin.H{"error": gin.H{"code": "errUnknown", "message": "An unknown error has occured. Please try again later."}})
+			c.JSON(500, helpers.ErrorUnknown())
 			return
 		}
 
@@ -172,84 +173,84 @@ func Post(c *gin.Context) {
 
 	bindingErr := c.Bind(&input)
 	if bindingErr != nil {
-		c.JSON(400, gin.H{"error": gin.H{"code": "errParsingBody", "message": "Unable to parse body, expected json structure."}})
+		c.JSON(400, helpers.ErrorInvalid("body"))
 		return
 	}
 
 	if input.Name == "" {
-		c.JSON(400, gin.H{"error": gin.H{"code": "errMissingName", "message": "Required 'name' was not found."}})
+		c.JSON(400, helpers.ErrorMissing("name"))
 		return
 	}
 
 	if input.NameIv == "" {
-		c.JSON(400, gin.H{"error": gin.H{"code": "errMissingNameIv", "message": "Required 'nameIv' was not found."}})
+		c.JSON(400, helpers.ErrorMissing("nameIv"))
 		return
 	}
 
 	if input.Username == "" {
-		c.JSON(400, gin.H{"error": gin.H{"code": "errMissingUsername", "message": "Required 'username' was not found."}})
+		c.JSON(400, helpers.ErrorMissing("username"))
 		return
 	}
 
 	if input.UsernameIv == "" {
-		c.JSON(400, gin.H{"error": gin.H{"code": "errMissingUsernameIv", "message": "Required 'usernameIv' was not found."}})
+		c.JSON(400, helpers.ErrorMissing("usernameIv"))
 		return
 	}
 
 	if input.Password == "" {
-		c.JSON(400, gin.H{"error": gin.H{"code": "errMissingPassword", "message": "Required 'password' was not found."}})
+		c.JSON(400, helpers.ErrorMissing("password"))
 		return
 	}
 
 	if input.PasswordIv == "" {
-		c.JSON(400, gin.H{"error": gin.H{"code": "errMissingPasswordIv", "message": "Required 'passwordIv' was not found."}})
+		c.JSON(400, helpers.ErrorMissing("passwordIv"))
 		return
 	}
 
 	if input.Colour == "" {
-		c.JSON(400, gin.H{"error": gin.H{"code": "errMissingColour", "message": "Required 'colour' was not found."}})
+		c.JSON(400, helpers.ErrorMissing("colour"))
 		return
 	}
 
 	decodedName, dnErr := base64.StdEncoding.DecodeString(input.Name)
 	if dnErr != nil {
-		c.JSON(400, gin.H{"error": gin.H{"code": "errParsingUsername", "message": "Unable to parse 'username', expected base64 encoding."}})
+		c.JSON(400, helpers.ErrorInvalid("name"))
 		return
 	}
 
 	decodedNameIv, dniErr := base64.StdEncoding.DecodeString(input.NameIv)
 	if dniErr != nil {
-		c.JSON(400, gin.H{"error": gin.H{"code": "errParsingUsername", "message": "Unable to parse 'username', expected base64 encoding."}})
+		c.JSON(400, helpers.ErrorInvalid("nameIv"))
 		return
 	}
 
 	decodedUsername, duErr := base64.StdEncoding.DecodeString(input.Username)
 	if duErr != nil {
-		c.JSON(400, gin.H{"error": gin.H{"code": "errParsingUsername", "message": "Unable to parse 'username', expected base64 encoding."}})
+		c.JSON(400, helpers.ErrorInvalid("username"))
 		return
 	}
 
 	decodedUsernameIv, duiErr := base64.StdEncoding.DecodeString(input.UsernameIv)
 	if duiErr != nil {
-		c.JSON(400, gin.H{"error": gin.H{"code": "errParsingUsernameIv", "message": "Unable to parse 'usernameIv', expected base64 encoding."}})
+		c.JSON(400, helpers.ErrorInvalid("usernameIv"))
 		return
 	}
 
 	decodedPassword, dpErr := base64.StdEncoding.DecodeString(input.Password)
 	if dpErr != nil {
-		c.JSON(400, gin.H{"error": gin.H{"code": "errParsingPassword", "message": "Unable to parse 'password', expected base64 encoding."}})
+		c.JSON(400, helpers.ErrorInvalid("password"))
 		return
 	}
 
 	decodedPasswordIv, dpiErr := base64.StdEncoding.DecodeString(input.PasswordIv)
 	if dpiErr != nil {
-		c.JSON(400, gin.H{"error": gin.H{"code": "errParsingPasswordIv", "message": "Unable to parse 'passwordIv', expected base64 encoding."}})
+		c.JSON(400, helpers.ErrorInvalid("passwordIv"))
 		return
 	}
 
 	_, hexErr := strconv.ParseInt(input.Colour, 16, 64)
 	if hexErr != nil {
-		c.JSON(400, gin.H{"error": gin.H{"code": "errParsingColour", "message": "Unable to parse 'colour', expected hex encoded colour."}})
+		c.JSON(400, helpers.ErrorInvalid("colour"))
 		return
 	}
 
@@ -257,25 +258,25 @@ func Post(c *gin.Context) {
 	for index, additionalField := range input.AdditionalFields {
 		decodedKey, dkErr := base64.StdEncoding.DecodeString(additionalField.Key)
 		if dkErr != nil {
-			c.JSON(400, gin.H{"error": gin.H{"code": "errPassingAdditionalFieldKey", "message": "Unable to parse 'additionalFields['" + fmt.Sprint(index) + "].key', expected base64 encoding."}})
+			c.JSON(400, helpers.ErrorInvalid("additionalFields["+fmt.Sprint(index)+"].key"))
 			return
 		}
 
 		decodedKeyIv, dkiErr := base64.StdEncoding.DecodeString(additionalField.KeyIv)
 		if dkiErr != nil {
-			c.JSON(400, gin.H{"error": gin.H{"code": "errPassingAdditionalFieldKeyIv", "message": "Unable to parse 'additionalFields['" + fmt.Sprint(index) + "].keyIv', expected base64 encoding."}})
+			c.JSON(400, helpers.ErrorInvalid("additionalFields["+fmt.Sprint(index)+"].keyIv"))
 			return
 		}
 
 		decodedValue, dvErr := base64.StdEncoding.DecodeString(additionalField.Value)
 		if dvErr != nil {
-			c.JSON(400, gin.H{"error": gin.H{"code": "errPassingAdditionalFieldValue", "message": "Unable to parse 'additionalFields['" + fmt.Sprint(index) + "].value', expected base64 encoding."}})
+			c.JSON(400, helpers.ErrorInvalid("additionalFields["+fmt.Sprint(index)+"].value"))
 			return
 		}
 
 		decodedValueIv, dviErr := base64.StdEncoding.DecodeString(additionalField.ValueIv)
 		if dviErr != nil {
-			c.JSON(400, gin.H{"error": gin.H{"code": "errPassingAdditionalFieldValueIv", "message": "Unable to parse 'additionalFields['" + fmt.Sprint(index) + "].valueIv', expected base64 encoding."}})
+			c.JSON(400, helpers.ErrorInvalid("additionalFields["+fmt.Sprint(index)+"].valueIv"))
 			return
 		}
 
@@ -287,7 +288,7 @@ func Post(c *gin.Context) {
 			Save(db.Context)
 
 		if nafErr != nil {
-			c.JSON(500, gin.H{"error": gin.H{"code": "errUnknown", "message": "An unknown error has occured. Please try again later."}})
+			c.JSON(500, helpers.ErrorCreating("additionalFields['"+fmt.Sprint(index)+"]"))
 			return
 		}
 
@@ -298,13 +299,13 @@ func Post(c *gin.Context) {
 	for index, url := range input.Urls {
 		decodedUrl, duErr := base64.StdEncoding.DecodeString(url.Url)
 		if duErr != nil {
-			c.JSON(400, gin.H{"error": gin.H{"code": "errPassingUrl", "message": "Unable to parse 'urls['" + fmt.Sprint(index) + "].url', expected base64 encoding."}})
+			c.JSON(400, helpers.ErrorInvalid("urls['"+fmt.Sprint(index)+"].url"))
 			return
 		}
 
 		decodedUrlIv, duiErr := base64.StdEncoding.DecodeString(url.UrlIv)
 		if duiErr != nil {
-			c.JSON(400, gin.H{"error": gin.H{"code": "errPassingUrlIv", "message": "Unable to parse 'urls['" + fmt.Sprint(index) + "].urlIv', expected base64 encoding."}})
+			c.JSON(400, helpers.ErrorInvalid("urls['"+fmt.Sprint(index)+"].urlIv"))
 			return
 		}
 
@@ -314,7 +315,7 @@ func Post(c *gin.Context) {
 			Save(db.Context)
 
 		if nuErr != nil {
-			c.JSON(500, gin.H{"error": gin.H{"code": "errUnknown", "message": "An unknown error has occured. Please try again later."}})
+			c.JSON(500, helpers.ErrorCreating("urls['"+fmt.Sprint(index)+"]"))
 			return
 		}
 
@@ -335,7 +336,7 @@ func Post(c *gin.Context) {
 		Save(db.Context)
 
 	if passwordErr != nil {
-		c.JSON(500, gin.H{"error": gin.H{"code": "errUnknown", "message": "An unknown error has occured. Please try again later."}})
+		c.JSON(500, helpers.ErrorCreating("password"))
 		return
 	}
 
@@ -349,24 +350,24 @@ func Delete(c *gin.Context) {
 
 	bindingErr := c.Bind(&input)
 	if bindingErr != nil {
-		c.JSON(400, gin.H{"error": gin.H{"code": "errParsingBody", "message": "Unable to parse body, expected json structure."}})
+		c.JSON(400, helpers.ErrorInvalid("body"))
 		return
 	}
 
 	if input.PasswordId == "" {
-		c.JSON(400, gin.H{"error": gin.H{"code": "errMissingPasswordId", "message": "Required 'passwordId' was not found."}})
+		c.JSON(400, helpers.ErrorMissing("passwordId"))
 		return
 	}
 
 	decodedPasswordId, dpiErr := uuid.Parse(input.PasswordId)
 	if dpiErr != nil {
-		c.JSON(400, gin.H{"error": gin.H{"code": "errParsingPasswordId", "message": "Unable to parse 'passwordId', expected uuid."}})
+		c.JSON(400, helpers.ErrorInvalid("passwordId"))
 		return
 	}
 
 	dpErr := db.DeleteUserPasswordViaId(authedUser, decodedPasswordId)
 	if dpErr != nil {
-		c.JSON(400, gin.H{"error": gin.H{"code": "errDeletingPassword", "message": "Unable to delete password using 'passwordId', is the password yours?"}})
+		c.JSON(400, helpers.ErrorDeleting("password"))
 		return
 	}
 

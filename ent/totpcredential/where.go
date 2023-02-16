@@ -213,6 +213,33 @@ func HasUserWith(preds ...predicate.User) predicate.TotpCredential {
 	})
 }
 
+// HasChallenge applies the HasEdge predicate on the "challenge" edge.
+func HasChallenge() predicate.TotpCredential {
+	return predicate.TotpCredential(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, true, ChallengeTable, ChallengeColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasChallengeWith applies the HasEdge predicate on the "challenge" edge with a given conditions (other predicates).
+func HasChallengeWith(preds ...predicate.Challenge) predicate.TotpCredential {
+	return predicate.TotpCredential(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(ChallengeInverseTable, FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, true, ChallengeTable, ChallengeColumn),
+		)
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
 // And groups predicates with the AND operator between them.
 func And(predicates ...predicate.TotpCredential) predicate.TotpCredential {
 	return predicate.TotpCredential(func(s *sql.Selector) {

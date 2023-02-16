@@ -10,17 +10,17 @@ import (
 	"github.com/google/uuid"
 
 	"PasswordManager/api/lib/db"
+	"PasswordManager/api/lib/helpers"
 	internalWebauthn "PasswordManager/api/lib/webauthn"
 	"PasswordManager/ent"
-	"PasswordManager/ent/user"
 )
 
 type GetRegisterInput struct{}
 
 type PostRegisterInput struct {
-	WebauthnChallengeId string `form:"webauthnChallengeId" json:"webauthnChallengeId" xml:"webauthnChallengeId"`
-	Name                string `form:"name" json:"name" xml:"json"`
-	Credential          struct {
+	WebauthnRegisterChallengeId string `form:"webauthnChallengeId" json:"webauthnChallengeId" xml:"webauthnChallengeId"`
+	Name                        string `form:"name" json:"name" xml:"json"`
+	Credential                  struct {
 		AuthenticatorAttachment string `form:"authenticatorAttachment" json:"authenticatorAttachment" xml:"authenticatorAttachment"`
 		Id                      string `form:"id" json:"id" xml:"id"`
 		RawId                   string `form:"rawId" json:"rawId" xml:"rawId"`
@@ -37,12 +37,12 @@ func GetRegister(c *gin.Context) {
 
 	options, sessionData, err := internalWebauthn.Web.BeginRegistration(&internalWebauthn.User{User: authedUser})
 	if err != nil {
-		c.JSON(500, gin.H{"error": gin.H{"code": "errUnknown", "message": "An unknown error has occured. Please try again later."}})
+		c.JSON(500, helpers.ErrorUnknown())
 		return
 	}
 
-	challenge, challengeId := db.Client.WebAuthnChallenge.Create().
-		SetChallenge(sessionData.Challenge).
+	challenge, challengeId := db.Client.WebAuthnRegisterChallenge.Create().
+		SetSdChallenge(sessionData.Challenge).
 		SetUserId(sessionData.UserID).
 		SetAllowedCredentialIds(sessionData.AllowedCredentialIDs).
 		SetUserVerification(string(sessionData.UserVerification)).
@@ -51,11 +51,11 @@ func GetRegister(c *gin.Context) {
 		Save(db.Context)
 
 	if challengeId != nil {
-		c.JSON(500, gin.H{"error": gin.H{"code": "errUnknown", "message": "An unknown error has occured. Please try again later."}})
+		c.JSON(500, helpers.ErrorUnknown())
 		return
 	}
 
-	c.JSON(200, gin.H{"webauthnChallengeId": challenge.ID.String(), "options": options})
+	c.JSON(200, gin.H{"webauthnRegisterChallengeId": challenge.ID.String(), "options": options})
 }
 
 func PostRegister(c *gin.Context) {
@@ -65,29 +65,29 @@ func PostRegister(c *gin.Context) {
 
 	bindingErr := c.Bind(&input)
 	if bindingErr != nil {
-		c.JSON(400, gin.H{"error": gin.H{"code": "errParsingBody", "message": "Unable to parse body, expected json structure."}})
+		c.JSON(400, helpers.ErrorInvalid("body"))
 		return
 	}
 
-	if input.WebauthnChallengeId == "" {
-		c.JSON(400, gin.H{"error": gin.H{"code": "errMissingWebauthnChallengeId", "message": "Required 'webauthnChallengeId' was not found."}})
+	if input.WebauthnRegisterChallengeId == "" {
+		c.JSON(400, helpers.ErrorMissing("webauthnRegisterChallengeId"))
 		return
 	}
 
-	decodedChallengeId, dciErr := uuid.Parse(input.WebauthnChallengeId)
+	decodedChallengeId, dciErr := uuid.Parse(input.WebauthnRegisterChallengeId)
 	if dciErr != nil {
-		c.JSON(400, gin.H{"error": gin.H{"code": "errParsingWebauthnChallengeId", "message": "Unable to parse 'webauthnChallengeId', expected uuid."}})
+		c.JSON(400, helpers.ErrorInvalid("webauthnRegisterChallengeId"))
 		return
 	}
 
-	foundWebauthnChallenge, fwcErr := db.GetUserWebauthnChallenge(authedUser, decodedChallengeId)
+	foundWebauthnChallenge, fwcErr := db.GetUserWebauthnRegisterChallengeViaId(authedUser, decodedChallengeId)
 	if fwcErr != nil {
-		c.JSON(400, gin.H{"error": gin.H{"code": "errWebauthnChallengeNotFound", "message": "Unable to find valid webauthn challenge using 'webauthnChallengeId'."}})
+		c.JSON(400, helpers.ErrorInvalid("webauthnRegisterChallenge"))
 		return
 	}
 
 	sessionData := webauthn.SessionData{
-		Challenge:            foundWebauthnChallenge.Challenge,
+		Challenge:            foundWebauthnChallenge.SdChallenge,
 		UserID:               foundWebauthnChallenge.UserId,
 		AllowedCredentialIDs: foundWebauthnChallenge.AllowedCredentialIds,
 		UserVerification:     protocol.UserVerificationRequirement(foundWebauthnChallenge.UserVerification),
@@ -99,13 +99,13 @@ func PostRegister(c *gin.Context) {
 
 	credentialData, cdErr := protocol.ParseCredentialCreationResponseBody(dataReader)
 	if cdErr != nil {
-		c.JSON(500, gin.H{"error": gin.H{"code": "errUnknown", "message": "An unknown error has occured. Please try again later."}})
+		c.JSON(500, helpers.ErrorUnknown())
 		return
 	}
 
 	credential, credentialErr := internalWebauthn.Web.CreateCredential(&internalWebauthn.User{User: authedUser}, sessionData, credentialData)
 	if credentialErr != nil {
-		c.JSON(500, gin.H{"error": gin.H{"code": "errUnknown", "message": "An unknown error has occured. Please try again later."}})
+		c.JSON(500, helpers.ErrorUnknown())
 		return
 	}
 
@@ -127,12 +127,12 @@ func PostRegister(c *gin.Context) {
 		Save(db.Context)
 
 	if wcErr != nil {
-		c.JSON(500, gin.H{"error": gin.H{"code": "errUnknown", "message": "An unknown error has occured. Please try again later."}})
+		c.JSON(500, helpers.ErrorUnknown())
 		return
 	}
 
-	authedUser.Update().SetDefault2FA(user.Default2FAWebauthn).Exec(db.Context)
-	db.Client.WebAuthnChallenge.DeleteOne(foundWebauthnChallenge).Exec(db.Context)
+	authedUser.Update().SetWebauthnEnabled(true).Exec(db.Context)
+	db.Client.WebAuthnRegisterChallenge.DeleteOne(foundWebauthnChallenge).Exec(db.Context)
 
 	c.JSON(200, gin.H{"webauthnCredentialId": webauthnCredential.ID.String()})
 }

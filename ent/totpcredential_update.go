@@ -3,6 +3,7 @@
 package ent
 
 import (
+	"PasswordManager/ent/challenge"
 	"PasswordManager/ent/predicate"
 	"PasswordManager/ent/totpcredential"
 	"PasswordManager/ent/user"
@@ -70,9 +71,36 @@ func (tcu *TotpCredentialUpdate) SetUserID(id uuid.UUID) *TotpCredentialUpdate {
 	return tcu
 }
 
+// SetNillableUserID sets the "user" edge to the User entity by ID if the given value is not nil.
+func (tcu *TotpCredentialUpdate) SetNillableUserID(id *uuid.UUID) *TotpCredentialUpdate {
+	if id != nil {
+		tcu = tcu.SetUserID(*id)
+	}
+	return tcu
+}
+
 // SetUser sets the "user" edge to the User entity.
 func (tcu *TotpCredentialUpdate) SetUser(u *User) *TotpCredentialUpdate {
 	return tcu.SetUserID(u.ID)
+}
+
+// SetChallengeID sets the "challenge" edge to the Challenge entity by ID.
+func (tcu *TotpCredentialUpdate) SetChallengeID(id uuid.UUID) *TotpCredentialUpdate {
+	tcu.mutation.SetChallengeID(id)
+	return tcu
+}
+
+// SetNillableChallengeID sets the "challenge" edge to the Challenge entity by ID if the given value is not nil.
+func (tcu *TotpCredentialUpdate) SetNillableChallengeID(id *uuid.UUID) *TotpCredentialUpdate {
+	if id != nil {
+		tcu = tcu.SetChallengeID(*id)
+	}
+	return tcu
+}
+
+// SetChallenge sets the "challenge" edge to the Challenge entity.
+func (tcu *TotpCredentialUpdate) SetChallenge(c *Challenge) *TotpCredentialUpdate {
+	return tcu.SetChallengeID(c.ID)
 }
 
 // Mutation returns the TotpCredentialMutation object of the builder.
@@ -83,6 +111,12 @@ func (tcu *TotpCredentialUpdate) Mutation() *TotpCredentialMutation {
 // ClearUser clears the "user" edge to the User entity.
 func (tcu *TotpCredentialUpdate) ClearUser() *TotpCredentialUpdate {
 	tcu.mutation.ClearUser()
+	return tcu
+}
+
+// ClearChallenge clears the "challenge" edge to the Challenge entity.
+func (tcu *TotpCredentialUpdate) ClearChallenge() *TotpCredentialUpdate {
+	tcu.mutation.ClearChallenge()
 	return tcu
 }
 
@@ -119,9 +153,6 @@ func (tcu *TotpCredentialUpdate) check() error {
 		if err := totpcredential.SecretValidator(v); err != nil {
 			return &ValidationError{Name: "secret", err: fmt.Errorf(`ent: validator failed for field "TotpCredential.secret": %w`, err)}
 		}
-	}
-	if _, ok := tcu.mutation.UserID(); tcu.mutation.UserCleared() && !ok {
-		return errors.New(`ent: clearing a required unique edge "TotpCredential.user"`)
 	}
 	return nil
 }
@@ -191,6 +222,41 @@ func (tcu *TotpCredentialUpdate) sqlSave(ctx context.Context) (n int, err error)
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if tcu.mutation.ChallengeCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: true,
+			Table:   totpcredential.ChallengeTable,
+			Columns: []string{totpcredential.ChallengeColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeUUID,
+					Column: challenge.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := tcu.mutation.ChallengeIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: true,
+			Table:   totpcredential.ChallengeTable,
+			Columns: []string{totpcredential.ChallengeColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeUUID,
+					Column: challenge.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if n, err = sqlgraph.UpdateNodes(ctx, tcu.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{totpcredential.Label}
@@ -251,9 +317,36 @@ func (tcuo *TotpCredentialUpdateOne) SetUserID(id uuid.UUID) *TotpCredentialUpda
 	return tcuo
 }
 
+// SetNillableUserID sets the "user" edge to the User entity by ID if the given value is not nil.
+func (tcuo *TotpCredentialUpdateOne) SetNillableUserID(id *uuid.UUID) *TotpCredentialUpdateOne {
+	if id != nil {
+		tcuo = tcuo.SetUserID(*id)
+	}
+	return tcuo
+}
+
 // SetUser sets the "user" edge to the User entity.
 func (tcuo *TotpCredentialUpdateOne) SetUser(u *User) *TotpCredentialUpdateOne {
 	return tcuo.SetUserID(u.ID)
+}
+
+// SetChallengeID sets the "challenge" edge to the Challenge entity by ID.
+func (tcuo *TotpCredentialUpdateOne) SetChallengeID(id uuid.UUID) *TotpCredentialUpdateOne {
+	tcuo.mutation.SetChallengeID(id)
+	return tcuo
+}
+
+// SetNillableChallengeID sets the "challenge" edge to the Challenge entity by ID if the given value is not nil.
+func (tcuo *TotpCredentialUpdateOne) SetNillableChallengeID(id *uuid.UUID) *TotpCredentialUpdateOne {
+	if id != nil {
+		tcuo = tcuo.SetChallengeID(*id)
+	}
+	return tcuo
+}
+
+// SetChallenge sets the "challenge" edge to the Challenge entity.
+func (tcuo *TotpCredentialUpdateOne) SetChallenge(c *Challenge) *TotpCredentialUpdateOne {
+	return tcuo.SetChallengeID(c.ID)
 }
 
 // Mutation returns the TotpCredentialMutation object of the builder.
@@ -264,6 +357,12 @@ func (tcuo *TotpCredentialUpdateOne) Mutation() *TotpCredentialMutation {
 // ClearUser clears the "user" edge to the User entity.
 func (tcuo *TotpCredentialUpdateOne) ClearUser() *TotpCredentialUpdateOne {
 	tcuo.mutation.ClearUser()
+	return tcuo
+}
+
+// ClearChallenge clears the "challenge" edge to the Challenge entity.
+func (tcuo *TotpCredentialUpdateOne) ClearChallenge() *TotpCredentialUpdateOne {
+	tcuo.mutation.ClearChallenge()
 	return tcuo
 }
 
@@ -307,9 +406,6 @@ func (tcuo *TotpCredentialUpdateOne) check() error {
 		if err := totpcredential.SecretValidator(v); err != nil {
 			return &ValidationError{Name: "secret", err: fmt.Errorf(`ent: validator failed for field "TotpCredential.secret": %w`, err)}
 		}
-	}
-	if _, ok := tcuo.mutation.UserID(); tcuo.mutation.UserCleared() && !ok {
-		return errors.New(`ent: clearing a required unique edge "TotpCredential.user"`)
 	}
 	return nil
 }
@@ -388,6 +484,41 @@ func (tcuo *TotpCredentialUpdateOne) sqlSave(ctx context.Context) (_node *TotpCr
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeUUID,
 					Column: user.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if tcuo.mutation.ChallengeCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: true,
+			Table:   totpcredential.ChallengeTable,
+			Columns: []string{totpcredential.ChallengeColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeUUID,
+					Column: challenge.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := tcuo.mutation.ChallengeIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: true,
+			Table:   totpcredential.ChallengeTable,
+			Columns: []string{totpcredential.ChallengeColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeUUID,
+					Column: challenge.FieldID,
 				},
 			},
 		}

@@ -3,7 +3,7 @@
 package ent
 
 import (
-	"PasswordManager/ent/user"
+	"PasswordManager/ent/challenge"
 	"PasswordManager/ent/webauthnchallenge"
 	"encoding/json"
 	"fmt"
@@ -18,8 +18,8 @@ type WebAuthnChallenge struct {
 	config `json:"-"`
 	// ID of the ent.
 	ID uuid.UUID `json:"id,omitempty"`
-	// Challenge holds the value of the "challenge" field.
-	Challenge string `json:"challenge,omitempty"`
+	// SdChallenge holds the value of the "sdChallenge" field.
+	SdChallenge string `json:"sdChallenge,omitempty"`
 	// UserId holds the value of the "userId" field.
 	UserId []byte `json:"userId,omitempty"`
 	// AllowedCredentialIds holds the value of the "allowedCredentialIds" field.
@@ -30,30 +30,30 @@ type WebAuthnChallenge struct {
 	Extensions map[string]interface{} `json:"extensions,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the WebAuthnChallengeQuery when eager-loading is set.
-	Edges                    WebAuthnChallengeEdges `json:"edges"`
-	user_webauthn_challenges *uuid.UUID
+	Edges                        WebAuthnChallengeEdges `json:"edges"`
+	challenge_webauthn_challenge *uuid.UUID
 }
 
 // WebAuthnChallengeEdges holds the relations/edges for other nodes in the graph.
 type WebAuthnChallengeEdges struct {
-	// User holds the value of the user edge.
-	User *User `json:"user,omitempty"`
+	// Challenge holds the value of the challenge edge.
+	Challenge *Challenge `json:"challenge,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
 	loadedTypes [1]bool
 }
 
-// UserOrErr returns the User value or an error if the edge
+// ChallengeOrErr returns the Challenge value or an error if the edge
 // was not loaded in eager-loading, or loaded but was not found.
-func (e WebAuthnChallengeEdges) UserOrErr() (*User, error) {
+func (e WebAuthnChallengeEdges) ChallengeOrErr() (*Challenge, error) {
 	if e.loadedTypes[0] {
-		if e.User == nil {
+		if e.Challenge == nil {
 			// Edge was loaded but was not found.
-			return nil, &NotFoundError{label: user.Label}
+			return nil, &NotFoundError{label: challenge.Label}
 		}
-		return e.User, nil
+		return e.Challenge, nil
 	}
-	return nil, &NotLoadedError{edge: "user"}
+	return nil, &NotLoadedError{edge: "challenge"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -63,11 +63,11 @@ func (*WebAuthnChallenge) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case webauthnchallenge.FieldUserId, webauthnchallenge.FieldAllowedCredentialIds, webauthnchallenge.FieldExtensions:
 			values[i] = new([]byte)
-		case webauthnchallenge.FieldChallenge, webauthnchallenge.FieldUserVerification:
+		case webauthnchallenge.FieldSdChallenge, webauthnchallenge.FieldUserVerification:
 			values[i] = new(sql.NullString)
 		case webauthnchallenge.FieldID:
 			values[i] = new(uuid.UUID)
-		case webauthnchallenge.ForeignKeys[0]: // user_webauthn_challenges
+		case webauthnchallenge.ForeignKeys[0]: // challenge_webauthn_challenge
 			values[i] = &sql.NullScanner{S: new(uuid.UUID)}
 		default:
 			return nil, fmt.Errorf("unexpected column %q for type WebAuthnChallenge", columns[i])
@@ -90,11 +90,11 @@ func (wac *WebAuthnChallenge) assignValues(columns []string, values []any) error
 			} else if value != nil {
 				wac.ID = *value
 			}
-		case webauthnchallenge.FieldChallenge:
+		case webauthnchallenge.FieldSdChallenge:
 			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field challenge", values[i])
+				return fmt.Errorf("unexpected type %T for field sdChallenge", values[i])
 			} else if value.Valid {
-				wac.Challenge = value.String
+				wac.SdChallenge = value.String
 			}
 		case webauthnchallenge.FieldUserId:
 			if value, ok := values[i].(*[]byte); !ok {
@@ -126,19 +126,19 @@ func (wac *WebAuthnChallenge) assignValues(columns []string, values []any) error
 			}
 		case webauthnchallenge.ForeignKeys[0]:
 			if value, ok := values[i].(*sql.NullScanner); !ok {
-				return fmt.Errorf("unexpected type %T for field user_webauthn_challenges", values[i])
+				return fmt.Errorf("unexpected type %T for field challenge_webauthn_challenge", values[i])
 			} else if value.Valid {
-				wac.user_webauthn_challenges = new(uuid.UUID)
-				*wac.user_webauthn_challenges = *value.S.(*uuid.UUID)
+				wac.challenge_webauthn_challenge = new(uuid.UUID)
+				*wac.challenge_webauthn_challenge = *value.S.(*uuid.UUID)
 			}
 		}
 	}
 	return nil
 }
 
-// QueryUser queries the "user" edge of the WebAuthnChallenge entity.
-func (wac *WebAuthnChallenge) QueryUser() *UserQuery {
-	return NewWebAuthnChallengeClient(wac.config).QueryUser(wac)
+// QueryChallenge queries the "challenge" edge of the WebAuthnChallenge entity.
+func (wac *WebAuthnChallenge) QueryChallenge() *ChallengeQuery {
+	return NewWebAuthnChallengeClient(wac.config).QueryChallenge(wac)
 }
 
 // Update returns a builder for updating this WebAuthnChallenge.
@@ -164,8 +164,8 @@ func (wac *WebAuthnChallenge) String() string {
 	var builder strings.Builder
 	builder.WriteString("WebAuthnChallenge(")
 	builder.WriteString(fmt.Sprintf("id=%v, ", wac.ID))
-	builder.WriteString("challenge=")
-	builder.WriteString(wac.Challenge)
+	builder.WriteString("sdChallenge=")
+	builder.WriteString(wac.SdChallenge)
 	builder.WriteString(", ")
 	builder.WriteString("userId=")
 	builder.WriteString(fmt.Sprintf("%v", wac.UserId))

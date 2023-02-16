@@ -4,6 +4,7 @@ package ent
 
 import (
 	"PasswordManager/ent/additionalfield"
+	"PasswordManager/ent/challenge"
 	"PasswordManager/ent/emailchallenge"
 	"PasswordManager/ent/password"
 	"PasswordManager/ent/schema"
@@ -13,6 +14,7 @@ import (
 	"PasswordManager/ent/user"
 	"PasswordManager/ent/webauthnchallenge"
 	"PasswordManager/ent/webauthncredential"
+	"PasswordManager/ent/webauthnregisterchallenge"
 	"time"
 
 	"github.com/google/uuid"
@@ -44,16 +46,18 @@ func init() {
 	additionalfieldDescID := additionalfieldFields[0].Descriptor()
 	// additionalfield.DefaultID holds the default value on creation for the id field.
 	additionalfield.DefaultID = additionalfieldDescID.Default.(func() uuid.UUID)
+	challengeFields := schema.Challenge{}.Fields()
+	_ = challengeFields
+	// challengeDescExpiry is the schema descriptor for expiry field.
+	challengeDescExpiry := challengeFields[1].Descriptor()
+	// challenge.DefaultExpiry holds the default value on creation for the expiry field.
+	challenge.DefaultExpiry = challengeDescExpiry.Default.(func() time.Time)
+	// challengeDescID is the schema descriptor for id field.
+	challengeDescID := challengeFields[0].Descriptor()
+	// challenge.DefaultID holds the default value on creation for the id field.
+	challenge.DefaultID = challengeDescID.Default.(func() uuid.UUID)
 	emailchallengeFields := schema.EmailChallenge{}.Fields()
 	_ = emailchallengeFields
-	// emailchallengeDescCode is the schema descriptor for code field.
-	emailchallengeDescCode := emailchallengeFields[1].Descriptor()
-	// emailchallenge.CodeValidator is a validator for the "code" field. It is called by the builders before save.
-	emailchallenge.CodeValidator = emailchallengeDescCode.Validators[0].(func(string) error)
-	// emailchallengeDescExpiry is the schema descriptor for expiry field.
-	emailchallengeDescExpiry := emailchallengeFields[2].Descriptor()
-	// emailchallenge.DefaultExpiry holds the default value on creation for the expiry field.
-	emailchallenge.DefaultExpiry = emailchallengeDescExpiry.Default.(func() time.Time)
 	// emailchallengeDescID is the schema descriptor for id field.
 	emailchallengeDescID := emailchallengeFields[0].Descriptor()
 	// emailchallenge.DefaultID holds the default value on creation for the id field.
@@ -152,8 +156,16 @@ func init() {
 	userDescProtectedDatabaseKeyIv := userFields[5].Descriptor()
 	// user.ProtectedDatabaseKeyIvValidator is a validator for the "protectedDatabaseKeyIv" field. It is called by the builders before save.
 	user.ProtectedDatabaseKeyIvValidator = userDescProtectedDatabaseKeyIv.Validators[0].(func([]byte) error)
+	// userDescWebauthnEnabled is the schema descriptor for webauthnEnabled field.
+	userDescWebauthnEnabled := userFields[6].Descriptor()
+	// user.DefaultWebauthnEnabled holds the default value on creation for the webauthnEnabled field.
+	user.DefaultWebauthnEnabled = userDescWebauthnEnabled.Default.(bool)
+	// userDescTotpEnabled is the schema descriptor for totpEnabled field.
+	userDescTotpEnabled := userFields[7].Descriptor()
+	// user.DefaultTotpEnabled holds the default value on creation for the totpEnabled field.
+	user.DefaultTotpEnabled = userDescTotpEnabled.Default.(bool)
 	// userDescVerified is the schema descriptor for verified field.
-	userDescVerified := userFields[7].Descriptor()
+	userDescVerified := userFields[8].Descriptor()
 	// user.DefaultVerified holds the default value on creation for the verified field.
 	user.DefaultVerified = userDescVerified.Default.(bool)
 	// userDescID is the schema descriptor for id field.
@@ -176,4 +188,10 @@ func init() {
 	webauthncredentialDescID := webauthncredentialFields[0].Descriptor()
 	// webauthncredential.DefaultID holds the default value on creation for the id field.
 	webauthncredential.DefaultID = webauthncredentialDescID.Default.(func() uuid.UUID)
+	webauthnregisterchallengeFields := schema.WebAuthnRegisterChallenge{}.Fields()
+	_ = webauthnregisterchallengeFields
+	// webauthnregisterchallengeDescID is the schema descriptor for id field.
+	webauthnregisterchallengeDescID := webauthnregisterchallengeFields[0].Descriptor()
+	// webauthnregisterchallenge.DefaultID holds the default value on creation for the id field.
+	webauthnregisterchallenge.DefaultID = webauthnregisterchallengeDescID.Default.(func() uuid.UUID)
 }

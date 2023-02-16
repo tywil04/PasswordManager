@@ -55,9 +55,9 @@ func IDLTE(id uuid.UUID) predicate.WebAuthnChallenge {
 	return predicate.WebAuthnChallenge(sql.FieldLTE(FieldID, id))
 }
 
-// Challenge applies equality check predicate on the "challenge" field. It's identical to ChallengeEQ.
-func Challenge(v string) predicate.WebAuthnChallenge {
-	return predicate.WebAuthnChallenge(sql.FieldEQ(FieldChallenge, v))
+// SdChallenge applies equality check predicate on the "sdChallenge" field. It's identical to SdChallengeEQ.
+func SdChallenge(v string) predicate.WebAuthnChallenge {
+	return predicate.WebAuthnChallenge(sql.FieldEQ(FieldSdChallenge, v))
 }
 
 // UserId applies equality check predicate on the "userId" field. It's identical to UserIdEQ.
@@ -70,79 +70,79 @@ func UserVerification(v string) predicate.WebAuthnChallenge {
 	return predicate.WebAuthnChallenge(sql.FieldEQ(FieldUserVerification, v))
 }
 
-// ChallengeEQ applies the EQ predicate on the "challenge" field.
-func ChallengeEQ(v string) predicate.WebAuthnChallenge {
-	return predicate.WebAuthnChallenge(sql.FieldEQ(FieldChallenge, v))
+// SdChallengeEQ applies the EQ predicate on the "sdChallenge" field.
+func SdChallengeEQ(v string) predicate.WebAuthnChallenge {
+	return predicate.WebAuthnChallenge(sql.FieldEQ(FieldSdChallenge, v))
 }
 
-// ChallengeNEQ applies the NEQ predicate on the "challenge" field.
-func ChallengeNEQ(v string) predicate.WebAuthnChallenge {
-	return predicate.WebAuthnChallenge(sql.FieldNEQ(FieldChallenge, v))
+// SdChallengeNEQ applies the NEQ predicate on the "sdChallenge" field.
+func SdChallengeNEQ(v string) predicate.WebAuthnChallenge {
+	return predicate.WebAuthnChallenge(sql.FieldNEQ(FieldSdChallenge, v))
 }
 
-// ChallengeIn applies the In predicate on the "challenge" field.
-func ChallengeIn(vs ...string) predicate.WebAuthnChallenge {
-	return predicate.WebAuthnChallenge(sql.FieldIn(FieldChallenge, vs...))
+// SdChallengeIn applies the In predicate on the "sdChallenge" field.
+func SdChallengeIn(vs ...string) predicate.WebAuthnChallenge {
+	return predicate.WebAuthnChallenge(sql.FieldIn(FieldSdChallenge, vs...))
 }
 
-// ChallengeNotIn applies the NotIn predicate on the "challenge" field.
-func ChallengeNotIn(vs ...string) predicate.WebAuthnChallenge {
-	return predicate.WebAuthnChallenge(sql.FieldNotIn(FieldChallenge, vs...))
+// SdChallengeNotIn applies the NotIn predicate on the "sdChallenge" field.
+func SdChallengeNotIn(vs ...string) predicate.WebAuthnChallenge {
+	return predicate.WebAuthnChallenge(sql.FieldNotIn(FieldSdChallenge, vs...))
 }
 
-// ChallengeGT applies the GT predicate on the "challenge" field.
-func ChallengeGT(v string) predicate.WebAuthnChallenge {
-	return predicate.WebAuthnChallenge(sql.FieldGT(FieldChallenge, v))
+// SdChallengeGT applies the GT predicate on the "sdChallenge" field.
+func SdChallengeGT(v string) predicate.WebAuthnChallenge {
+	return predicate.WebAuthnChallenge(sql.FieldGT(FieldSdChallenge, v))
 }
 
-// ChallengeGTE applies the GTE predicate on the "challenge" field.
-func ChallengeGTE(v string) predicate.WebAuthnChallenge {
-	return predicate.WebAuthnChallenge(sql.FieldGTE(FieldChallenge, v))
+// SdChallengeGTE applies the GTE predicate on the "sdChallenge" field.
+func SdChallengeGTE(v string) predicate.WebAuthnChallenge {
+	return predicate.WebAuthnChallenge(sql.FieldGTE(FieldSdChallenge, v))
 }
 
-// ChallengeLT applies the LT predicate on the "challenge" field.
-func ChallengeLT(v string) predicate.WebAuthnChallenge {
-	return predicate.WebAuthnChallenge(sql.FieldLT(FieldChallenge, v))
+// SdChallengeLT applies the LT predicate on the "sdChallenge" field.
+func SdChallengeLT(v string) predicate.WebAuthnChallenge {
+	return predicate.WebAuthnChallenge(sql.FieldLT(FieldSdChallenge, v))
 }
 
-// ChallengeLTE applies the LTE predicate on the "challenge" field.
-func ChallengeLTE(v string) predicate.WebAuthnChallenge {
-	return predicate.WebAuthnChallenge(sql.FieldLTE(FieldChallenge, v))
+// SdChallengeLTE applies the LTE predicate on the "sdChallenge" field.
+func SdChallengeLTE(v string) predicate.WebAuthnChallenge {
+	return predicate.WebAuthnChallenge(sql.FieldLTE(FieldSdChallenge, v))
 }
 
-// ChallengeContains applies the Contains predicate on the "challenge" field.
-func ChallengeContains(v string) predicate.WebAuthnChallenge {
-	return predicate.WebAuthnChallenge(sql.FieldContains(FieldChallenge, v))
+// SdChallengeContains applies the Contains predicate on the "sdChallenge" field.
+func SdChallengeContains(v string) predicate.WebAuthnChallenge {
+	return predicate.WebAuthnChallenge(sql.FieldContains(FieldSdChallenge, v))
 }
 
-// ChallengeHasPrefix applies the HasPrefix predicate on the "challenge" field.
-func ChallengeHasPrefix(v string) predicate.WebAuthnChallenge {
-	return predicate.WebAuthnChallenge(sql.FieldHasPrefix(FieldChallenge, v))
+// SdChallengeHasPrefix applies the HasPrefix predicate on the "sdChallenge" field.
+func SdChallengeHasPrefix(v string) predicate.WebAuthnChallenge {
+	return predicate.WebAuthnChallenge(sql.FieldHasPrefix(FieldSdChallenge, v))
 }
 
-// ChallengeHasSuffix applies the HasSuffix predicate on the "challenge" field.
-func ChallengeHasSuffix(v string) predicate.WebAuthnChallenge {
-	return predicate.WebAuthnChallenge(sql.FieldHasSuffix(FieldChallenge, v))
+// SdChallengeHasSuffix applies the HasSuffix predicate on the "sdChallenge" field.
+func SdChallengeHasSuffix(v string) predicate.WebAuthnChallenge {
+	return predicate.WebAuthnChallenge(sql.FieldHasSuffix(FieldSdChallenge, v))
 }
 
-// ChallengeIsNil applies the IsNil predicate on the "challenge" field.
-func ChallengeIsNil() predicate.WebAuthnChallenge {
-	return predicate.WebAuthnChallenge(sql.FieldIsNull(FieldChallenge))
+// SdChallengeIsNil applies the IsNil predicate on the "sdChallenge" field.
+func SdChallengeIsNil() predicate.WebAuthnChallenge {
+	return predicate.WebAuthnChallenge(sql.FieldIsNull(FieldSdChallenge))
 }
 
-// ChallengeNotNil applies the NotNil predicate on the "challenge" field.
-func ChallengeNotNil() predicate.WebAuthnChallenge {
-	return predicate.WebAuthnChallenge(sql.FieldNotNull(FieldChallenge))
+// SdChallengeNotNil applies the NotNil predicate on the "sdChallenge" field.
+func SdChallengeNotNil() predicate.WebAuthnChallenge {
+	return predicate.WebAuthnChallenge(sql.FieldNotNull(FieldSdChallenge))
 }
 
-// ChallengeEqualFold applies the EqualFold predicate on the "challenge" field.
-func ChallengeEqualFold(v string) predicate.WebAuthnChallenge {
-	return predicate.WebAuthnChallenge(sql.FieldEqualFold(FieldChallenge, v))
+// SdChallengeEqualFold applies the EqualFold predicate on the "sdChallenge" field.
+func SdChallengeEqualFold(v string) predicate.WebAuthnChallenge {
+	return predicate.WebAuthnChallenge(sql.FieldEqualFold(FieldSdChallenge, v))
 }
 
-// ChallengeContainsFold applies the ContainsFold predicate on the "challenge" field.
-func ChallengeContainsFold(v string) predicate.WebAuthnChallenge {
-	return predicate.WebAuthnChallenge(sql.FieldContainsFold(FieldChallenge, v))
+// SdChallengeContainsFold applies the ContainsFold predicate on the "sdChallenge" field.
+func SdChallengeContainsFold(v string) predicate.WebAuthnChallenge {
+	return predicate.WebAuthnChallenge(sql.FieldContainsFold(FieldSdChallenge, v))
 }
 
 // UserIdEQ applies the EQ predicate on the "userId" field.
@@ -290,24 +290,24 @@ func ExtensionsNotNil() predicate.WebAuthnChallenge {
 	return predicate.WebAuthnChallenge(sql.FieldNotNull(FieldExtensions))
 }
 
-// HasUser applies the HasEdge predicate on the "user" edge.
-func HasUser() predicate.WebAuthnChallenge {
+// HasChallenge applies the HasEdge predicate on the "challenge" edge.
+func HasChallenge() predicate.WebAuthnChallenge {
 	return predicate.WebAuthnChallenge(func(s *sql.Selector) {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, UserTable, UserColumn),
+			sqlgraph.Edge(sqlgraph.O2O, true, ChallengeTable, ChallengeColumn),
 		)
 		sqlgraph.HasNeighbors(s, step)
 	})
 }
 
-// HasUserWith applies the HasEdge predicate on the "user" edge with a given conditions (other predicates).
-func HasUserWith(preds ...predicate.User) predicate.WebAuthnChallenge {
+// HasChallengeWith applies the HasEdge predicate on the "challenge" edge with a given conditions (other predicates).
+func HasChallengeWith(preds ...predicate.Challenge) predicate.WebAuthnChallenge {
 	return predicate.WebAuthnChallenge(func(s *sql.Selector) {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
-			sqlgraph.To(UserInverseTable, FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, UserTable, UserColumn),
+			sqlgraph.To(ChallengeInverseTable, FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, true, ChallengeTable, ChallengeColumn),
 		)
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {

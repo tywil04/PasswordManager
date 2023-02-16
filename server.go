@@ -16,20 +16,17 @@ import (
 
 	"PasswordManager/api"
 	"PasswordManager/api/lib/db"
+	"PasswordManager/ent/challenge"
 	"PasswordManager/ent/session"
 	"PasswordManager/ui"
 )
 
 func cleanup() {
 	for {
-		time.Sleep(time.Minute * 5)
+		db.Client.Session.Delete().Where(session.ExpiryLT(time.Now())).Exec(db.Context)
+		db.Client.Challenge.Delete().Where(challenge.ExpiryLT(time.Now())).Exec(db.Context)
 
-		expiredSessions, esErr := db.Client.Session.Query().Where(session.ExpiryLT(time.Now())).All(db.Context)
-		if esErr == nil {
-			for _, es := range expiredSessions {
-				db.Client.Session.DeleteOne(es)
-			}
-		}
+		time.Sleep(time.Hour * 24)
 	}
 }
 
@@ -43,12 +40,12 @@ func main() {
 		Handler: router,
 	}
 
-	// Start cleanup
-	go cleanup()
-
 	// Start API/Frontend
 	api.Start(router)
 	ui.Start(router)
+
+	// Start cleanup
+	go cleanup()
 
 	// Graceful Start/Stop
 	fmt.Println("Starting Server...")

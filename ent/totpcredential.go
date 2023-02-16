@@ -3,6 +3,7 @@
 package ent
 
 import (
+	"PasswordManager/ent/challenge"
 	"PasswordManager/ent/totpcredential"
 	"PasswordManager/ent/user"
 	"fmt"
@@ -26,17 +27,20 @@ type TotpCredential struct {
 	Validated bool `json:"validated,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the TotpCredentialQuery when eager-loading is set.
-	Edges                TotpCredentialEdges `json:"edges"`
-	user_totp_credential *uuid.UUID
+	Edges                     TotpCredentialEdges `json:"edges"`
+	challenge_totp_credential *uuid.UUID
+	user_totp_credential      *uuid.UUID
 }
 
 // TotpCredentialEdges holds the relations/edges for other nodes in the graph.
 type TotpCredentialEdges struct {
 	// User holds the value of the user edge.
 	User *User `json:"user,omitempty"`
+	// Challenge holds the value of the challenge edge.
+	Challenge *Challenge `json:"challenge,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [1]bool
+	loadedTypes [2]bool
 }
 
 // UserOrErr returns the User value or an error if the edge
@@ -52,6 +56,19 @@ func (e TotpCredentialEdges) UserOrErr() (*User, error) {
 	return nil, &NotLoadedError{edge: "user"}
 }
 
+// ChallengeOrErr returns the Challenge value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e TotpCredentialEdges) ChallengeOrErr() (*Challenge, error) {
+	if e.loadedTypes[1] {
+		if e.Challenge == nil {
+			// Edge was loaded but was not found.
+			return nil, &NotFoundError{label: challenge.Label}
+		}
+		return e.Challenge, nil
+	}
+	return nil, &NotLoadedError{edge: "challenge"}
+}
+
 // scanValues returns the types for scanning values from sql.Rows.
 func (*TotpCredential) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
@@ -65,7 +82,9 @@ func (*TotpCredential) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullTime)
 		case totpcredential.FieldID:
 			values[i] = new(uuid.UUID)
-		case totpcredential.ForeignKeys[0]: // user_totp_credential
+		case totpcredential.ForeignKeys[0]: // challenge_totp_credential
+			values[i] = &sql.NullScanner{S: new(uuid.UUID)}
+		case totpcredential.ForeignKeys[1]: // user_totp_credential
 			values[i] = &sql.NullScanner{S: new(uuid.UUID)}
 		default:
 			return nil, fmt.Errorf("unexpected column %q for type TotpCredential", columns[i])
@@ -108,6 +127,13 @@ func (tc *TotpCredential) assignValues(columns []string, values []any) error {
 			}
 		case totpcredential.ForeignKeys[0]:
 			if value, ok := values[i].(*sql.NullScanner); !ok {
+				return fmt.Errorf("unexpected type %T for field challenge_totp_credential", values[i])
+			} else if value.Valid {
+				tc.challenge_totp_credential = new(uuid.UUID)
+				*tc.challenge_totp_credential = *value.S.(*uuid.UUID)
+			}
+		case totpcredential.ForeignKeys[1]:
+			if value, ok := values[i].(*sql.NullScanner); !ok {
 				return fmt.Errorf("unexpected type %T for field user_totp_credential", values[i])
 			} else if value.Valid {
 				tc.user_totp_credential = new(uuid.UUID)
@@ -121,6 +147,11 @@ func (tc *TotpCredential) assignValues(columns []string, values []any) error {
 // QueryUser queries the "user" edge of the TotpCredential entity.
 func (tc *TotpCredential) QueryUser() *UserQuery {
 	return NewTotpCredentialClient(tc.config).QueryUser(tc)
+}
+
+// QueryChallenge queries the "challenge" edge of the TotpCredential entity.
+func (tc *TotpCredential) QueryChallenge() *ChallengeQuery {
+	return NewTotpCredentialClient(tc.config).QueryChallenge(tc)
 }
 
 // Update returns a builder for updating this TotpCredential.

@@ -14,7 +14,7 @@ type WebAuthnChallenge struct {
 func (WebAuthnChallenge) Fields() []ent.Field {
 	return []ent.Field{
 		field.UUID("id", uuid.UUID{}).Default(uuid.New),
-		field.String("challenge").Optional(),
+		field.String("sdChallenge").Optional(),
 		field.Bytes("userId").Optional(),
 		field.JSON("allowedCredentialIds", [][]byte{}).Optional(),
 		field.String("userVerification").Optional(),
@@ -24,7 +24,7 @@ func (WebAuthnChallenge) Fields() []ent.Field {
 
 func (WebAuthnChallenge) Edges() []ent.Edge {
 	return []ent.Edge{
-		edge.From("user", User.Type).Ref("webauthnChallenges").Unique().Required(),
+		edge.From("challenge", Challenge.Type).Ref("webauthnChallenge").Unique(),
 	}
 }
 

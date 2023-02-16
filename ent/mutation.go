@@ -4,6 +4,7 @@ package ent
 
 import (
 	"PasswordManager/ent/additionalfield"
+	"PasswordManager/ent/challenge"
 	"PasswordManager/ent/emailchallenge"
 	"PasswordManager/ent/password"
 	"PasswordManager/ent/predicate"
@@ -13,6 +14,7 @@ import (
 	"PasswordManager/ent/user"
 	"PasswordManager/ent/webauthnchallenge"
 	"PasswordManager/ent/webauthncredential"
+	"PasswordManager/ent/webauthnregisterchallenge"
 	"context"
 	"errors"
 	"fmt"
@@ -34,15 +36,17 @@ const (
 	OpUpdateOne = ent.OpUpdateOne
 
 	// Node types.
-	TypeAdditionalField    = "AdditionalField"
-	TypeEmailChallenge     = "EmailChallenge"
-	TypePassword           = "Password"
-	TypeSession            = "Session"
-	TypeTotpCredential     = "TotpCredential"
-	TypeURL                = "Url"
-	TypeUser               = "User"
-	TypeWebAuthnChallenge  = "WebAuthnChallenge"
-	TypeWebAuthnCredential = "WebAuthnCredential"
+	TypeAdditionalField           = "AdditionalField"
+	TypeChallenge                 = "Challenge"
+	TypeEmailChallenge            = "EmailChallenge"
+	TypePassword                  = "Password"
+	TypeSession                   = "Session"
+	TypeTotpCredential            = "TotpCredential"
+	TypeURL                       = "Url"
+	TypeUser                      = "User"
+	TypeWebAuthnChallenge         = "WebAuthnChallenge"
+	TypeWebAuthnCredential        = "WebAuthnCredential"
+	TypeWebAuthnRegisterChallenge = "WebAuthnRegisterChallenge"
 )
 
 // AdditionalFieldMutation represents an operation that mutates the AdditionalField nodes in the graph.
@@ -606,21 +610,595 @@ func (m *AdditionalFieldMutation) ResetEdge(name string) error {
 	return fmt.Errorf("unknown AdditionalField edge %s", name)
 }
 
+// ChallengeMutation represents an operation that mutates the Challenge nodes in the graph.
+type ChallengeMutation struct {
+	config
+	op                       Op
+	typ                      string
+	id                       *uuid.UUID
+	expiry                   *time.Time
+	clearedFields            map[string]struct{}
+	user                     *uuid.UUID
+	cleareduser              bool
+	emailChallenge           *uuid.UUID
+	clearedemailChallenge    bool
+	webauthnChallenge        *uuid.UUID
+	clearedwebauthnChallenge bool
+	totpCredential           *uuid.UUID
+	clearedtotpCredential    bool
+	done                     bool
+	oldValue                 func(context.Context) (*Challenge, error)
+	predicates               []predicate.Challenge
+}
+
+var _ ent.Mutation = (*ChallengeMutation)(nil)
+
+// challengeOption allows management of the mutation configuration using functional options.
+type challengeOption func(*ChallengeMutation)
+
+// newChallengeMutation creates new mutation for the Challenge entity.
+func newChallengeMutation(c config, op Op, opts ...challengeOption) *ChallengeMutation {
+	m := &ChallengeMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeChallenge,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withChallengeID sets the ID field of the mutation.
+func withChallengeID(id uuid.UUID) challengeOption {
+	return func(m *ChallengeMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *Challenge
+		)
+		m.oldValue = func(ctx context.Context) (*Challenge, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().Challenge.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withChallenge sets the old Challenge of the mutation.
+func withChallenge(node *Challenge) challengeOption {
+	return func(m *ChallengeMutation) {
+		m.oldValue = func(context.Context) (*Challenge, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m ChallengeMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m ChallengeMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of Challenge entities.
+func (m *ChallengeMutation) SetID(id uuid.UUID) {
+	m.id = &id
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *ChallengeMutation) ID() (id uuid.UUID, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *ChallengeMutation) IDs(ctx context.Context) ([]uuid.UUID, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []uuid.UUID{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().Challenge.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetExpiry sets the "expiry" field.
+func (m *ChallengeMutation) SetExpiry(t time.Time) {
+	m.expiry = &t
+}
+
+// Expiry returns the value of the "expiry" field in the mutation.
+func (m *ChallengeMutation) Expiry() (r time.Time, exists bool) {
+	v := m.expiry
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldExpiry returns the old "expiry" field's value of the Challenge entity.
+// If the Challenge object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *ChallengeMutation) OldExpiry(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldExpiry is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldExpiry requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldExpiry: %w", err)
+	}
+	return oldValue.Expiry, nil
+}
+
+// ResetExpiry resets all changes to the "expiry" field.
+func (m *ChallengeMutation) ResetExpiry() {
+	m.expiry = nil
+}
+
+// SetUserID sets the "user" edge to the User entity by id.
+func (m *ChallengeMutation) SetUserID(id uuid.UUID) {
+	m.user = &id
+}
+
+// ClearUser clears the "user" edge to the User entity.
+func (m *ChallengeMutation) ClearUser() {
+	m.cleareduser = true
+}
+
+// UserCleared reports if the "user" edge to the User entity was cleared.
+func (m *ChallengeMutation) UserCleared() bool {
+	return m.cleareduser
+}
+
+// UserID returns the "user" edge ID in the mutation.
+func (m *ChallengeMutation) UserID() (id uuid.UUID, exists bool) {
+	if m.user != nil {
+		return *m.user, true
+	}
+	return
+}
+
+// UserIDs returns the "user" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// UserID instead. It exists only for internal usage by the builders.
+func (m *ChallengeMutation) UserIDs() (ids []uuid.UUID) {
+	if id := m.user; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetUser resets all changes to the "user" edge.
+func (m *ChallengeMutation) ResetUser() {
+	m.user = nil
+	m.cleareduser = false
+}
+
+// SetEmailChallengeID sets the "emailChallenge" edge to the EmailChallenge entity by id.
+func (m *ChallengeMutation) SetEmailChallengeID(id uuid.UUID) {
+	m.emailChallenge = &id
+}
+
+// ClearEmailChallenge clears the "emailChallenge" edge to the EmailChallenge entity.
+func (m *ChallengeMutation) ClearEmailChallenge() {
+	m.clearedemailChallenge = true
+}
+
+// EmailChallengeCleared reports if the "emailChallenge" edge to the EmailChallenge entity was cleared.
+func (m *ChallengeMutation) EmailChallengeCleared() bool {
+	return m.clearedemailChallenge
+}
+
+// EmailChallengeID returns the "emailChallenge" edge ID in the mutation.
+func (m *ChallengeMutation) EmailChallengeID() (id uuid.UUID, exists bool) {
+	if m.emailChallenge != nil {
+		return *m.emailChallenge, true
+	}
+	return
+}
+
+// EmailChallengeIDs returns the "emailChallenge" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// EmailChallengeID instead. It exists only for internal usage by the builders.
+func (m *ChallengeMutation) EmailChallengeIDs() (ids []uuid.UUID) {
+	if id := m.emailChallenge; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetEmailChallenge resets all changes to the "emailChallenge" edge.
+func (m *ChallengeMutation) ResetEmailChallenge() {
+	m.emailChallenge = nil
+	m.clearedemailChallenge = false
+}
+
+// SetWebauthnChallengeID sets the "webauthnChallenge" edge to the WebAuthnChallenge entity by id.
+func (m *ChallengeMutation) SetWebauthnChallengeID(id uuid.UUID) {
+	m.webauthnChallenge = &id
+}
+
+// ClearWebauthnChallenge clears the "webauthnChallenge" edge to the WebAuthnChallenge entity.
+func (m *ChallengeMutation) ClearWebauthnChallenge() {
+	m.clearedwebauthnChallenge = true
+}
+
+// WebauthnChallengeCleared reports if the "webauthnChallenge" edge to the WebAuthnChallenge entity was cleared.
+func (m *ChallengeMutation) WebauthnChallengeCleared() bool {
+	return m.clearedwebauthnChallenge
+}
+
+// WebauthnChallengeID returns the "webauthnChallenge" edge ID in the mutation.
+func (m *ChallengeMutation) WebauthnChallengeID() (id uuid.UUID, exists bool) {
+	if m.webauthnChallenge != nil {
+		return *m.webauthnChallenge, true
+	}
+	return
+}
+
+// WebauthnChallengeIDs returns the "webauthnChallenge" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// WebauthnChallengeID instead. It exists only for internal usage by the builders.
+func (m *ChallengeMutation) WebauthnChallengeIDs() (ids []uuid.UUID) {
+	if id := m.webauthnChallenge; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetWebauthnChallenge resets all changes to the "webauthnChallenge" edge.
+func (m *ChallengeMutation) ResetWebauthnChallenge() {
+	m.webauthnChallenge = nil
+	m.clearedwebauthnChallenge = false
+}
+
+// SetTotpCredentialID sets the "totpCredential" edge to the TotpCredential entity by id.
+func (m *ChallengeMutation) SetTotpCredentialID(id uuid.UUID) {
+	m.totpCredential = &id
+}
+
+// ClearTotpCredential clears the "totpCredential" edge to the TotpCredential entity.
+func (m *ChallengeMutation) ClearTotpCredential() {
+	m.clearedtotpCredential = true
+}
+
+// TotpCredentialCleared reports if the "totpCredential" edge to the TotpCredential entity was cleared.
+func (m *ChallengeMutation) TotpCredentialCleared() bool {
+	return m.clearedtotpCredential
+}
+
+// TotpCredentialID returns the "totpCredential" edge ID in the mutation.
+func (m *ChallengeMutation) TotpCredentialID() (id uuid.UUID, exists bool) {
+	if m.totpCredential != nil {
+		return *m.totpCredential, true
+	}
+	return
+}
+
+// TotpCredentialIDs returns the "totpCredential" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// TotpCredentialID instead. It exists only for internal usage by the builders.
+func (m *ChallengeMutation) TotpCredentialIDs() (ids []uuid.UUID) {
+	if id := m.totpCredential; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetTotpCredential resets all changes to the "totpCredential" edge.
+func (m *ChallengeMutation) ResetTotpCredential() {
+	m.totpCredential = nil
+	m.clearedtotpCredential = false
+}
+
+// Where appends a list predicates to the ChallengeMutation builder.
+func (m *ChallengeMutation) Where(ps ...predicate.Challenge) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the ChallengeMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *ChallengeMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.Challenge, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *ChallengeMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *ChallengeMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (Challenge).
+func (m *ChallengeMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *ChallengeMutation) Fields() []string {
+	fields := make([]string, 0, 1)
+	if m.expiry != nil {
+		fields = append(fields, challenge.FieldExpiry)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *ChallengeMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case challenge.FieldExpiry:
+		return m.Expiry()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *ChallengeMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case challenge.FieldExpiry:
+		return m.OldExpiry(ctx)
+	}
+	return nil, fmt.Errorf("unknown Challenge field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *ChallengeMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case challenge.FieldExpiry:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetExpiry(v)
+		return nil
+	}
+	return fmt.Errorf("unknown Challenge field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *ChallengeMutation) AddedFields() []string {
+	return nil
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *ChallengeMutation) AddedField(name string) (ent.Value, bool) {
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *ChallengeMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	}
+	return fmt.Errorf("unknown Challenge numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *ChallengeMutation) ClearedFields() []string {
+	return nil
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *ChallengeMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *ChallengeMutation) ClearField(name string) error {
+	return fmt.Errorf("unknown Challenge nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *ChallengeMutation) ResetField(name string) error {
+	switch name {
+	case challenge.FieldExpiry:
+		m.ResetExpiry()
+		return nil
+	}
+	return fmt.Errorf("unknown Challenge field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *ChallengeMutation) AddedEdges() []string {
+	edges := make([]string, 0, 4)
+	if m.user != nil {
+		edges = append(edges, challenge.EdgeUser)
+	}
+	if m.emailChallenge != nil {
+		edges = append(edges, challenge.EdgeEmailChallenge)
+	}
+	if m.webauthnChallenge != nil {
+		edges = append(edges, challenge.EdgeWebauthnChallenge)
+	}
+	if m.totpCredential != nil {
+		edges = append(edges, challenge.EdgeTotpCredential)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *ChallengeMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case challenge.EdgeUser:
+		if id := m.user; id != nil {
+			return []ent.Value{*id}
+		}
+	case challenge.EdgeEmailChallenge:
+		if id := m.emailChallenge; id != nil {
+			return []ent.Value{*id}
+		}
+	case challenge.EdgeWebauthnChallenge:
+		if id := m.webauthnChallenge; id != nil {
+			return []ent.Value{*id}
+		}
+	case challenge.EdgeTotpCredential:
+		if id := m.totpCredential; id != nil {
+			return []ent.Value{*id}
+		}
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *ChallengeMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 4)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *ChallengeMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *ChallengeMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 4)
+	if m.cleareduser {
+		edges = append(edges, challenge.EdgeUser)
+	}
+	if m.clearedemailChallenge {
+		edges = append(edges, challenge.EdgeEmailChallenge)
+	}
+	if m.clearedwebauthnChallenge {
+		edges = append(edges, challenge.EdgeWebauthnChallenge)
+	}
+	if m.clearedtotpCredential {
+		edges = append(edges, challenge.EdgeTotpCredential)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *ChallengeMutation) EdgeCleared(name string) bool {
+	switch name {
+	case challenge.EdgeUser:
+		return m.cleareduser
+	case challenge.EdgeEmailChallenge:
+		return m.clearedemailChallenge
+	case challenge.EdgeWebauthnChallenge:
+		return m.clearedwebauthnChallenge
+	case challenge.EdgeTotpCredential:
+		return m.clearedtotpCredential
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *ChallengeMutation) ClearEdge(name string) error {
+	switch name {
+	case challenge.EdgeUser:
+		m.ClearUser()
+		return nil
+	case challenge.EdgeEmailChallenge:
+		m.ClearEmailChallenge()
+		return nil
+	case challenge.EdgeWebauthnChallenge:
+		m.ClearWebauthnChallenge()
+		return nil
+	case challenge.EdgeTotpCredential:
+		m.ClearTotpCredential()
+		return nil
+	}
+	return fmt.Errorf("unknown Challenge unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *ChallengeMutation) ResetEdge(name string) error {
+	switch name {
+	case challenge.EdgeUser:
+		m.ResetUser()
+		return nil
+	case challenge.EdgeEmailChallenge:
+		m.ResetEmailChallenge()
+		return nil
+	case challenge.EdgeWebauthnChallenge:
+		m.ResetWebauthnChallenge()
+		return nil
+	case challenge.EdgeTotpCredential:
+		m.ResetTotpCredential()
+		return nil
+	}
+	return fmt.Errorf("unknown Challenge edge %s", name)
+}
+
 // EmailChallengeMutation represents an operation that mutates the EmailChallenge nodes in the graph.
 type EmailChallengeMutation struct {
 	config
-	op            Op
-	typ           string
-	id            *uuid.UUID
-	code          *string
-	expiry        *time.Time
-	_for          *emailchallenge.For
-	clearedFields map[string]struct{}
-	user          *uuid.UUID
-	cleareduser   bool
-	done          bool
-	oldValue      func(context.Context) (*EmailChallenge, error)
-	predicates    []predicate.EmailChallenge
+	op               Op
+	typ              string
+	id               *uuid.UUID
+	code             *string
+	clearedFields    map[string]struct{}
+	challenge        *uuid.UUID
+	clearedchallenge bool
+	done             bool
+	oldValue         func(context.Context) (*EmailChallenge, error)
+	predicates       []predicate.EmailChallenge
 }
 
 var _ ent.Mutation = (*EmailChallengeMutation)(nil)
@@ -758,120 +1336,61 @@ func (m *EmailChallengeMutation) OldCode(ctx context.Context) (v string, err err
 	return oldValue.Code, nil
 }
 
+// ClearCode clears the value of the "code" field.
+func (m *EmailChallengeMutation) ClearCode() {
+	m.code = nil
+	m.clearedFields[emailchallenge.FieldCode] = struct{}{}
+}
+
+// CodeCleared returns if the "code" field was cleared in this mutation.
+func (m *EmailChallengeMutation) CodeCleared() bool {
+	_, ok := m.clearedFields[emailchallenge.FieldCode]
+	return ok
+}
+
 // ResetCode resets all changes to the "code" field.
 func (m *EmailChallengeMutation) ResetCode() {
 	m.code = nil
+	delete(m.clearedFields, emailchallenge.FieldCode)
 }
 
-// SetExpiry sets the "expiry" field.
-func (m *EmailChallengeMutation) SetExpiry(t time.Time) {
-	m.expiry = &t
+// SetChallengeID sets the "challenge" edge to the Challenge entity by id.
+func (m *EmailChallengeMutation) SetChallengeID(id uuid.UUID) {
+	m.challenge = &id
 }
 
-// Expiry returns the value of the "expiry" field in the mutation.
-func (m *EmailChallengeMutation) Expiry() (r time.Time, exists bool) {
-	v := m.expiry
-	if v == nil {
-		return
-	}
-	return *v, true
+// ClearChallenge clears the "challenge" edge to the Challenge entity.
+func (m *EmailChallengeMutation) ClearChallenge() {
+	m.clearedchallenge = true
 }
 
-// OldExpiry returns the old "expiry" field's value of the EmailChallenge entity.
-// If the EmailChallenge object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *EmailChallengeMutation) OldExpiry(ctx context.Context) (v time.Time, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldExpiry is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldExpiry requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldExpiry: %w", err)
-	}
-	return oldValue.Expiry, nil
+// ChallengeCleared reports if the "challenge" edge to the Challenge entity was cleared.
+func (m *EmailChallengeMutation) ChallengeCleared() bool {
+	return m.clearedchallenge
 }
 
-// ResetExpiry resets all changes to the "expiry" field.
-func (m *EmailChallengeMutation) ResetExpiry() {
-	m.expiry = nil
-}
-
-// SetFor sets the "for" field.
-func (m *EmailChallengeMutation) SetFor(e emailchallenge.For) {
-	m._for = &e
-}
-
-// For returns the value of the "for" field in the mutation.
-func (m *EmailChallengeMutation) For() (r emailchallenge.For, exists bool) {
-	v := m._for
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldFor returns the old "for" field's value of the EmailChallenge entity.
-// If the EmailChallenge object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *EmailChallengeMutation) OldFor(ctx context.Context) (v emailchallenge.For, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldFor is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldFor requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldFor: %w", err)
-	}
-	return oldValue.For, nil
-}
-
-// ResetFor resets all changes to the "for" field.
-func (m *EmailChallengeMutation) ResetFor() {
-	m._for = nil
-}
-
-// SetUserID sets the "user" edge to the User entity by id.
-func (m *EmailChallengeMutation) SetUserID(id uuid.UUID) {
-	m.user = &id
-}
-
-// ClearUser clears the "user" edge to the User entity.
-func (m *EmailChallengeMutation) ClearUser() {
-	m.cleareduser = true
-}
-
-// UserCleared reports if the "user" edge to the User entity was cleared.
-func (m *EmailChallengeMutation) UserCleared() bool {
-	return m.cleareduser
-}
-
-// UserID returns the "user" edge ID in the mutation.
-func (m *EmailChallengeMutation) UserID() (id uuid.UUID, exists bool) {
-	if m.user != nil {
-		return *m.user, true
+// ChallengeID returns the "challenge" edge ID in the mutation.
+func (m *EmailChallengeMutation) ChallengeID() (id uuid.UUID, exists bool) {
+	if m.challenge != nil {
+		return *m.challenge, true
 	}
 	return
 }
 
-// UserIDs returns the "user" edge IDs in the mutation.
+// ChallengeIDs returns the "challenge" edge IDs in the mutation.
 // Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
-// UserID instead. It exists only for internal usage by the builders.
-func (m *EmailChallengeMutation) UserIDs() (ids []uuid.UUID) {
-	if id := m.user; id != nil {
+// ChallengeID instead. It exists only for internal usage by the builders.
+func (m *EmailChallengeMutation) ChallengeIDs() (ids []uuid.UUID) {
+	if id := m.challenge; id != nil {
 		ids = append(ids, *id)
 	}
 	return
 }
 
-// ResetUser resets all changes to the "user" edge.
-func (m *EmailChallengeMutation) ResetUser() {
-	m.user = nil
-	m.cleareduser = false
+// ResetChallenge resets all changes to the "challenge" edge.
+func (m *EmailChallengeMutation) ResetChallenge() {
+	m.challenge = nil
+	m.clearedchallenge = false
 }
 
 // Where appends a list predicates to the EmailChallengeMutation builder.
@@ -908,15 +1427,9 @@ func (m *EmailChallengeMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *EmailChallengeMutation) Fields() []string {
-	fields := make([]string, 0, 3)
+	fields := make([]string, 0, 1)
 	if m.code != nil {
 		fields = append(fields, emailchallenge.FieldCode)
-	}
-	if m.expiry != nil {
-		fields = append(fields, emailchallenge.FieldExpiry)
-	}
-	if m._for != nil {
-		fields = append(fields, emailchallenge.FieldFor)
 	}
 	return fields
 }
@@ -928,10 +1441,6 @@ func (m *EmailChallengeMutation) Field(name string) (ent.Value, bool) {
 	switch name {
 	case emailchallenge.FieldCode:
 		return m.Code()
-	case emailchallenge.FieldExpiry:
-		return m.Expiry()
-	case emailchallenge.FieldFor:
-		return m.For()
 	}
 	return nil, false
 }
@@ -943,10 +1452,6 @@ func (m *EmailChallengeMutation) OldField(ctx context.Context, name string) (ent
 	switch name {
 	case emailchallenge.FieldCode:
 		return m.OldCode(ctx)
-	case emailchallenge.FieldExpiry:
-		return m.OldExpiry(ctx)
-	case emailchallenge.FieldFor:
-		return m.OldFor(ctx)
 	}
 	return nil, fmt.Errorf("unknown EmailChallenge field %s", name)
 }
@@ -962,20 +1467,6 @@ func (m *EmailChallengeMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetCode(v)
-		return nil
-	case emailchallenge.FieldExpiry:
-		v, ok := value.(time.Time)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetExpiry(v)
-		return nil
-	case emailchallenge.FieldFor:
-		v, ok := value.(emailchallenge.For)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetFor(v)
 		return nil
 	}
 	return fmt.Errorf("unknown EmailChallenge field %s", name)
@@ -1006,7 +1497,11 @@ func (m *EmailChallengeMutation) AddField(name string, value ent.Value) error {
 // ClearedFields returns all nullable fields that were cleared during this
 // mutation.
 func (m *EmailChallengeMutation) ClearedFields() []string {
-	return nil
+	var fields []string
+	if m.FieldCleared(emailchallenge.FieldCode) {
+		fields = append(fields, emailchallenge.FieldCode)
+	}
+	return fields
 }
 
 // FieldCleared returns a boolean indicating if a field with the given name was
@@ -1019,6 +1514,11 @@ func (m *EmailChallengeMutation) FieldCleared(name string) bool {
 // ClearField clears the value of the field with the given name. It returns an
 // error if the field is not defined in the schema.
 func (m *EmailChallengeMutation) ClearField(name string) error {
+	switch name {
+	case emailchallenge.FieldCode:
+		m.ClearCode()
+		return nil
+	}
 	return fmt.Errorf("unknown EmailChallenge nullable field %s", name)
 }
 
@@ -1029,12 +1529,6 @@ func (m *EmailChallengeMutation) ResetField(name string) error {
 	case emailchallenge.FieldCode:
 		m.ResetCode()
 		return nil
-	case emailchallenge.FieldExpiry:
-		m.ResetExpiry()
-		return nil
-	case emailchallenge.FieldFor:
-		m.ResetFor()
-		return nil
 	}
 	return fmt.Errorf("unknown EmailChallenge field %s", name)
 }
@@ -1042,8 +1536,8 @@ func (m *EmailChallengeMutation) ResetField(name string) error {
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *EmailChallengeMutation) AddedEdges() []string {
 	edges := make([]string, 0, 1)
-	if m.user != nil {
-		edges = append(edges, emailchallenge.EdgeUser)
+	if m.challenge != nil {
+		edges = append(edges, emailchallenge.EdgeChallenge)
 	}
 	return edges
 }
@@ -1052,8 +1546,8 @@ func (m *EmailChallengeMutation) AddedEdges() []string {
 // name in this mutation.
 func (m *EmailChallengeMutation) AddedIDs(name string) []ent.Value {
 	switch name {
-	case emailchallenge.EdgeUser:
-		if id := m.user; id != nil {
+	case emailchallenge.EdgeChallenge:
+		if id := m.challenge; id != nil {
 			return []ent.Value{*id}
 		}
 	}
@@ -1075,8 +1569,8 @@ func (m *EmailChallengeMutation) RemovedIDs(name string) []ent.Value {
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *EmailChallengeMutation) ClearedEdges() []string {
 	edges := make([]string, 0, 1)
-	if m.cleareduser {
-		edges = append(edges, emailchallenge.EdgeUser)
+	if m.clearedchallenge {
+		edges = append(edges, emailchallenge.EdgeChallenge)
 	}
 	return edges
 }
@@ -1085,8 +1579,8 @@ func (m *EmailChallengeMutation) ClearedEdges() []string {
 // was cleared in this mutation.
 func (m *EmailChallengeMutation) EdgeCleared(name string) bool {
 	switch name {
-	case emailchallenge.EdgeUser:
-		return m.cleareduser
+	case emailchallenge.EdgeChallenge:
+		return m.clearedchallenge
 	}
 	return false
 }
@@ -1095,8 +1589,8 @@ func (m *EmailChallengeMutation) EdgeCleared(name string) bool {
 // if that edge is not defined in the schema.
 func (m *EmailChallengeMutation) ClearEdge(name string) error {
 	switch name {
-	case emailchallenge.EdgeUser:
-		m.ClearUser()
+	case emailchallenge.EdgeChallenge:
+		m.ClearChallenge()
 		return nil
 	}
 	return fmt.Errorf("unknown EmailChallenge unique edge %s", name)
@@ -1106,8 +1600,8 @@ func (m *EmailChallengeMutation) ClearEdge(name string) error {
 // It returns an error if the edge is not defined in the schema.
 func (m *EmailChallengeMutation) ResetEdge(name string) error {
 	switch name {
-	case emailchallenge.EdgeUser:
-		m.ResetUser()
+	case emailchallenge.EdgeChallenge:
+		m.ResetChallenge()
 		return nil
 	}
 	return fmt.Errorf("unknown EmailChallenge edge %s", name)
@@ -2572,18 +3066,20 @@ func (m *SessionMutation) ResetEdge(name string) error {
 // TotpCredentialMutation represents an operation that mutates the TotpCredential nodes in the graph.
 type TotpCredentialMutation struct {
 	config
-	op            Op
-	typ           string
-	id            *uuid.UUID
-	createdAt     *time.Time
-	secret        *string
-	validated     *bool
-	clearedFields map[string]struct{}
-	user          *uuid.UUID
-	cleareduser   bool
-	done          bool
-	oldValue      func(context.Context) (*TotpCredential, error)
-	predicates    []predicate.TotpCredential
+	op               Op
+	typ              string
+	id               *uuid.UUID
+	createdAt        *time.Time
+	secret           *string
+	validated        *bool
+	clearedFields    map[string]struct{}
+	user             *uuid.UUID
+	cleareduser      bool
+	challenge        *uuid.UUID
+	clearedchallenge bool
+	done             bool
+	oldValue         func(context.Context) (*TotpCredential, error)
+	predicates       []predicate.TotpCredential
 }
 
 var _ ent.Mutation = (*TotpCredentialMutation)(nil)
@@ -2837,6 +3333,45 @@ func (m *TotpCredentialMutation) ResetUser() {
 	m.cleareduser = false
 }
 
+// SetChallengeID sets the "challenge" edge to the Challenge entity by id.
+func (m *TotpCredentialMutation) SetChallengeID(id uuid.UUID) {
+	m.challenge = &id
+}
+
+// ClearChallenge clears the "challenge" edge to the Challenge entity.
+func (m *TotpCredentialMutation) ClearChallenge() {
+	m.clearedchallenge = true
+}
+
+// ChallengeCleared reports if the "challenge" edge to the Challenge entity was cleared.
+func (m *TotpCredentialMutation) ChallengeCleared() bool {
+	return m.clearedchallenge
+}
+
+// ChallengeID returns the "challenge" edge ID in the mutation.
+func (m *TotpCredentialMutation) ChallengeID() (id uuid.UUID, exists bool) {
+	if m.challenge != nil {
+		return *m.challenge, true
+	}
+	return
+}
+
+// ChallengeIDs returns the "challenge" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// ChallengeID instead. It exists only for internal usage by the builders.
+func (m *TotpCredentialMutation) ChallengeIDs() (ids []uuid.UUID) {
+	if id := m.challenge; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetChallenge resets all changes to the "challenge" edge.
+func (m *TotpCredentialMutation) ResetChallenge() {
+	m.challenge = nil
+	m.clearedchallenge = false
+}
+
 // Where appends a list predicates to the TotpCredentialMutation builder.
 func (m *TotpCredentialMutation) Where(ps ...predicate.TotpCredential) {
 	m.predicates = append(m.predicates, ps...)
@@ -3004,9 +3539,12 @@ func (m *TotpCredentialMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *TotpCredentialMutation) AddedEdges() []string {
-	edges := make([]string, 0, 1)
+	edges := make([]string, 0, 2)
 	if m.user != nil {
 		edges = append(edges, totpcredential.EdgeUser)
+	}
+	if m.challenge != nil {
+		edges = append(edges, totpcredential.EdgeChallenge)
 	}
 	return edges
 }
@@ -3019,13 +3557,17 @@ func (m *TotpCredentialMutation) AddedIDs(name string) []ent.Value {
 		if id := m.user; id != nil {
 			return []ent.Value{*id}
 		}
+	case totpcredential.EdgeChallenge:
+		if id := m.challenge; id != nil {
+			return []ent.Value{*id}
+		}
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *TotpCredentialMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 1)
+	edges := make([]string, 0, 2)
 	return edges
 }
 
@@ -3037,9 +3579,12 @@ func (m *TotpCredentialMutation) RemovedIDs(name string) []ent.Value {
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *TotpCredentialMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 1)
+	edges := make([]string, 0, 2)
 	if m.cleareduser {
 		edges = append(edges, totpcredential.EdgeUser)
+	}
+	if m.clearedchallenge {
+		edges = append(edges, totpcredential.EdgeChallenge)
 	}
 	return edges
 }
@@ -3050,6 +3595,8 @@ func (m *TotpCredentialMutation) EdgeCleared(name string) bool {
 	switch name {
 	case totpcredential.EdgeUser:
 		return m.cleareduser
+	case totpcredential.EdgeChallenge:
+		return m.clearedchallenge
 	}
 	return false
 }
@@ -3061,6 +3608,9 @@ func (m *TotpCredentialMutation) ClearEdge(name string) error {
 	case totpcredential.EdgeUser:
 		m.ClearUser()
 		return nil
+	case totpcredential.EdgeChallenge:
+		m.ClearChallenge()
+		return nil
 	}
 	return fmt.Errorf("unknown TotpCredential unique edge %s", name)
 }
@@ -3071,6 +3621,9 @@ func (m *TotpCredentialMutation) ResetEdge(name string) error {
 	switch name {
 	case totpcredential.EdgeUser:
 		m.ResetUser()
+		return nil
+	case totpcredential.EdgeChallenge:
+		m.ResetChallenge()
 		return nil
 	}
 	return fmt.Errorf("unknown TotpCredential edge %s", name)
@@ -3532,37 +4085,38 @@ func (m *URLMutation) ResetEdge(name string) error {
 // UserMutation represents an operation that mutates the User nodes in the graph.
 type UserMutation struct {
 	config
-	op                         Op
-	typ                        string
-	id                         *uuid.UUID
-	email                      *string
-	strengthenedMasterHash     *[]byte
-	strengthenedMasterHashSalt *[]byte
-	protectedDatabaseKey       *[]byte
-	protectedDatabaseKeyIv     *[]byte
-	default2FA                 *user.Default2FA
-	verified                   *bool
-	clearedFields              map[string]struct{}
-	emailChallenges            map[uuid.UUID]struct{}
-	removedemailChallenges     map[uuid.UUID]struct{}
-	clearedemailChallenges     bool
-	totpCredential             *uuid.UUID
-	clearedtotpCredential      bool
-	webauthnCredentials        map[uuid.UUID]struct{}
-	removedwebauthnCredentials map[uuid.UUID]struct{}
-	clearedwebauthnCredentials bool
-	webauthnChallenges         map[uuid.UUID]struct{}
-	removedwebauthnChallenges  map[uuid.UUID]struct{}
-	clearedwebauthnChallenges  bool
-	passwords                  map[uuid.UUID]struct{}
-	removedpasswords           map[uuid.UUID]struct{}
-	clearedpasswords           bool
-	sessions                   map[uuid.UUID]struct{}
-	removedsessions            map[uuid.UUID]struct{}
-	clearedsessions            bool
-	done                       bool
-	oldValue                   func(context.Context) (*User, error)
-	predicates                 []predicate.User
+	op                                Op
+	typ                               string
+	id                                *uuid.UUID
+	email                             *string
+	strengthenedMasterHash            *[]byte
+	strengthenedMasterHashSalt        *[]byte
+	protectedDatabaseKey              *[]byte
+	protectedDatabaseKeyIv            *[]byte
+	webauthnEnabled                   *bool
+	totpEnabled                       *bool
+	verified                          *bool
+	clearedFields                     map[string]struct{}
+	totpCredential                    *uuid.UUID
+	clearedtotpCredential             bool
+	webauthnCredentials               map[uuid.UUID]struct{}
+	removedwebauthnCredentials        map[uuid.UUID]struct{}
+	clearedwebauthnCredentials        bool
+	webauthnRegisterChallenges        map[uuid.UUID]struct{}
+	removedwebauthnRegisterChallenges map[uuid.UUID]struct{}
+	clearedwebauthnRegisterChallenges bool
+	passwords                         map[uuid.UUID]struct{}
+	removedpasswords                  map[uuid.UUID]struct{}
+	clearedpasswords                  bool
+	sessions                          map[uuid.UUID]struct{}
+	removedsessions                   map[uuid.UUID]struct{}
+	clearedsessions                   bool
+	challenges                        map[uuid.UUID]struct{}
+	removedchallenges                 map[uuid.UUID]struct{}
+	clearedchallenges                 bool
+	done                              bool
+	oldValue                          func(context.Context) (*User, error)
+	predicates                        []predicate.User
 }
 
 var _ ent.Mutation = (*UserMutation)(nil)
@@ -3849,40 +4403,76 @@ func (m *UserMutation) ResetProtectedDatabaseKeyIv() {
 	m.protectedDatabaseKeyIv = nil
 }
 
-// SetDefault2FA sets the "default2FA" field.
-func (m *UserMutation) SetDefault2FA(u user.Default2FA) {
-	m.default2FA = &u
+// SetWebauthnEnabled sets the "webauthnEnabled" field.
+func (m *UserMutation) SetWebauthnEnabled(b bool) {
+	m.webauthnEnabled = &b
 }
 
-// Default2FA returns the value of the "default2FA" field in the mutation.
-func (m *UserMutation) Default2FA() (r user.Default2FA, exists bool) {
-	v := m.default2FA
+// WebauthnEnabled returns the value of the "webauthnEnabled" field in the mutation.
+func (m *UserMutation) WebauthnEnabled() (r bool, exists bool) {
+	v := m.webauthnEnabled
 	if v == nil {
 		return
 	}
 	return *v, true
 }
 
-// OldDefault2FA returns the old "default2FA" field's value of the User entity.
+// OldWebauthnEnabled returns the old "webauthnEnabled" field's value of the User entity.
 // If the User object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *UserMutation) OldDefault2FA(ctx context.Context) (v user.Default2FA, err error) {
+func (m *UserMutation) OldWebauthnEnabled(ctx context.Context) (v bool, err error) {
 	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldDefault2FA is only allowed on UpdateOne operations")
+		return v, errors.New("OldWebauthnEnabled is only allowed on UpdateOne operations")
 	}
 	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldDefault2FA requires an ID field in the mutation")
+		return v, errors.New("OldWebauthnEnabled requires an ID field in the mutation")
 	}
 	oldValue, err := m.oldValue(ctx)
 	if err != nil {
-		return v, fmt.Errorf("querying old value for OldDefault2FA: %w", err)
+		return v, fmt.Errorf("querying old value for OldWebauthnEnabled: %w", err)
 	}
-	return oldValue.Default2FA, nil
+	return oldValue.WebauthnEnabled, nil
 }
 
-// ResetDefault2FA resets all changes to the "default2FA" field.
-func (m *UserMutation) ResetDefault2FA() {
-	m.default2FA = nil
+// ResetWebauthnEnabled resets all changes to the "webauthnEnabled" field.
+func (m *UserMutation) ResetWebauthnEnabled() {
+	m.webauthnEnabled = nil
+}
+
+// SetTotpEnabled sets the "totpEnabled" field.
+func (m *UserMutation) SetTotpEnabled(b bool) {
+	m.totpEnabled = &b
+}
+
+// TotpEnabled returns the value of the "totpEnabled" field in the mutation.
+func (m *UserMutation) TotpEnabled() (r bool, exists bool) {
+	v := m.totpEnabled
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTotpEnabled returns the old "totpEnabled" field's value of the User entity.
+// If the User object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UserMutation) OldTotpEnabled(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTotpEnabled is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTotpEnabled requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTotpEnabled: %w", err)
+	}
+	return oldValue.TotpEnabled, nil
+}
+
+// ResetTotpEnabled resets all changes to the "totpEnabled" field.
+func (m *UserMutation) ResetTotpEnabled() {
+	m.totpEnabled = nil
 }
 
 // SetVerified sets the "verified" field.
@@ -3919,60 +4509,6 @@ func (m *UserMutation) OldVerified(ctx context.Context) (v bool, err error) {
 // ResetVerified resets all changes to the "verified" field.
 func (m *UserMutation) ResetVerified() {
 	m.verified = nil
-}
-
-// AddEmailChallengeIDs adds the "emailChallenges" edge to the EmailChallenge entity by ids.
-func (m *UserMutation) AddEmailChallengeIDs(ids ...uuid.UUID) {
-	if m.emailChallenges == nil {
-		m.emailChallenges = make(map[uuid.UUID]struct{})
-	}
-	for i := range ids {
-		m.emailChallenges[ids[i]] = struct{}{}
-	}
-}
-
-// ClearEmailChallenges clears the "emailChallenges" edge to the EmailChallenge entity.
-func (m *UserMutation) ClearEmailChallenges() {
-	m.clearedemailChallenges = true
-}
-
-// EmailChallengesCleared reports if the "emailChallenges" edge to the EmailChallenge entity was cleared.
-func (m *UserMutation) EmailChallengesCleared() bool {
-	return m.clearedemailChallenges
-}
-
-// RemoveEmailChallengeIDs removes the "emailChallenges" edge to the EmailChallenge entity by IDs.
-func (m *UserMutation) RemoveEmailChallengeIDs(ids ...uuid.UUID) {
-	if m.removedemailChallenges == nil {
-		m.removedemailChallenges = make(map[uuid.UUID]struct{})
-	}
-	for i := range ids {
-		delete(m.emailChallenges, ids[i])
-		m.removedemailChallenges[ids[i]] = struct{}{}
-	}
-}
-
-// RemovedEmailChallenges returns the removed IDs of the "emailChallenges" edge to the EmailChallenge entity.
-func (m *UserMutation) RemovedEmailChallengesIDs() (ids []uuid.UUID) {
-	for id := range m.removedemailChallenges {
-		ids = append(ids, id)
-	}
-	return
-}
-
-// EmailChallengesIDs returns the "emailChallenges" edge IDs in the mutation.
-func (m *UserMutation) EmailChallengesIDs() (ids []uuid.UUID) {
-	for id := range m.emailChallenges {
-		ids = append(ids, id)
-	}
-	return
-}
-
-// ResetEmailChallenges resets all changes to the "emailChallenges" edge.
-func (m *UserMutation) ResetEmailChallenges() {
-	m.emailChallenges = nil
-	m.clearedemailChallenges = false
-	m.removedemailChallenges = nil
 }
 
 // SetTotpCredentialID sets the "totpCredential" edge to the TotpCredential entity by id.
@@ -4068,58 +4604,58 @@ func (m *UserMutation) ResetWebauthnCredentials() {
 	m.removedwebauthnCredentials = nil
 }
 
-// AddWebauthnChallengeIDs adds the "webauthnChallenges" edge to the WebAuthnChallenge entity by ids.
-func (m *UserMutation) AddWebauthnChallengeIDs(ids ...uuid.UUID) {
-	if m.webauthnChallenges == nil {
-		m.webauthnChallenges = make(map[uuid.UUID]struct{})
+// AddWebauthnRegisterChallengeIDs adds the "webauthnRegisterChallenges" edge to the WebAuthnRegisterChallenge entity by ids.
+func (m *UserMutation) AddWebauthnRegisterChallengeIDs(ids ...uuid.UUID) {
+	if m.webauthnRegisterChallenges == nil {
+		m.webauthnRegisterChallenges = make(map[uuid.UUID]struct{})
 	}
 	for i := range ids {
-		m.webauthnChallenges[ids[i]] = struct{}{}
+		m.webauthnRegisterChallenges[ids[i]] = struct{}{}
 	}
 }
 
-// ClearWebauthnChallenges clears the "webauthnChallenges" edge to the WebAuthnChallenge entity.
-func (m *UserMutation) ClearWebauthnChallenges() {
-	m.clearedwebauthnChallenges = true
+// ClearWebauthnRegisterChallenges clears the "webauthnRegisterChallenges" edge to the WebAuthnRegisterChallenge entity.
+func (m *UserMutation) ClearWebauthnRegisterChallenges() {
+	m.clearedwebauthnRegisterChallenges = true
 }
 
-// WebauthnChallengesCleared reports if the "webauthnChallenges" edge to the WebAuthnChallenge entity was cleared.
-func (m *UserMutation) WebauthnChallengesCleared() bool {
-	return m.clearedwebauthnChallenges
+// WebauthnRegisterChallengesCleared reports if the "webauthnRegisterChallenges" edge to the WebAuthnRegisterChallenge entity was cleared.
+func (m *UserMutation) WebauthnRegisterChallengesCleared() bool {
+	return m.clearedwebauthnRegisterChallenges
 }
 
-// RemoveWebauthnChallengeIDs removes the "webauthnChallenges" edge to the WebAuthnChallenge entity by IDs.
-func (m *UserMutation) RemoveWebauthnChallengeIDs(ids ...uuid.UUID) {
-	if m.removedwebauthnChallenges == nil {
-		m.removedwebauthnChallenges = make(map[uuid.UUID]struct{})
+// RemoveWebauthnRegisterChallengeIDs removes the "webauthnRegisterChallenges" edge to the WebAuthnRegisterChallenge entity by IDs.
+func (m *UserMutation) RemoveWebauthnRegisterChallengeIDs(ids ...uuid.UUID) {
+	if m.removedwebauthnRegisterChallenges == nil {
+		m.removedwebauthnRegisterChallenges = make(map[uuid.UUID]struct{})
 	}
 	for i := range ids {
-		delete(m.webauthnChallenges, ids[i])
-		m.removedwebauthnChallenges[ids[i]] = struct{}{}
+		delete(m.webauthnRegisterChallenges, ids[i])
+		m.removedwebauthnRegisterChallenges[ids[i]] = struct{}{}
 	}
 }
 
-// RemovedWebauthnChallenges returns the removed IDs of the "webauthnChallenges" edge to the WebAuthnChallenge entity.
-func (m *UserMutation) RemovedWebauthnChallengesIDs() (ids []uuid.UUID) {
-	for id := range m.removedwebauthnChallenges {
+// RemovedWebauthnRegisterChallenges returns the removed IDs of the "webauthnRegisterChallenges" edge to the WebAuthnRegisterChallenge entity.
+func (m *UserMutation) RemovedWebauthnRegisterChallengesIDs() (ids []uuid.UUID) {
+	for id := range m.removedwebauthnRegisterChallenges {
 		ids = append(ids, id)
 	}
 	return
 }
 
-// WebauthnChallengesIDs returns the "webauthnChallenges" edge IDs in the mutation.
-func (m *UserMutation) WebauthnChallengesIDs() (ids []uuid.UUID) {
-	for id := range m.webauthnChallenges {
+// WebauthnRegisterChallengesIDs returns the "webauthnRegisterChallenges" edge IDs in the mutation.
+func (m *UserMutation) WebauthnRegisterChallengesIDs() (ids []uuid.UUID) {
+	for id := range m.webauthnRegisterChallenges {
 		ids = append(ids, id)
 	}
 	return
 }
 
-// ResetWebauthnChallenges resets all changes to the "webauthnChallenges" edge.
-func (m *UserMutation) ResetWebauthnChallenges() {
-	m.webauthnChallenges = nil
-	m.clearedwebauthnChallenges = false
-	m.removedwebauthnChallenges = nil
+// ResetWebauthnRegisterChallenges resets all changes to the "webauthnRegisterChallenges" edge.
+func (m *UserMutation) ResetWebauthnRegisterChallenges() {
+	m.webauthnRegisterChallenges = nil
+	m.clearedwebauthnRegisterChallenges = false
+	m.removedwebauthnRegisterChallenges = nil
 }
 
 // AddPasswordIDs adds the "passwords" edge to the Password entity by ids.
@@ -4230,6 +4766,60 @@ func (m *UserMutation) ResetSessions() {
 	m.removedsessions = nil
 }
 
+// AddChallengeIDs adds the "challenges" edge to the Challenge entity by ids.
+func (m *UserMutation) AddChallengeIDs(ids ...uuid.UUID) {
+	if m.challenges == nil {
+		m.challenges = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		m.challenges[ids[i]] = struct{}{}
+	}
+}
+
+// ClearChallenges clears the "challenges" edge to the Challenge entity.
+func (m *UserMutation) ClearChallenges() {
+	m.clearedchallenges = true
+}
+
+// ChallengesCleared reports if the "challenges" edge to the Challenge entity was cleared.
+func (m *UserMutation) ChallengesCleared() bool {
+	return m.clearedchallenges
+}
+
+// RemoveChallengeIDs removes the "challenges" edge to the Challenge entity by IDs.
+func (m *UserMutation) RemoveChallengeIDs(ids ...uuid.UUID) {
+	if m.removedchallenges == nil {
+		m.removedchallenges = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		delete(m.challenges, ids[i])
+		m.removedchallenges[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedChallenges returns the removed IDs of the "challenges" edge to the Challenge entity.
+func (m *UserMutation) RemovedChallengesIDs() (ids []uuid.UUID) {
+	for id := range m.removedchallenges {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ChallengesIDs returns the "challenges" edge IDs in the mutation.
+func (m *UserMutation) ChallengesIDs() (ids []uuid.UUID) {
+	for id := range m.challenges {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetChallenges resets all changes to the "challenges" edge.
+func (m *UserMutation) ResetChallenges() {
+	m.challenges = nil
+	m.clearedchallenges = false
+	m.removedchallenges = nil
+}
+
 // Where appends a list predicates to the UserMutation builder.
 func (m *UserMutation) Where(ps ...predicate.User) {
 	m.predicates = append(m.predicates, ps...)
@@ -4264,7 +4854,7 @@ func (m *UserMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *UserMutation) Fields() []string {
-	fields := make([]string, 0, 7)
+	fields := make([]string, 0, 8)
 	if m.email != nil {
 		fields = append(fields, user.FieldEmail)
 	}
@@ -4280,8 +4870,11 @@ func (m *UserMutation) Fields() []string {
 	if m.protectedDatabaseKeyIv != nil {
 		fields = append(fields, user.FieldProtectedDatabaseKeyIv)
 	}
-	if m.default2FA != nil {
-		fields = append(fields, user.FieldDefault2FA)
+	if m.webauthnEnabled != nil {
+		fields = append(fields, user.FieldWebauthnEnabled)
+	}
+	if m.totpEnabled != nil {
+		fields = append(fields, user.FieldTotpEnabled)
 	}
 	if m.verified != nil {
 		fields = append(fields, user.FieldVerified)
@@ -4304,8 +4897,10 @@ func (m *UserMutation) Field(name string) (ent.Value, bool) {
 		return m.ProtectedDatabaseKey()
 	case user.FieldProtectedDatabaseKeyIv:
 		return m.ProtectedDatabaseKeyIv()
-	case user.FieldDefault2FA:
-		return m.Default2FA()
+	case user.FieldWebauthnEnabled:
+		return m.WebauthnEnabled()
+	case user.FieldTotpEnabled:
+		return m.TotpEnabled()
 	case user.FieldVerified:
 		return m.Verified()
 	}
@@ -4327,8 +4922,10 @@ func (m *UserMutation) OldField(ctx context.Context, name string) (ent.Value, er
 		return m.OldProtectedDatabaseKey(ctx)
 	case user.FieldProtectedDatabaseKeyIv:
 		return m.OldProtectedDatabaseKeyIv(ctx)
-	case user.FieldDefault2FA:
-		return m.OldDefault2FA(ctx)
+	case user.FieldWebauthnEnabled:
+		return m.OldWebauthnEnabled(ctx)
+	case user.FieldTotpEnabled:
+		return m.OldTotpEnabled(ctx)
 	case user.FieldVerified:
 		return m.OldVerified(ctx)
 	}
@@ -4375,12 +4972,19 @@ func (m *UserMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetProtectedDatabaseKeyIv(v)
 		return nil
-	case user.FieldDefault2FA:
-		v, ok := value.(user.Default2FA)
+	case user.FieldWebauthnEnabled:
+		v, ok := value.(bool)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
-		m.SetDefault2FA(v)
+		m.SetWebauthnEnabled(v)
+		return nil
+	case user.FieldTotpEnabled:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTotpEnabled(v)
 		return nil
 	case user.FieldVerified:
 		v, ok := value.(bool)
@@ -4453,8 +5057,11 @@ func (m *UserMutation) ResetField(name string) error {
 	case user.FieldProtectedDatabaseKeyIv:
 		m.ResetProtectedDatabaseKeyIv()
 		return nil
-	case user.FieldDefault2FA:
-		m.ResetDefault2FA()
+	case user.FieldWebauthnEnabled:
+		m.ResetWebauthnEnabled()
+		return nil
+	case user.FieldTotpEnabled:
+		m.ResetTotpEnabled()
 		return nil
 	case user.FieldVerified:
 		m.ResetVerified()
@@ -4466,23 +5073,23 @@ func (m *UserMutation) ResetField(name string) error {
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *UserMutation) AddedEdges() []string {
 	edges := make([]string, 0, 6)
-	if m.emailChallenges != nil {
-		edges = append(edges, user.EdgeEmailChallenges)
-	}
 	if m.totpCredential != nil {
 		edges = append(edges, user.EdgeTotpCredential)
 	}
 	if m.webauthnCredentials != nil {
 		edges = append(edges, user.EdgeWebauthnCredentials)
 	}
-	if m.webauthnChallenges != nil {
-		edges = append(edges, user.EdgeWebauthnChallenges)
+	if m.webauthnRegisterChallenges != nil {
+		edges = append(edges, user.EdgeWebauthnRegisterChallenges)
 	}
 	if m.passwords != nil {
 		edges = append(edges, user.EdgePasswords)
 	}
 	if m.sessions != nil {
 		edges = append(edges, user.EdgeSessions)
+	}
+	if m.challenges != nil {
+		edges = append(edges, user.EdgeChallenges)
 	}
 	return edges
 }
@@ -4491,12 +5098,6 @@ func (m *UserMutation) AddedEdges() []string {
 // name in this mutation.
 func (m *UserMutation) AddedIDs(name string) []ent.Value {
 	switch name {
-	case user.EdgeEmailChallenges:
-		ids := make([]ent.Value, 0, len(m.emailChallenges))
-		for id := range m.emailChallenges {
-			ids = append(ids, id)
-		}
-		return ids
 	case user.EdgeTotpCredential:
 		if id := m.totpCredential; id != nil {
 			return []ent.Value{*id}
@@ -4507,9 +5108,9 @@ func (m *UserMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
-	case user.EdgeWebauthnChallenges:
-		ids := make([]ent.Value, 0, len(m.webauthnChallenges))
-		for id := range m.webauthnChallenges {
+	case user.EdgeWebauthnRegisterChallenges:
+		ids := make([]ent.Value, 0, len(m.webauthnRegisterChallenges))
+		for id := range m.webauthnRegisterChallenges {
 			ids = append(ids, id)
 		}
 		return ids
@@ -4525,6 +5126,12 @@ func (m *UserMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case user.EdgeChallenges:
+		ids := make([]ent.Value, 0, len(m.challenges))
+		for id := range m.challenges {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
@@ -4532,20 +5139,20 @@ func (m *UserMutation) AddedIDs(name string) []ent.Value {
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *UserMutation) RemovedEdges() []string {
 	edges := make([]string, 0, 6)
-	if m.removedemailChallenges != nil {
-		edges = append(edges, user.EdgeEmailChallenges)
-	}
 	if m.removedwebauthnCredentials != nil {
 		edges = append(edges, user.EdgeWebauthnCredentials)
 	}
-	if m.removedwebauthnChallenges != nil {
-		edges = append(edges, user.EdgeWebauthnChallenges)
+	if m.removedwebauthnRegisterChallenges != nil {
+		edges = append(edges, user.EdgeWebauthnRegisterChallenges)
 	}
 	if m.removedpasswords != nil {
 		edges = append(edges, user.EdgePasswords)
 	}
 	if m.removedsessions != nil {
 		edges = append(edges, user.EdgeSessions)
+	}
+	if m.removedchallenges != nil {
+		edges = append(edges, user.EdgeChallenges)
 	}
 	return edges
 }
@@ -4554,21 +5161,15 @@ func (m *UserMutation) RemovedEdges() []string {
 // the given name in this mutation.
 func (m *UserMutation) RemovedIDs(name string) []ent.Value {
 	switch name {
-	case user.EdgeEmailChallenges:
-		ids := make([]ent.Value, 0, len(m.removedemailChallenges))
-		for id := range m.removedemailChallenges {
-			ids = append(ids, id)
-		}
-		return ids
 	case user.EdgeWebauthnCredentials:
 		ids := make([]ent.Value, 0, len(m.removedwebauthnCredentials))
 		for id := range m.removedwebauthnCredentials {
 			ids = append(ids, id)
 		}
 		return ids
-	case user.EdgeWebauthnChallenges:
-		ids := make([]ent.Value, 0, len(m.removedwebauthnChallenges))
-		for id := range m.removedwebauthnChallenges {
+	case user.EdgeWebauthnRegisterChallenges:
+		ids := make([]ent.Value, 0, len(m.removedwebauthnRegisterChallenges))
+		for id := range m.removedwebauthnRegisterChallenges {
 			ids = append(ids, id)
 		}
 		return ids
@@ -4584,6 +5185,12 @@ func (m *UserMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case user.EdgeChallenges:
+		ids := make([]ent.Value, 0, len(m.removedchallenges))
+		for id := range m.removedchallenges {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
@@ -4591,23 +5198,23 @@ func (m *UserMutation) RemovedIDs(name string) []ent.Value {
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *UserMutation) ClearedEdges() []string {
 	edges := make([]string, 0, 6)
-	if m.clearedemailChallenges {
-		edges = append(edges, user.EdgeEmailChallenges)
-	}
 	if m.clearedtotpCredential {
 		edges = append(edges, user.EdgeTotpCredential)
 	}
 	if m.clearedwebauthnCredentials {
 		edges = append(edges, user.EdgeWebauthnCredentials)
 	}
-	if m.clearedwebauthnChallenges {
-		edges = append(edges, user.EdgeWebauthnChallenges)
+	if m.clearedwebauthnRegisterChallenges {
+		edges = append(edges, user.EdgeWebauthnRegisterChallenges)
 	}
 	if m.clearedpasswords {
 		edges = append(edges, user.EdgePasswords)
 	}
 	if m.clearedsessions {
 		edges = append(edges, user.EdgeSessions)
+	}
+	if m.clearedchallenges {
+		edges = append(edges, user.EdgeChallenges)
 	}
 	return edges
 }
@@ -4616,18 +5223,18 @@ func (m *UserMutation) ClearedEdges() []string {
 // was cleared in this mutation.
 func (m *UserMutation) EdgeCleared(name string) bool {
 	switch name {
-	case user.EdgeEmailChallenges:
-		return m.clearedemailChallenges
 	case user.EdgeTotpCredential:
 		return m.clearedtotpCredential
 	case user.EdgeWebauthnCredentials:
 		return m.clearedwebauthnCredentials
-	case user.EdgeWebauthnChallenges:
-		return m.clearedwebauthnChallenges
+	case user.EdgeWebauthnRegisterChallenges:
+		return m.clearedwebauthnRegisterChallenges
 	case user.EdgePasswords:
 		return m.clearedpasswords
 	case user.EdgeSessions:
 		return m.clearedsessions
+	case user.EdgeChallenges:
+		return m.clearedchallenges
 	}
 	return false
 }
@@ -4647,23 +5254,23 @@ func (m *UserMutation) ClearEdge(name string) error {
 // It returns an error if the edge is not defined in the schema.
 func (m *UserMutation) ResetEdge(name string) error {
 	switch name {
-	case user.EdgeEmailChallenges:
-		m.ResetEmailChallenges()
-		return nil
 	case user.EdgeTotpCredential:
 		m.ResetTotpCredential()
 		return nil
 	case user.EdgeWebauthnCredentials:
 		m.ResetWebauthnCredentials()
 		return nil
-	case user.EdgeWebauthnChallenges:
-		m.ResetWebauthnChallenges()
+	case user.EdgeWebauthnRegisterChallenges:
+		m.ResetWebauthnRegisterChallenges()
 		return nil
 	case user.EdgePasswords:
 		m.ResetPasswords()
 		return nil
 	case user.EdgeSessions:
 		m.ResetSessions()
+		return nil
+	case user.EdgeChallenges:
+		m.ResetChallenges()
 		return nil
 	}
 	return fmt.Errorf("unknown User edge %s", name)
@@ -4675,15 +5282,15 @@ type WebAuthnChallengeMutation struct {
 	op                         Op
 	typ                        string
 	id                         *uuid.UUID
-	challenge                  *string
+	sdChallenge                *string
 	userId                     *[]byte
 	allowedCredentialIds       *[][]uint8
 	appendallowedCredentialIds [][]uint8
 	userVerification           *string
 	extensions                 *map[string]interface{}
 	clearedFields              map[string]struct{}
-	user                       *uuid.UUID
-	cleareduser                bool
+	challenge                  *uuid.UUID
+	clearedchallenge           bool
 	done                       bool
 	oldValue                   func(context.Context) (*WebAuthnChallenge, error)
 	predicates                 []predicate.WebAuthnChallenge
@@ -4793,53 +5400,53 @@ func (m *WebAuthnChallengeMutation) IDs(ctx context.Context) ([]uuid.UUID, error
 	}
 }
 
-// SetChallenge sets the "challenge" field.
-func (m *WebAuthnChallengeMutation) SetChallenge(s string) {
-	m.challenge = &s
+// SetSdChallenge sets the "sdChallenge" field.
+func (m *WebAuthnChallengeMutation) SetSdChallenge(s string) {
+	m.sdChallenge = &s
 }
 
-// Challenge returns the value of the "challenge" field in the mutation.
-func (m *WebAuthnChallengeMutation) Challenge() (r string, exists bool) {
-	v := m.challenge
+// SdChallenge returns the value of the "sdChallenge" field in the mutation.
+func (m *WebAuthnChallengeMutation) SdChallenge() (r string, exists bool) {
+	v := m.sdChallenge
 	if v == nil {
 		return
 	}
 	return *v, true
 }
 
-// OldChallenge returns the old "challenge" field's value of the WebAuthnChallenge entity.
+// OldSdChallenge returns the old "sdChallenge" field's value of the WebAuthnChallenge entity.
 // If the WebAuthnChallenge object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *WebAuthnChallengeMutation) OldChallenge(ctx context.Context) (v string, err error) {
+func (m *WebAuthnChallengeMutation) OldSdChallenge(ctx context.Context) (v string, err error) {
 	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldChallenge is only allowed on UpdateOne operations")
+		return v, errors.New("OldSdChallenge is only allowed on UpdateOne operations")
 	}
 	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldChallenge requires an ID field in the mutation")
+		return v, errors.New("OldSdChallenge requires an ID field in the mutation")
 	}
 	oldValue, err := m.oldValue(ctx)
 	if err != nil {
-		return v, fmt.Errorf("querying old value for OldChallenge: %w", err)
+		return v, fmt.Errorf("querying old value for OldSdChallenge: %w", err)
 	}
-	return oldValue.Challenge, nil
+	return oldValue.SdChallenge, nil
 }
 
-// ClearChallenge clears the value of the "challenge" field.
-func (m *WebAuthnChallengeMutation) ClearChallenge() {
-	m.challenge = nil
-	m.clearedFields[webauthnchallenge.FieldChallenge] = struct{}{}
+// ClearSdChallenge clears the value of the "sdChallenge" field.
+func (m *WebAuthnChallengeMutation) ClearSdChallenge() {
+	m.sdChallenge = nil
+	m.clearedFields[webauthnchallenge.FieldSdChallenge] = struct{}{}
 }
 
-// ChallengeCleared returns if the "challenge" field was cleared in this mutation.
-func (m *WebAuthnChallengeMutation) ChallengeCleared() bool {
-	_, ok := m.clearedFields[webauthnchallenge.FieldChallenge]
+// SdChallengeCleared returns if the "sdChallenge" field was cleared in this mutation.
+func (m *WebAuthnChallengeMutation) SdChallengeCleared() bool {
+	_, ok := m.clearedFields[webauthnchallenge.FieldSdChallenge]
 	return ok
 }
 
-// ResetChallenge resets all changes to the "challenge" field.
-func (m *WebAuthnChallengeMutation) ResetChallenge() {
-	m.challenge = nil
-	delete(m.clearedFields, webauthnchallenge.FieldChallenge)
+// ResetSdChallenge resets all changes to the "sdChallenge" field.
+func (m *WebAuthnChallengeMutation) ResetSdChallenge() {
+	m.sdChallenge = nil
+	delete(m.clearedFields, webauthnchallenge.FieldSdChallenge)
 }
 
 // SetUserId sets the "userId" field.
@@ -5054,43 +5661,43 @@ func (m *WebAuthnChallengeMutation) ResetExtensions() {
 	delete(m.clearedFields, webauthnchallenge.FieldExtensions)
 }
 
-// SetUserID sets the "user" edge to the User entity by id.
-func (m *WebAuthnChallengeMutation) SetUserID(id uuid.UUID) {
-	m.user = &id
+// SetChallengeID sets the "challenge" edge to the Challenge entity by id.
+func (m *WebAuthnChallengeMutation) SetChallengeID(id uuid.UUID) {
+	m.challenge = &id
 }
 
-// ClearUser clears the "user" edge to the User entity.
-func (m *WebAuthnChallengeMutation) ClearUser() {
-	m.cleareduser = true
+// ClearChallenge clears the "challenge" edge to the Challenge entity.
+func (m *WebAuthnChallengeMutation) ClearChallenge() {
+	m.clearedchallenge = true
 }
 
-// UserCleared reports if the "user" edge to the User entity was cleared.
-func (m *WebAuthnChallengeMutation) UserCleared() bool {
-	return m.cleareduser
+// ChallengeCleared reports if the "challenge" edge to the Challenge entity was cleared.
+func (m *WebAuthnChallengeMutation) ChallengeCleared() bool {
+	return m.clearedchallenge
 }
 
-// UserID returns the "user" edge ID in the mutation.
-func (m *WebAuthnChallengeMutation) UserID() (id uuid.UUID, exists bool) {
-	if m.user != nil {
-		return *m.user, true
+// ChallengeID returns the "challenge" edge ID in the mutation.
+func (m *WebAuthnChallengeMutation) ChallengeID() (id uuid.UUID, exists bool) {
+	if m.challenge != nil {
+		return *m.challenge, true
 	}
 	return
 }
 
-// UserIDs returns the "user" edge IDs in the mutation.
+// ChallengeIDs returns the "challenge" edge IDs in the mutation.
 // Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
-// UserID instead. It exists only for internal usage by the builders.
-func (m *WebAuthnChallengeMutation) UserIDs() (ids []uuid.UUID) {
-	if id := m.user; id != nil {
+// ChallengeID instead. It exists only for internal usage by the builders.
+func (m *WebAuthnChallengeMutation) ChallengeIDs() (ids []uuid.UUID) {
+	if id := m.challenge; id != nil {
 		ids = append(ids, *id)
 	}
 	return
 }
 
-// ResetUser resets all changes to the "user" edge.
-func (m *WebAuthnChallengeMutation) ResetUser() {
-	m.user = nil
-	m.cleareduser = false
+// ResetChallenge resets all changes to the "challenge" edge.
+func (m *WebAuthnChallengeMutation) ResetChallenge() {
+	m.challenge = nil
+	m.clearedchallenge = false
 }
 
 // Where appends a list predicates to the WebAuthnChallengeMutation builder.
@@ -5128,8 +5735,8 @@ func (m *WebAuthnChallengeMutation) Type() string {
 // AddedFields().
 func (m *WebAuthnChallengeMutation) Fields() []string {
 	fields := make([]string, 0, 5)
-	if m.challenge != nil {
-		fields = append(fields, webauthnchallenge.FieldChallenge)
+	if m.sdChallenge != nil {
+		fields = append(fields, webauthnchallenge.FieldSdChallenge)
 	}
 	if m.userId != nil {
 		fields = append(fields, webauthnchallenge.FieldUserId)
@@ -5151,8 +5758,8 @@ func (m *WebAuthnChallengeMutation) Fields() []string {
 // schema.
 func (m *WebAuthnChallengeMutation) Field(name string) (ent.Value, bool) {
 	switch name {
-	case webauthnchallenge.FieldChallenge:
-		return m.Challenge()
+	case webauthnchallenge.FieldSdChallenge:
+		return m.SdChallenge()
 	case webauthnchallenge.FieldUserId:
 		return m.UserId()
 	case webauthnchallenge.FieldAllowedCredentialIds:
@@ -5170,8 +5777,8 @@ func (m *WebAuthnChallengeMutation) Field(name string) (ent.Value, bool) {
 // database failed.
 func (m *WebAuthnChallengeMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
 	switch name {
-	case webauthnchallenge.FieldChallenge:
-		return m.OldChallenge(ctx)
+	case webauthnchallenge.FieldSdChallenge:
+		return m.OldSdChallenge(ctx)
 	case webauthnchallenge.FieldUserId:
 		return m.OldUserId(ctx)
 	case webauthnchallenge.FieldAllowedCredentialIds:
@@ -5189,12 +5796,12 @@ func (m *WebAuthnChallengeMutation) OldField(ctx context.Context, name string) (
 // type.
 func (m *WebAuthnChallengeMutation) SetField(name string, value ent.Value) error {
 	switch name {
-	case webauthnchallenge.FieldChallenge:
+	case webauthnchallenge.FieldSdChallenge:
 		v, ok := value.(string)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
-		m.SetChallenge(v)
+		m.SetSdChallenge(v)
 		return nil
 	case webauthnchallenge.FieldUserId:
 		v, ok := value.([]byte)
@@ -5254,8 +5861,8 @@ func (m *WebAuthnChallengeMutation) AddField(name string, value ent.Value) error
 // mutation.
 func (m *WebAuthnChallengeMutation) ClearedFields() []string {
 	var fields []string
-	if m.FieldCleared(webauthnchallenge.FieldChallenge) {
-		fields = append(fields, webauthnchallenge.FieldChallenge)
+	if m.FieldCleared(webauthnchallenge.FieldSdChallenge) {
+		fields = append(fields, webauthnchallenge.FieldSdChallenge)
 	}
 	if m.FieldCleared(webauthnchallenge.FieldUserId) {
 		fields = append(fields, webauthnchallenge.FieldUserId)
@@ -5283,8 +5890,8 @@ func (m *WebAuthnChallengeMutation) FieldCleared(name string) bool {
 // error if the field is not defined in the schema.
 func (m *WebAuthnChallengeMutation) ClearField(name string) error {
 	switch name {
-	case webauthnchallenge.FieldChallenge:
-		m.ClearChallenge()
+	case webauthnchallenge.FieldSdChallenge:
+		m.ClearSdChallenge()
 		return nil
 	case webauthnchallenge.FieldUserId:
 		m.ClearUserId()
@@ -5306,8 +5913,8 @@ func (m *WebAuthnChallengeMutation) ClearField(name string) error {
 // It returns an error if the field is not defined in the schema.
 func (m *WebAuthnChallengeMutation) ResetField(name string) error {
 	switch name {
-	case webauthnchallenge.FieldChallenge:
-		m.ResetChallenge()
+	case webauthnchallenge.FieldSdChallenge:
+		m.ResetSdChallenge()
 		return nil
 	case webauthnchallenge.FieldUserId:
 		m.ResetUserId()
@@ -5328,8 +5935,8 @@ func (m *WebAuthnChallengeMutation) ResetField(name string) error {
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *WebAuthnChallengeMutation) AddedEdges() []string {
 	edges := make([]string, 0, 1)
-	if m.user != nil {
-		edges = append(edges, webauthnchallenge.EdgeUser)
+	if m.challenge != nil {
+		edges = append(edges, webauthnchallenge.EdgeChallenge)
 	}
 	return edges
 }
@@ -5338,8 +5945,8 @@ func (m *WebAuthnChallengeMutation) AddedEdges() []string {
 // name in this mutation.
 func (m *WebAuthnChallengeMutation) AddedIDs(name string) []ent.Value {
 	switch name {
-	case webauthnchallenge.EdgeUser:
-		if id := m.user; id != nil {
+	case webauthnchallenge.EdgeChallenge:
+		if id := m.challenge; id != nil {
 			return []ent.Value{*id}
 		}
 	}
@@ -5361,8 +5968,8 @@ func (m *WebAuthnChallengeMutation) RemovedIDs(name string) []ent.Value {
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *WebAuthnChallengeMutation) ClearedEdges() []string {
 	edges := make([]string, 0, 1)
-	if m.cleareduser {
-		edges = append(edges, webauthnchallenge.EdgeUser)
+	if m.clearedchallenge {
+		edges = append(edges, webauthnchallenge.EdgeChallenge)
 	}
 	return edges
 }
@@ -5371,8 +5978,8 @@ func (m *WebAuthnChallengeMutation) ClearedEdges() []string {
 // was cleared in this mutation.
 func (m *WebAuthnChallengeMutation) EdgeCleared(name string) bool {
 	switch name {
-	case webauthnchallenge.EdgeUser:
-		return m.cleareduser
+	case webauthnchallenge.EdgeChallenge:
+		return m.clearedchallenge
 	}
 	return false
 }
@@ -5381,8 +5988,8 @@ func (m *WebAuthnChallengeMutation) EdgeCleared(name string) bool {
 // if that edge is not defined in the schema.
 func (m *WebAuthnChallengeMutation) ClearEdge(name string) error {
 	switch name {
-	case webauthnchallenge.EdgeUser:
-		m.ClearUser()
+	case webauthnchallenge.EdgeChallenge:
+		m.ClearChallenge()
 		return nil
 	}
 	return fmt.Errorf("unknown WebAuthnChallenge unique edge %s", name)
@@ -5392,8 +5999,8 @@ func (m *WebAuthnChallengeMutation) ClearEdge(name string) error {
 // It returns an error if the edge is not defined in the schema.
 func (m *WebAuthnChallengeMutation) ResetEdge(name string) error {
 	switch name {
-	case webauthnchallenge.EdgeUser:
-		m.ResetUser()
+	case webauthnchallenge.EdgeChallenge:
+		m.ResetChallenge()
 		return nil
 	}
 	return fmt.Errorf("unknown WebAuthnChallenge edge %s", name)
@@ -6280,4 +6887,734 @@ func (m *WebAuthnCredentialMutation) ResetEdge(name string) error {
 		return nil
 	}
 	return fmt.Errorf("unknown WebAuthnCredential edge %s", name)
+}
+
+// WebAuthnRegisterChallengeMutation represents an operation that mutates the WebAuthnRegisterChallenge nodes in the graph.
+type WebAuthnRegisterChallengeMutation struct {
+	config
+	op                         Op
+	typ                        string
+	id                         *uuid.UUID
+	sdChallenge                *string
+	userId                     *[]byte
+	allowedCredentialIds       *[][]uint8
+	appendallowedCredentialIds [][]uint8
+	userVerification           *string
+	extensions                 *map[string]interface{}
+	clearedFields              map[string]struct{}
+	user                       *uuid.UUID
+	cleareduser                bool
+	done                       bool
+	oldValue                   func(context.Context) (*WebAuthnRegisterChallenge, error)
+	predicates                 []predicate.WebAuthnRegisterChallenge
+}
+
+var _ ent.Mutation = (*WebAuthnRegisterChallengeMutation)(nil)
+
+// webauthnregisterchallengeOption allows management of the mutation configuration using functional options.
+type webauthnregisterchallengeOption func(*WebAuthnRegisterChallengeMutation)
+
+// newWebAuthnRegisterChallengeMutation creates new mutation for the WebAuthnRegisterChallenge entity.
+func newWebAuthnRegisterChallengeMutation(c config, op Op, opts ...webauthnregisterchallengeOption) *WebAuthnRegisterChallengeMutation {
+	m := &WebAuthnRegisterChallengeMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeWebAuthnRegisterChallenge,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withWebAuthnRegisterChallengeID sets the ID field of the mutation.
+func withWebAuthnRegisterChallengeID(id uuid.UUID) webauthnregisterchallengeOption {
+	return func(m *WebAuthnRegisterChallengeMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *WebAuthnRegisterChallenge
+		)
+		m.oldValue = func(ctx context.Context) (*WebAuthnRegisterChallenge, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().WebAuthnRegisterChallenge.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withWebAuthnRegisterChallenge sets the old WebAuthnRegisterChallenge of the mutation.
+func withWebAuthnRegisterChallenge(node *WebAuthnRegisterChallenge) webauthnregisterchallengeOption {
+	return func(m *WebAuthnRegisterChallengeMutation) {
+		m.oldValue = func(context.Context) (*WebAuthnRegisterChallenge, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m WebAuthnRegisterChallengeMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m WebAuthnRegisterChallengeMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of WebAuthnRegisterChallenge entities.
+func (m *WebAuthnRegisterChallengeMutation) SetID(id uuid.UUID) {
+	m.id = &id
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *WebAuthnRegisterChallengeMutation) ID() (id uuid.UUID, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *WebAuthnRegisterChallengeMutation) IDs(ctx context.Context) ([]uuid.UUID, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []uuid.UUID{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().WebAuthnRegisterChallenge.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetSdChallenge sets the "sdChallenge" field.
+func (m *WebAuthnRegisterChallengeMutation) SetSdChallenge(s string) {
+	m.sdChallenge = &s
+}
+
+// SdChallenge returns the value of the "sdChallenge" field in the mutation.
+func (m *WebAuthnRegisterChallengeMutation) SdChallenge() (r string, exists bool) {
+	v := m.sdChallenge
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSdChallenge returns the old "sdChallenge" field's value of the WebAuthnRegisterChallenge entity.
+// If the WebAuthnRegisterChallenge object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *WebAuthnRegisterChallengeMutation) OldSdChallenge(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldSdChallenge is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldSdChallenge requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSdChallenge: %w", err)
+	}
+	return oldValue.SdChallenge, nil
+}
+
+// ClearSdChallenge clears the value of the "sdChallenge" field.
+func (m *WebAuthnRegisterChallengeMutation) ClearSdChallenge() {
+	m.sdChallenge = nil
+	m.clearedFields[webauthnregisterchallenge.FieldSdChallenge] = struct{}{}
+}
+
+// SdChallengeCleared returns if the "sdChallenge" field was cleared in this mutation.
+func (m *WebAuthnRegisterChallengeMutation) SdChallengeCleared() bool {
+	_, ok := m.clearedFields[webauthnregisterchallenge.FieldSdChallenge]
+	return ok
+}
+
+// ResetSdChallenge resets all changes to the "sdChallenge" field.
+func (m *WebAuthnRegisterChallengeMutation) ResetSdChallenge() {
+	m.sdChallenge = nil
+	delete(m.clearedFields, webauthnregisterchallenge.FieldSdChallenge)
+}
+
+// SetUserId sets the "userId" field.
+func (m *WebAuthnRegisterChallengeMutation) SetUserId(b []byte) {
+	m.userId = &b
+}
+
+// UserId returns the value of the "userId" field in the mutation.
+func (m *WebAuthnRegisterChallengeMutation) UserId() (r []byte, exists bool) {
+	v := m.userId
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUserId returns the old "userId" field's value of the WebAuthnRegisterChallenge entity.
+// If the WebAuthnRegisterChallenge object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *WebAuthnRegisterChallengeMutation) OldUserId(ctx context.Context) (v []byte, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUserId is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUserId requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUserId: %w", err)
+	}
+	return oldValue.UserId, nil
+}
+
+// ClearUserId clears the value of the "userId" field.
+func (m *WebAuthnRegisterChallengeMutation) ClearUserId() {
+	m.userId = nil
+	m.clearedFields[webauthnregisterchallenge.FieldUserId] = struct{}{}
+}
+
+// UserIdCleared returns if the "userId" field was cleared in this mutation.
+func (m *WebAuthnRegisterChallengeMutation) UserIdCleared() bool {
+	_, ok := m.clearedFields[webauthnregisterchallenge.FieldUserId]
+	return ok
+}
+
+// ResetUserId resets all changes to the "userId" field.
+func (m *WebAuthnRegisterChallengeMutation) ResetUserId() {
+	m.userId = nil
+	delete(m.clearedFields, webauthnregisterchallenge.FieldUserId)
+}
+
+// SetAllowedCredentialIds sets the "allowedCredentialIds" field.
+func (m *WebAuthnRegisterChallengeMutation) SetAllowedCredentialIds(u [][]uint8) {
+	m.allowedCredentialIds = &u
+	m.appendallowedCredentialIds = nil
+}
+
+// AllowedCredentialIds returns the value of the "allowedCredentialIds" field in the mutation.
+func (m *WebAuthnRegisterChallengeMutation) AllowedCredentialIds() (r [][]uint8, exists bool) {
+	v := m.allowedCredentialIds
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldAllowedCredentialIds returns the old "allowedCredentialIds" field's value of the WebAuthnRegisterChallenge entity.
+// If the WebAuthnRegisterChallenge object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *WebAuthnRegisterChallengeMutation) OldAllowedCredentialIds(ctx context.Context) (v [][]uint8, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldAllowedCredentialIds is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldAllowedCredentialIds requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldAllowedCredentialIds: %w", err)
+	}
+	return oldValue.AllowedCredentialIds, nil
+}
+
+// AppendAllowedCredentialIds adds u to the "allowedCredentialIds" field.
+func (m *WebAuthnRegisterChallengeMutation) AppendAllowedCredentialIds(u [][]uint8) {
+	m.appendallowedCredentialIds = append(m.appendallowedCredentialIds, u...)
+}
+
+// AppendedAllowedCredentialIds returns the list of values that were appended to the "allowedCredentialIds" field in this mutation.
+func (m *WebAuthnRegisterChallengeMutation) AppendedAllowedCredentialIds() ([][]uint8, bool) {
+	if len(m.appendallowedCredentialIds) == 0 {
+		return nil, false
+	}
+	return m.appendallowedCredentialIds, true
+}
+
+// ClearAllowedCredentialIds clears the value of the "allowedCredentialIds" field.
+func (m *WebAuthnRegisterChallengeMutation) ClearAllowedCredentialIds() {
+	m.allowedCredentialIds = nil
+	m.appendallowedCredentialIds = nil
+	m.clearedFields[webauthnregisterchallenge.FieldAllowedCredentialIds] = struct{}{}
+}
+
+// AllowedCredentialIdsCleared returns if the "allowedCredentialIds" field was cleared in this mutation.
+func (m *WebAuthnRegisterChallengeMutation) AllowedCredentialIdsCleared() bool {
+	_, ok := m.clearedFields[webauthnregisterchallenge.FieldAllowedCredentialIds]
+	return ok
+}
+
+// ResetAllowedCredentialIds resets all changes to the "allowedCredentialIds" field.
+func (m *WebAuthnRegisterChallengeMutation) ResetAllowedCredentialIds() {
+	m.allowedCredentialIds = nil
+	m.appendallowedCredentialIds = nil
+	delete(m.clearedFields, webauthnregisterchallenge.FieldAllowedCredentialIds)
+}
+
+// SetUserVerification sets the "userVerification" field.
+func (m *WebAuthnRegisterChallengeMutation) SetUserVerification(s string) {
+	m.userVerification = &s
+}
+
+// UserVerification returns the value of the "userVerification" field in the mutation.
+func (m *WebAuthnRegisterChallengeMutation) UserVerification() (r string, exists bool) {
+	v := m.userVerification
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUserVerification returns the old "userVerification" field's value of the WebAuthnRegisterChallenge entity.
+// If the WebAuthnRegisterChallenge object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *WebAuthnRegisterChallengeMutation) OldUserVerification(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUserVerification is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUserVerification requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUserVerification: %w", err)
+	}
+	return oldValue.UserVerification, nil
+}
+
+// ClearUserVerification clears the value of the "userVerification" field.
+func (m *WebAuthnRegisterChallengeMutation) ClearUserVerification() {
+	m.userVerification = nil
+	m.clearedFields[webauthnregisterchallenge.FieldUserVerification] = struct{}{}
+}
+
+// UserVerificationCleared returns if the "userVerification" field was cleared in this mutation.
+func (m *WebAuthnRegisterChallengeMutation) UserVerificationCleared() bool {
+	_, ok := m.clearedFields[webauthnregisterchallenge.FieldUserVerification]
+	return ok
+}
+
+// ResetUserVerification resets all changes to the "userVerification" field.
+func (m *WebAuthnRegisterChallengeMutation) ResetUserVerification() {
+	m.userVerification = nil
+	delete(m.clearedFields, webauthnregisterchallenge.FieldUserVerification)
+}
+
+// SetExtensions sets the "extensions" field.
+func (m *WebAuthnRegisterChallengeMutation) SetExtensions(value map[string]interface{}) {
+	m.extensions = &value
+}
+
+// Extensions returns the value of the "extensions" field in the mutation.
+func (m *WebAuthnRegisterChallengeMutation) Extensions() (r map[string]interface{}, exists bool) {
+	v := m.extensions
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldExtensions returns the old "extensions" field's value of the WebAuthnRegisterChallenge entity.
+// If the WebAuthnRegisterChallenge object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *WebAuthnRegisterChallengeMutation) OldExtensions(ctx context.Context) (v map[string]interface{}, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldExtensions is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldExtensions requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldExtensions: %w", err)
+	}
+	return oldValue.Extensions, nil
+}
+
+// ClearExtensions clears the value of the "extensions" field.
+func (m *WebAuthnRegisterChallengeMutation) ClearExtensions() {
+	m.extensions = nil
+	m.clearedFields[webauthnregisterchallenge.FieldExtensions] = struct{}{}
+}
+
+// ExtensionsCleared returns if the "extensions" field was cleared in this mutation.
+func (m *WebAuthnRegisterChallengeMutation) ExtensionsCleared() bool {
+	_, ok := m.clearedFields[webauthnregisterchallenge.FieldExtensions]
+	return ok
+}
+
+// ResetExtensions resets all changes to the "extensions" field.
+func (m *WebAuthnRegisterChallengeMutation) ResetExtensions() {
+	m.extensions = nil
+	delete(m.clearedFields, webauthnregisterchallenge.FieldExtensions)
+}
+
+// SetUserID sets the "user" edge to the User entity by id.
+func (m *WebAuthnRegisterChallengeMutation) SetUserID(id uuid.UUID) {
+	m.user = &id
+}
+
+// ClearUser clears the "user" edge to the User entity.
+func (m *WebAuthnRegisterChallengeMutation) ClearUser() {
+	m.cleareduser = true
+}
+
+// UserCleared reports if the "user" edge to the User entity was cleared.
+func (m *WebAuthnRegisterChallengeMutation) UserCleared() bool {
+	return m.cleareduser
+}
+
+// UserID returns the "user" edge ID in the mutation.
+func (m *WebAuthnRegisterChallengeMutation) UserID() (id uuid.UUID, exists bool) {
+	if m.user != nil {
+		return *m.user, true
+	}
+	return
+}
+
+// UserIDs returns the "user" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// UserID instead. It exists only for internal usage by the builders.
+func (m *WebAuthnRegisterChallengeMutation) UserIDs() (ids []uuid.UUID) {
+	if id := m.user; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetUser resets all changes to the "user" edge.
+func (m *WebAuthnRegisterChallengeMutation) ResetUser() {
+	m.user = nil
+	m.cleareduser = false
+}
+
+// Where appends a list predicates to the WebAuthnRegisterChallengeMutation builder.
+func (m *WebAuthnRegisterChallengeMutation) Where(ps ...predicate.WebAuthnRegisterChallenge) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the WebAuthnRegisterChallengeMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *WebAuthnRegisterChallengeMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.WebAuthnRegisterChallenge, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *WebAuthnRegisterChallengeMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *WebAuthnRegisterChallengeMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (WebAuthnRegisterChallenge).
+func (m *WebAuthnRegisterChallengeMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *WebAuthnRegisterChallengeMutation) Fields() []string {
+	fields := make([]string, 0, 5)
+	if m.sdChallenge != nil {
+		fields = append(fields, webauthnregisterchallenge.FieldSdChallenge)
+	}
+	if m.userId != nil {
+		fields = append(fields, webauthnregisterchallenge.FieldUserId)
+	}
+	if m.allowedCredentialIds != nil {
+		fields = append(fields, webauthnregisterchallenge.FieldAllowedCredentialIds)
+	}
+	if m.userVerification != nil {
+		fields = append(fields, webauthnregisterchallenge.FieldUserVerification)
+	}
+	if m.extensions != nil {
+		fields = append(fields, webauthnregisterchallenge.FieldExtensions)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *WebAuthnRegisterChallengeMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case webauthnregisterchallenge.FieldSdChallenge:
+		return m.SdChallenge()
+	case webauthnregisterchallenge.FieldUserId:
+		return m.UserId()
+	case webauthnregisterchallenge.FieldAllowedCredentialIds:
+		return m.AllowedCredentialIds()
+	case webauthnregisterchallenge.FieldUserVerification:
+		return m.UserVerification()
+	case webauthnregisterchallenge.FieldExtensions:
+		return m.Extensions()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *WebAuthnRegisterChallengeMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case webauthnregisterchallenge.FieldSdChallenge:
+		return m.OldSdChallenge(ctx)
+	case webauthnregisterchallenge.FieldUserId:
+		return m.OldUserId(ctx)
+	case webauthnregisterchallenge.FieldAllowedCredentialIds:
+		return m.OldAllowedCredentialIds(ctx)
+	case webauthnregisterchallenge.FieldUserVerification:
+		return m.OldUserVerification(ctx)
+	case webauthnregisterchallenge.FieldExtensions:
+		return m.OldExtensions(ctx)
+	}
+	return nil, fmt.Errorf("unknown WebAuthnRegisterChallenge field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *WebAuthnRegisterChallengeMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case webauthnregisterchallenge.FieldSdChallenge:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSdChallenge(v)
+		return nil
+	case webauthnregisterchallenge.FieldUserId:
+		v, ok := value.([]byte)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUserId(v)
+		return nil
+	case webauthnregisterchallenge.FieldAllowedCredentialIds:
+		v, ok := value.([][]uint8)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetAllowedCredentialIds(v)
+		return nil
+	case webauthnregisterchallenge.FieldUserVerification:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUserVerification(v)
+		return nil
+	case webauthnregisterchallenge.FieldExtensions:
+		v, ok := value.(map[string]interface{})
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetExtensions(v)
+		return nil
+	}
+	return fmt.Errorf("unknown WebAuthnRegisterChallenge field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *WebAuthnRegisterChallengeMutation) AddedFields() []string {
+	return nil
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *WebAuthnRegisterChallengeMutation) AddedField(name string) (ent.Value, bool) {
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *WebAuthnRegisterChallengeMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	}
+	return fmt.Errorf("unknown WebAuthnRegisterChallenge numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *WebAuthnRegisterChallengeMutation) ClearedFields() []string {
+	var fields []string
+	if m.FieldCleared(webauthnregisterchallenge.FieldSdChallenge) {
+		fields = append(fields, webauthnregisterchallenge.FieldSdChallenge)
+	}
+	if m.FieldCleared(webauthnregisterchallenge.FieldUserId) {
+		fields = append(fields, webauthnregisterchallenge.FieldUserId)
+	}
+	if m.FieldCleared(webauthnregisterchallenge.FieldAllowedCredentialIds) {
+		fields = append(fields, webauthnregisterchallenge.FieldAllowedCredentialIds)
+	}
+	if m.FieldCleared(webauthnregisterchallenge.FieldUserVerification) {
+		fields = append(fields, webauthnregisterchallenge.FieldUserVerification)
+	}
+	if m.FieldCleared(webauthnregisterchallenge.FieldExtensions) {
+		fields = append(fields, webauthnregisterchallenge.FieldExtensions)
+	}
+	return fields
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *WebAuthnRegisterChallengeMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *WebAuthnRegisterChallengeMutation) ClearField(name string) error {
+	switch name {
+	case webauthnregisterchallenge.FieldSdChallenge:
+		m.ClearSdChallenge()
+		return nil
+	case webauthnregisterchallenge.FieldUserId:
+		m.ClearUserId()
+		return nil
+	case webauthnregisterchallenge.FieldAllowedCredentialIds:
+		m.ClearAllowedCredentialIds()
+		return nil
+	case webauthnregisterchallenge.FieldUserVerification:
+		m.ClearUserVerification()
+		return nil
+	case webauthnregisterchallenge.FieldExtensions:
+		m.ClearExtensions()
+		return nil
+	}
+	return fmt.Errorf("unknown WebAuthnRegisterChallenge nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *WebAuthnRegisterChallengeMutation) ResetField(name string) error {
+	switch name {
+	case webauthnregisterchallenge.FieldSdChallenge:
+		m.ResetSdChallenge()
+		return nil
+	case webauthnregisterchallenge.FieldUserId:
+		m.ResetUserId()
+		return nil
+	case webauthnregisterchallenge.FieldAllowedCredentialIds:
+		m.ResetAllowedCredentialIds()
+		return nil
+	case webauthnregisterchallenge.FieldUserVerification:
+		m.ResetUserVerification()
+		return nil
+	case webauthnregisterchallenge.FieldExtensions:
+		m.ResetExtensions()
+		return nil
+	}
+	return fmt.Errorf("unknown WebAuthnRegisterChallenge field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *WebAuthnRegisterChallengeMutation) AddedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.user != nil {
+		edges = append(edges, webauthnregisterchallenge.EdgeUser)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *WebAuthnRegisterChallengeMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case webauthnregisterchallenge.EdgeUser:
+		if id := m.user; id != nil {
+			return []ent.Value{*id}
+		}
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *WebAuthnRegisterChallengeMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 1)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *WebAuthnRegisterChallengeMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *WebAuthnRegisterChallengeMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.cleareduser {
+		edges = append(edges, webauthnregisterchallenge.EdgeUser)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *WebAuthnRegisterChallengeMutation) EdgeCleared(name string) bool {
+	switch name {
+	case webauthnregisterchallenge.EdgeUser:
+		return m.cleareduser
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *WebAuthnRegisterChallengeMutation) ClearEdge(name string) error {
+	switch name {
+	case webauthnregisterchallenge.EdgeUser:
+		m.ClearUser()
+		return nil
+	}
+	return fmt.Errorf("unknown WebAuthnRegisterChallenge unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *WebAuthnRegisterChallengeMutation) ResetEdge(name string) error {
+	switch name {
+	case webauthnregisterchallenge.EdgeUser:
+		m.ResetUser()
+		return nil
+	}
+	return fmt.Errorf("unknown WebAuthnRegisterChallenge edge %s", name)
 }

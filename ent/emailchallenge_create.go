@@ -3,12 +3,10 @@
 package ent
 
 import (
+	"PasswordManager/ent/challenge"
 	"PasswordManager/ent/emailchallenge"
-	"PasswordManager/ent/user"
 	"context"
-	"errors"
 	"fmt"
-	"time"
 
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
@@ -28,23 +26,11 @@ func (ecc *EmailChallengeCreate) SetCode(s string) *EmailChallengeCreate {
 	return ecc
 }
 
-// SetExpiry sets the "expiry" field.
-func (ecc *EmailChallengeCreate) SetExpiry(t time.Time) *EmailChallengeCreate {
-	ecc.mutation.SetExpiry(t)
-	return ecc
-}
-
-// SetNillableExpiry sets the "expiry" field if the given value is not nil.
-func (ecc *EmailChallengeCreate) SetNillableExpiry(t *time.Time) *EmailChallengeCreate {
-	if t != nil {
-		ecc.SetExpiry(*t)
+// SetNillableCode sets the "code" field if the given value is not nil.
+func (ecc *EmailChallengeCreate) SetNillableCode(s *string) *EmailChallengeCreate {
+	if s != nil {
+		ecc.SetCode(*s)
 	}
-	return ecc
-}
-
-// SetFor sets the "for" field.
-func (ecc *EmailChallengeCreate) SetFor(e emailchallenge.For) *EmailChallengeCreate {
-	ecc.mutation.SetFor(e)
 	return ecc
 }
 
@@ -62,15 +48,23 @@ func (ecc *EmailChallengeCreate) SetNillableID(u *uuid.UUID) *EmailChallengeCrea
 	return ecc
 }
 
-// SetUserID sets the "user" edge to the User entity by ID.
-func (ecc *EmailChallengeCreate) SetUserID(id uuid.UUID) *EmailChallengeCreate {
-	ecc.mutation.SetUserID(id)
+// SetChallengeID sets the "challenge" edge to the Challenge entity by ID.
+func (ecc *EmailChallengeCreate) SetChallengeID(id uuid.UUID) *EmailChallengeCreate {
+	ecc.mutation.SetChallengeID(id)
 	return ecc
 }
 
-// SetUser sets the "user" edge to the User entity.
-func (ecc *EmailChallengeCreate) SetUser(u *User) *EmailChallengeCreate {
-	return ecc.SetUserID(u.ID)
+// SetNillableChallengeID sets the "challenge" edge to the Challenge entity by ID if the given value is not nil.
+func (ecc *EmailChallengeCreate) SetNillableChallengeID(id *uuid.UUID) *EmailChallengeCreate {
+	if id != nil {
+		ecc = ecc.SetChallengeID(*id)
+	}
+	return ecc
+}
+
+// SetChallenge sets the "challenge" edge to the Challenge entity.
+func (ecc *EmailChallengeCreate) SetChallenge(c *Challenge) *EmailChallengeCreate {
+	return ecc.SetChallengeID(c.ID)
 }
 
 // Mutation returns the EmailChallengeMutation object of the builder.
@@ -108,10 +102,6 @@ func (ecc *EmailChallengeCreate) ExecX(ctx context.Context) {
 
 // defaults sets the default values of the builder before save.
 func (ecc *EmailChallengeCreate) defaults() {
-	if _, ok := ecc.mutation.Expiry(); !ok {
-		v := emailchallenge.DefaultExpiry()
-		ecc.mutation.SetExpiry(v)
-	}
 	if _, ok := ecc.mutation.ID(); !ok {
 		v := emailchallenge.DefaultID()
 		ecc.mutation.SetID(v)
@@ -120,28 +110,6 @@ func (ecc *EmailChallengeCreate) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (ecc *EmailChallengeCreate) check() error {
-	if _, ok := ecc.mutation.Code(); !ok {
-		return &ValidationError{Name: "code", err: errors.New(`ent: missing required field "EmailChallenge.code"`)}
-	}
-	if v, ok := ecc.mutation.Code(); ok {
-		if err := emailchallenge.CodeValidator(v); err != nil {
-			return &ValidationError{Name: "code", err: fmt.Errorf(`ent: validator failed for field "EmailChallenge.code": %w`, err)}
-		}
-	}
-	if _, ok := ecc.mutation.Expiry(); !ok {
-		return &ValidationError{Name: "expiry", err: errors.New(`ent: missing required field "EmailChallenge.expiry"`)}
-	}
-	if _, ok := ecc.mutation.For(); !ok {
-		return &ValidationError{Name: "for", err: errors.New(`ent: missing required field "EmailChallenge.for"`)}
-	}
-	if v, ok := ecc.mutation.For(); ok {
-		if err := emailchallenge.ForValidator(v); err != nil {
-			return &ValidationError{Name: "for", err: fmt.Errorf(`ent: validator failed for field "EmailChallenge.for": %w`, err)}
-		}
-	}
-	if _, ok := ecc.mutation.UserID(); !ok {
-		return &ValidationError{Name: "user", err: errors.New(`ent: missing required edge "EmailChallenge.user"`)}
-	}
 	return nil
 }
 
@@ -187,32 +155,24 @@ func (ecc *EmailChallengeCreate) createSpec() (*EmailChallenge, *sqlgraph.Create
 		_spec.SetField(emailchallenge.FieldCode, field.TypeString, value)
 		_node.Code = value
 	}
-	if value, ok := ecc.mutation.Expiry(); ok {
-		_spec.SetField(emailchallenge.FieldExpiry, field.TypeTime, value)
-		_node.Expiry = value
-	}
-	if value, ok := ecc.mutation.For(); ok {
-		_spec.SetField(emailchallenge.FieldFor, field.TypeEnum, value)
-		_node.For = value
-	}
-	if nodes := ecc.mutation.UserIDs(); len(nodes) > 0 {
+	if nodes := ecc.mutation.ChallengeIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
+			Rel:     sqlgraph.O2O,
 			Inverse: true,
-			Table:   emailchallenge.UserTable,
-			Columns: []string{emailchallenge.UserColumn},
+			Table:   emailchallenge.ChallengeTable,
+			Columns: []string{emailchallenge.ChallengeColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeUUID,
-					Column: user.FieldID,
+					Column: challenge.FieldID,
 				},
 			},
 		}
 		for _, k := range nodes {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
-		_node.user_email_challenges = &nodes[0]
+		_node.challenge_email_challenge = &nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec

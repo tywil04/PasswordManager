@@ -3,13 +3,13 @@
 package ent
 
 import (
-	"PasswordManager/ent/emailchallenge"
+	"PasswordManager/ent/challenge"
 	"PasswordManager/ent/password"
 	"PasswordManager/ent/session"
 	"PasswordManager/ent/totpcredential"
 	"PasswordManager/ent/user"
-	"PasswordManager/ent/webauthnchallenge"
 	"PasswordManager/ent/webauthncredential"
+	"PasswordManager/ent/webauthnregisterchallenge"
 	"context"
 	"errors"
 	"fmt"
@@ -56,16 +56,30 @@ func (uc *UserCreate) SetProtectedDatabaseKeyIv(b []byte) *UserCreate {
 	return uc
 }
 
-// SetDefault2FA sets the "default2FA" field.
-func (uc *UserCreate) SetDefault2FA(u user.Default2FA) *UserCreate {
-	uc.mutation.SetDefault2FA(u)
+// SetWebauthnEnabled sets the "webauthnEnabled" field.
+func (uc *UserCreate) SetWebauthnEnabled(b bool) *UserCreate {
+	uc.mutation.SetWebauthnEnabled(b)
 	return uc
 }
 
-// SetNillableDefault2FA sets the "default2FA" field if the given value is not nil.
-func (uc *UserCreate) SetNillableDefault2FA(u *user.Default2FA) *UserCreate {
-	if u != nil {
-		uc.SetDefault2FA(*u)
+// SetNillableWebauthnEnabled sets the "webauthnEnabled" field if the given value is not nil.
+func (uc *UserCreate) SetNillableWebauthnEnabled(b *bool) *UserCreate {
+	if b != nil {
+		uc.SetWebauthnEnabled(*b)
+	}
+	return uc
+}
+
+// SetTotpEnabled sets the "totpEnabled" field.
+func (uc *UserCreate) SetTotpEnabled(b bool) *UserCreate {
+	uc.mutation.SetTotpEnabled(b)
+	return uc
+}
+
+// SetNillableTotpEnabled sets the "totpEnabled" field if the given value is not nil.
+func (uc *UserCreate) SetNillableTotpEnabled(b *bool) *UserCreate {
+	if b != nil {
+		uc.SetTotpEnabled(*b)
 	}
 	return uc
 }
@@ -96,21 +110,6 @@ func (uc *UserCreate) SetNillableID(u *uuid.UUID) *UserCreate {
 		uc.SetID(*u)
 	}
 	return uc
-}
-
-// AddEmailChallengeIDs adds the "emailChallenges" edge to the EmailChallenge entity by IDs.
-func (uc *UserCreate) AddEmailChallengeIDs(ids ...uuid.UUID) *UserCreate {
-	uc.mutation.AddEmailChallengeIDs(ids...)
-	return uc
-}
-
-// AddEmailChallenges adds the "emailChallenges" edges to the EmailChallenge entity.
-func (uc *UserCreate) AddEmailChallenges(e ...*EmailChallenge) *UserCreate {
-	ids := make([]uuid.UUID, len(e))
-	for i := range e {
-		ids[i] = e[i].ID
-	}
-	return uc.AddEmailChallengeIDs(ids...)
 }
 
 // SetTotpCredentialID sets the "totpCredential" edge to the TotpCredential entity by ID.
@@ -147,19 +146,19 @@ func (uc *UserCreate) AddWebauthnCredentials(w ...*WebAuthnCredential) *UserCrea
 	return uc.AddWebauthnCredentialIDs(ids...)
 }
 
-// AddWebauthnChallengeIDs adds the "webauthnChallenges" edge to the WebAuthnChallenge entity by IDs.
-func (uc *UserCreate) AddWebauthnChallengeIDs(ids ...uuid.UUID) *UserCreate {
-	uc.mutation.AddWebauthnChallengeIDs(ids...)
+// AddWebauthnRegisterChallengeIDs adds the "webauthnRegisterChallenges" edge to the WebAuthnRegisterChallenge entity by IDs.
+func (uc *UserCreate) AddWebauthnRegisterChallengeIDs(ids ...uuid.UUID) *UserCreate {
+	uc.mutation.AddWebauthnRegisterChallengeIDs(ids...)
 	return uc
 }
 
-// AddWebauthnChallenges adds the "webauthnChallenges" edges to the WebAuthnChallenge entity.
-func (uc *UserCreate) AddWebauthnChallenges(w ...*WebAuthnChallenge) *UserCreate {
+// AddWebauthnRegisterChallenges adds the "webauthnRegisterChallenges" edges to the WebAuthnRegisterChallenge entity.
+func (uc *UserCreate) AddWebauthnRegisterChallenges(w ...*WebAuthnRegisterChallenge) *UserCreate {
 	ids := make([]uuid.UUID, len(w))
 	for i := range w {
 		ids[i] = w[i].ID
 	}
-	return uc.AddWebauthnChallengeIDs(ids...)
+	return uc.AddWebauthnRegisterChallengeIDs(ids...)
 }
 
 // AddPasswordIDs adds the "passwords" edge to the Password entity by IDs.
@@ -190,6 +189,21 @@ func (uc *UserCreate) AddSessions(s ...*Session) *UserCreate {
 		ids[i] = s[i].ID
 	}
 	return uc.AddSessionIDs(ids...)
+}
+
+// AddChallengeIDs adds the "challenges" edge to the Challenge entity by IDs.
+func (uc *UserCreate) AddChallengeIDs(ids ...uuid.UUID) *UserCreate {
+	uc.mutation.AddChallengeIDs(ids...)
+	return uc
+}
+
+// AddChallenges adds the "challenges" edges to the Challenge entity.
+func (uc *UserCreate) AddChallenges(c ...*Challenge) *UserCreate {
+	ids := make([]uuid.UUID, len(c))
+	for i := range c {
+		ids[i] = c[i].ID
+	}
+	return uc.AddChallengeIDs(ids...)
 }
 
 // Mutation returns the UserMutation object of the builder.
@@ -227,9 +241,13 @@ func (uc *UserCreate) ExecX(ctx context.Context) {
 
 // defaults sets the default values of the builder before save.
 func (uc *UserCreate) defaults() {
-	if _, ok := uc.mutation.Default2FA(); !ok {
-		v := user.DefaultDefault2FA
-		uc.mutation.SetDefault2FA(v)
+	if _, ok := uc.mutation.WebauthnEnabled(); !ok {
+		v := user.DefaultWebauthnEnabled
+		uc.mutation.SetWebauthnEnabled(v)
+	}
+	if _, ok := uc.mutation.TotpEnabled(); !ok {
+		v := user.DefaultTotpEnabled
+		uc.mutation.SetTotpEnabled(v)
 	}
 	if _, ok := uc.mutation.Verified(); !ok {
 		v := user.DefaultVerified
@@ -283,13 +301,11 @@ func (uc *UserCreate) check() error {
 			return &ValidationError{Name: "protectedDatabaseKeyIv", err: fmt.Errorf(`ent: validator failed for field "User.protectedDatabaseKeyIv": %w`, err)}
 		}
 	}
-	if _, ok := uc.mutation.Default2FA(); !ok {
-		return &ValidationError{Name: "default2FA", err: errors.New(`ent: missing required field "User.default2FA"`)}
+	if _, ok := uc.mutation.WebauthnEnabled(); !ok {
+		return &ValidationError{Name: "webauthnEnabled", err: errors.New(`ent: missing required field "User.webauthnEnabled"`)}
 	}
-	if v, ok := uc.mutation.Default2FA(); ok {
-		if err := user.Default2FAValidator(v); err != nil {
-			return &ValidationError{Name: "default2FA", err: fmt.Errorf(`ent: validator failed for field "User.default2FA": %w`, err)}
-		}
+	if _, ok := uc.mutation.TotpEnabled(); !ok {
+		return &ValidationError{Name: "totpEnabled", err: errors.New(`ent: missing required field "User.totpEnabled"`)}
 	}
 	if _, ok := uc.mutation.Verified(); !ok {
 		return &ValidationError{Name: "verified", err: errors.New(`ent: missing required field "User.verified"`)}
@@ -355,32 +371,17 @@ func (uc *UserCreate) createSpec() (*User, *sqlgraph.CreateSpec) {
 		_spec.SetField(user.FieldProtectedDatabaseKeyIv, field.TypeBytes, value)
 		_node.ProtectedDatabaseKeyIv = value
 	}
-	if value, ok := uc.mutation.Default2FA(); ok {
-		_spec.SetField(user.FieldDefault2FA, field.TypeEnum, value)
-		_node.Default2FA = value
+	if value, ok := uc.mutation.WebauthnEnabled(); ok {
+		_spec.SetField(user.FieldWebauthnEnabled, field.TypeBool, value)
+		_node.WebauthnEnabled = value
+	}
+	if value, ok := uc.mutation.TotpEnabled(); ok {
+		_spec.SetField(user.FieldTotpEnabled, field.TypeBool, value)
+		_node.TotpEnabled = value
 	}
 	if value, ok := uc.mutation.Verified(); ok {
 		_spec.SetField(user.FieldVerified, field.TypeBool, value)
 		_node.Verified = value
-	}
-	if nodes := uc.mutation.EmailChallengesIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   user.EmailChallengesTable,
-			Columns: []string{user.EmailChallengesColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeUUID,
-					Column: emailchallenge.FieldID,
-				},
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges = append(_spec.Edges, edge)
 	}
 	if nodes := uc.mutation.TotpCredentialIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
@@ -420,17 +421,17 @@ func (uc *UserCreate) createSpec() (*User, *sqlgraph.CreateSpec) {
 		}
 		_spec.Edges = append(_spec.Edges, edge)
 	}
-	if nodes := uc.mutation.WebauthnChallengesIDs(); len(nodes) > 0 {
+	if nodes := uc.mutation.WebauthnRegisterChallengesIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   user.WebauthnChallengesTable,
-			Columns: []string{user.WebauthnChallengesColumn},
+			Table:   user.WebauthnRegisterChallengesTable,
+			Columns: []string{user.WebauthnRegisterChallengesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeUUID,
-					Column: webauthnchallenge.FieldID,
+					Column: webauthnregisterchallenge.FieldID,
 				},
 			},
 		}
@@ -469,6 +470,25 @@ func (uc *UserCreate) createSpec() (*User, *sqlgraph.CreateSpec) {
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeUUID,
 					Column: session.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := uc.mutation.ChallengesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   user.ChallengesTable,
+			Columns: []string{user.ChallengesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeUUID,
+					Column: challenge.FieldID,
 				},
 			},
 		}
