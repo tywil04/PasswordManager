@@ -115,7 +115,7 @@ func PostChallenge(c *gin.Context) {
 
 	sameCode := cryptography.ConstantTimeCompare([]byte(foundChallenge.Code), []byte(input.Code))
 	if !sameCode {
-		c.JSON(400, helpers.ErrorChallenge("code"))
+		c.JSON(403, gin.H{})
 		go smtp.SendTemplate(foundUser.Email, "PasswordManager5 Unsuccessful Sign In Notification", smtp.SigninNotificationTemplate, smtp.SigninNotificationTemplateData{Successful: false})
 		return
 	}

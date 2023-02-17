@@ -55,7 +55,7 @@ func Post(c *gin.Context) {
 	strengthenedMasterHash := cryptography.StrengthenMasterHash(decodedMasterHash, foundUser.StrengthenedMasterHashSalt)
 	sameMasterHash := cryptography.ConstantTimeCompare(strengthenedMasterHash, foundUser.StrengthenedMasterHash)
 	if !sameMasterHash {
-		c.JSON(400, helpers.ErrorInvalidCredentials())
+		c.JSON(403, gin.H{})
 		return
 	}
 

@@ -153,7 +153,7 @@ func PostChallenge(c *gin.Context) {
 
 	_, credentialErr := internalWebauthn.Web.ValidateLogin(&internalWebauthn.User{User: foundUser}, sessionData, credentialData)
 	if credentialErr != nil {
-		c.JSON(400, helpers.ErrorChallenge("webauthn"))
+		c.JSON(403, gin.H{})
 		go smtp.SendTemplate(foundUser.Email, "PasswordManager5 Unsuccessful Sign In Notification", smtp.SigninNotificationTemplate, smtp.SigninNotificationTemplateData{Successful: false})
 		return
 	}

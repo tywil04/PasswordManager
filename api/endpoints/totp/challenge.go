@@ -74,7 +74,6 @@ func PostChallenge(c *gin.Context) {
 		c.JSON(200, gin.H{"authToken": token, "protectedDatabaseKey": encodedProtectedDatabaseKey, "protectedDatabaseKeyIv": encodedProtectedDatabaseKeyIv})
 	} else if !valid {
 		go smtp.SendTemplate(foundUser.Email, "PasswordManager5 Unsuccessful Sign In Notification", smtp.SigninNotificationTemplate, smtp.SigninNotificationTemplateData{Successful: false})
-
-		c.JSON(400, helpers.ErrorChallenge("code"))
+		c.JSON(403, gin.H{})
 	}
 }

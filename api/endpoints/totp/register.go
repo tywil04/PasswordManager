@@ -106,9 +106,6 @@ func PostRegister(c *gin.Context) {
 		c.JSON(200, gin.H{"totpCredentialId": credential.ID.String()})
 	} else if !valid {
 		db.Client.TotpCredential.DeleteOne(credential).Exec(db.Context)
-		if credential.ID != decodedChallengeId {
-			c.JSON(400, helpers.ErrorChallenge("code"))
-			return
-		}
+		c.JSON(400, helpers.ErrorInvalid("code"))
 	}
 }
