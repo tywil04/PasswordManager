@@ -37,7 +37,7 @@ Body Params:
 Status 200 (Success)
 --------------------
 {
-	"availableChallenges": [
+    "availableChallenges": [
         ...string
     ],
     "challengeId": uuid string
