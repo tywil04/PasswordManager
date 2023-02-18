@@ -7,8 +7,6 @@ import (
 	entChallenge "PasswordManager/ent/challenge"
 	"encoding/base64"
 	"time"
-
-	"github.com/gin-gonic/gin"
 )
 
 func GenerateEmailChallenge(challenge *ent.Challenge) (*ent.EmailChallenge, error) {
@@ -100,40 +98,4 @@ func GenerateSession(user *ent.User) (string, string, string, error) {
 	encodedProtectedDatabaseKeyIv := base64.StdEncoding.EncodeToString(user.ProtectedDatabaseKeyIv)
 
 	return token, encodedProtectedDatabaseKey, encodedProtectedDatabaseKeyIv, nil
-}
-
-func ErrorMissing(subject string) gin.H {
-	return gin.H{"error": gin.H{"code": "errorMissing", "causee": subject}}
-}
-
-func ErrorInvalid(subject string) gin.H {
-	return gin.H{"error": gin.H{"code": "errorInvalid", "causee": subject}}
-}
-
-func ErrorExpired(subject string) gin.H {
-	return gin.H{"error": gin.H{"code": "errorExpired", "causee": subject}}
-}
-
-func ErrorInUse(subject string) gin.H {
-	return gin.H{"error": gin.H{"code": "errorInUse", "causee": subject}}
-}
-
-func ErrorNotInUse(subject string) gin.H {
-	return gin.H{"error": gin.H{"code": "errorNotInUse", "causee": subject}}
-}
-
-func ErrorIssuing(subject string) gin.H {
-	return gin.H{"error": gin.H{"code": "errorIssuing", "causee": subject}}
-}
-
-func ErrorDeleting(subject string) gin.H {
-	return gin.H{"error": gin.H{"code": "errorDeleting", "causee": subject}}
-}
-
-func ErrorCreating(subject string) gin.H {
-	return gin.H{"error": gin.H{"code": "errorCreating", "causee": subject}}
-}
-
-func ErrorUnknown() gin.H {
-	return gin.H{"error": gin.H{"code": "errorUnknown", "causee": "unknown"}}
 }

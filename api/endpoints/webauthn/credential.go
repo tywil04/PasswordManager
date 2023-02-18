@@ -5,7 +5,7 @@ import (
 	"github.com/google/uuid"
 
 	"PasswordManager/api/lib/db"
-	"PasswordManager/api/lib/helpers"
+	"PasswordManager/api/lib/exceptions"
 	"PasswordManager/ent"
 )
 
@@ -24,14 +24,14 @@ func GetCredential(c *gin.Context) {
 
 	bindingErr := c.Bind(&input)
 	if bindingErr != nil {
-		c.JSON(400, helpers.ErrorInvalid("body"))
+		c.JSON(400, exceptions.Builder("body", exceptions.Invalid, exceptions.JsonOrXml))
 		return
 	}
 
 	if input.WebauthnCredentialId == "" {
 		credentials, credentialErr := db.GetUserWebauthnCredentials(authedUser)
 		if credentialErr != nil {
-			c.JSON(500, helpers.ErrorUnknown())
+			c.JSON(500, exceptions.Builder("", exceptions.Unknown, exceptions.TryAgain))
 			return
 		}
 
@@ -48,13 +48,13 @@ func GetCredential(c *gin.Context) {
 	} else {
 		decodedCredentialId, dciErr := uuid.Parse(input.WebauthnCredentialId)
 		if dciErr != nil {
-			c.JSON(400, helpers.ErrorInvalid("webauthnCredentialId"))
+			c.JSON(400, exceptions.Builder("webauthnCredentialId", exceptions.ParsingParam, exceptions.Uuid))
 			return
 		}
 
 		credential, credentialErr := db.GetUserWebauthnCredential(authedUser, decodedCredentialId)
 		if credentialErr != nil {
-			c.JSON(400, helpers.ErrorInvalid("webauthnCredential"))
+			c.JSON(400, exceptions.Builder("webauthnCredential", exceptions.Invalid))
 			return
 		}
 
@@ -75,30 +75,30 @@ func DeleteCredential(c *gin.Context) {
 
 	bindingErr := c.Bind(&input)
 	if bindingErr != nil {
-		c.JSON(400, helpers.ErrorInvalid("body"))
+		c.JSON(400, exceptions.Builder("body", exceptions.Invalid, exceptions.JsonOrXml))
 		return
 	}
 
 	if input.WebauthnCredentialId == "" {
-		c.JSON(400, helpers.ErrorMissing("webauthnCredentialId"))
+		c.JSON(400, exceptions.Builder("webauthnCredentialId", exceptions.MissingParam))
 		return
 	}
 
 	decodedCredentialId, dciErr := uuid.Parse(input.WebauthnCredentialId)
 	if dciErr != nil {
-		c.JSON(400, helpers.ErrorInvalid("webauthnCredentialId"))
+		c.JSON(400, exceptions.Builder("webauthnCredentialId", exceptions.ParsingParam, exceptions.Uuid))
 		return
 	}
 
 	dcErr := db.DeleteUserWebauthnCredentialViaId(authedUser, decodedCredentialId)
 	if dcErr != nil {
-		c.JSON(400, helpers.ErrorDeleting("webauthnCredential"))
+		c.JSON(500, exceptions.Builder("webauthnCredential", exceptions.Deleting, exceptions.TryAgain))
 		return
 	}
 
 	numberOfCredentials, nocErr := db.CountUserWebauthnCredentials(authedUser)
 	if nocErr != nil {
-		c.JSON(500, helpers.ErrorUnknown())
+		c.JSON(500, exceptions.Builder("", exceptions.Unknown, exceptions.TryAgain))
 		return
 	}
 

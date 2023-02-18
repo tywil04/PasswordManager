@@ -8,6 +8,7 @@ import (
 
 	"PasswordManager/api/lib/cryptography"
 	"PasswordManager/api/lib/db"
+	"PasswordManager/api/lib/exceptions"
 	"PasswordManager/api/lib/helpers"
 	"PasswordManager/api/lib/validations"
 )
@@ -24,56 +25,56 @@ func Post(c *gin.Context) {
 
 	bindingErr := c.Bind(&input)
 	if bindingErr != nil {
-		c.JSON(400, helpers.ErrorInvalid("body"))
+		c.JSON(400, exceptions.Builder("body", exceptions.Invalid, exceptions.JsonOrXml))
 		return
 	}
 
 	if input.Email == "" {
-		c.JSON(400, helpers.ErrorMissing("email"))
+		c.JSON(400, exceptions.Builder("email", exceptions.MissingParam))
 		return
 	}
 
 	if input.MasterHash == "" {
-		c.JSON(400, helpers.ErrorMissing("masterHash"))
+		c.JSON(400, exceptions.Builder("masterHash", exceptions.MissingParam))
 		return
 	}
 
 	if input.ProtectedDatabaseKey == "" {
-		c.JSON(400, helpers.ErrorMissing("protectedDatabaseKey"))
+		c.JSON(400, exceptions.Builder("protectedDatabaseKey", exceptions.MissingParam))
 		return
 	}
 
 	if input.ProtectedDatabaseKeyIv == "" {
-		c.JSON(400, helpers.ErrorMissing("protectedDatabaseKeyIv"))
+		c.JSON(400, exceptions.Builder("protectedDatabaseKeyIv", exceptions.MissingParam))
 		return
 	}
 
 	if !validations.IsEmailValid(input.Email) {
-		c.JSON(400, helpers.ErrorInvalid("email"))
+		c.JSON(400, exceptions.Builder("email", exceptions.ParsingParam, exceptions.Email))
 		return
 	}
 
 	decodedMasterHash, dmhErr := base64.StdEncoding.DecodeString(input.MasterHash)
 	if dmhErr != nil {
-		c.JSON(400, helpers.ErrorInvalid("masterHash"))
+		c.JSON(400, exceptions.Builder("masterHash", exceptions.ParsingParam, exceptions.Base64))
 		return
 	}
 
 	decodedProtectedDatabaseKey, dpdkErr := base64.StdEncoding.DecodeString(input.ProtectedDatabaseKey)
 	if dpdkErr != nil {
-		c.JSON(400, helpers.ErrorInvalid("protectedDatabaseKey"))
+		c.JSON(400, exceptions.Builder("protectedDatabaseKey", exceptions.ParsingParam, exceptions.Base64))
 		return
 	}
 
 	decodedProtectedDatabaseKeyIv, dpdkiErr := base64.StdEncoding.DecodeString(input.ProtectedDatabaseKeyIv)
 	if dpdkiErr != nil {
-		c.JSON(400, helpers.ErrorInvalid("protectedDatabaseKeyIv"))
+		c.JSON(400, exceptions.Builder("protectedDatabaseKeyIv", exceptions.ParsingParam, exceptions.Base64))
 		return
 	}
 
 	testUser, _ := db.GetUserViaEmail(input.Email)
 	if testUser != nil {
-		c.JSON(400, helpers.ErrorInUse("email"))
+		c.JSON(400, exceptions.Builder("email", exceptions.InvalidParam, exceptions.InUse))
 		return
 	}
 
@@ -89,14 +90,14 @@ func Post(c *gin.Context) {
 		Save(db.Context)
 
 	if userErr != nil {
-		c.JSON(500, helpers.ErrorCreating("user"))
+		c.JSON(500, exceptions.Builder("user", exceptions.Creating, exceptions.TryAgain))
 		return
 	}
 
 	challenge, challengeErr := helpers.GenerateChallenge(user)
 	fmt.Println(challengeErr)
 	if challengeErr != nil {
-		c.JSON(500, helpers.ErrorIssuing("challenge"))
+		c.JSON(500, exceptions.Builder("challenge", exceptions.Issuing, exceptions.TryAgain))
 		return
 	}
 

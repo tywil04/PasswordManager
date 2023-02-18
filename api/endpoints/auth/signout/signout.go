@@ -4,7 +4,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"PasswordManager/api/lib/db"
-	"PasswordManager/api/lib/helpers"
+	"PasswordManager/api/lib/exceptions"
 	"PasswordManager/ent"
 )
 
@@ -16,7 +16,7 @@ func Delete(c *gin.Context) {
 
 	sessionErr := db.DeleteUserSession(authedUser, authedSession)
 	if sessionErr != nil {
-		c.JSON(500, helpers.ErrorDeleting("session"))
+		c.JSON(500, exceptions.Builder("session", exceptions.Deleting, exceptions.TryAgain))
 		return
 	}
 

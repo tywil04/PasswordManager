@@ -10,7 +10,7 @@ import (
 	"github.com/google/uuid"
 
 	"PasswordManager/api/lib/db"
-	"PasswordManager/api/lib/helpers"
+	"PasswordManager/api/lib/exceptions"
 	internalWebauthn "PasswordManager/api/lib/webauthn"
 	"PasswordManager/ent"
 )
@@ -18,7 +18,7 @@ import (
 type GetRegisterInput struct{}
 
 type PostRegisterInput struct {
-	WebauthnRegisterChallengeId string `form:"webauthnChallengeId" json:"webauthnChallengeId" xml:"webauthnChallengeId"`
+	WebauthnRegisterChallengeId string `form:"webauthnRegisterChallengeId" json:"webauthnRegisterChallengeId" xml:"webauthnRegisterChallengeId"`
 	Name                        string `form:"name" json:"name" xml:"json"`
 	Credential                  struct {
 		AuthenticatorAttachment string `form:"authenticatorAttachment" json:"authenticatorAttachment" xml:"authenticatorAttachment"`
@@ -37,7 +37,7 @@ func GetRegister(c *gin.Context) {
 
 	options, sessionData, err := internalWebauthn.Web.BeginRegistration(&internalWebauthn.User{User: authedUser})
 	if err != nil {
-		c.JSON(500, helpers.ErrorUnknown())
+		c.JSON(500, exceptions.Builder("", exceptions.Unknown, exceptions.TryAgain))
 		return
 	}
 
@@ -51,7 +51,7 @@ func GetRegister(c *gin.Context) {
 		Save(db.Context)
 
 	if challengeId != nil {
-		c.JSON(500, helpers.ErrorUnknown())
+		c.JSON(500, exceptions.Builder("", exceptions.Unknown, exceptions.TryAgain))
 		return
 	}
 
@@ -65,24 +65,24 @@ func PostRegister(c *gin.Context) {
 
 	bindingErr := c.Bind(&input)
 	if bindingErr != nil {
-		c.JSON(400, helpers.ErrorInvalid("body"))
+		c.JSON(400, exceptions.Builder("body", exceptions.Invalid, exceptions.JsonOrXml))
 		return
 	}
 
 	if input.WebauthnRegisterChallengeId == "" {
-		c.JSON(400, helpers.ErrorMissing("webauthnRegisterChallengeId"))
+		c.JSON(400, exceptions.Builder("webauthnRegisterChallengeId", exceptions.MissingParam))
 		return
 	}
 
 	decodedChallengeId, dciErr := uuid.Parse(input.WebauthnRegisterChallengeId)
 	if dciErr != nil {
-		c.JSON(400, helpers.ErrorInvalid("webauthnRegisterChallengeId"))
+		c.JSON(400, exceptions.Builder("webauthnRegisterChallengeId", exceptions.ParsingParam, exceptions.Uuid))
 		return
 	}
 
 	foundWebauthnChallenge, fwcErr := db.GetUserWebauthnRegisterChallengeViaId(authedUser, decodedChallengeId)
 	if fwcErr != nil {
-		c.JSON(400, helpers.ErrorInvalid("webauthnRegisterChallenge"))
+		c.JSON(400, exceptions.Builder("webauthnRegisterChallenge", exceptions.Invalid))
 		return
 	}
 
@@ -99,13 +99,13 @@ func PostRegister(c *gin.Context) {
 
 	credentialData, cdErr := protocol.ParseCredentialCreationResponseBody(dataReader)
 	if cdErr != nil {
-		c.JSON(500, helpers.ErrorUnknown())
+		c.JSON(500, exceptions.Builder("", exceptions.Unknown, exceptions.TryAgain))
 		return
 	}
 
 	credential, credentialErr := internalWebauthn.Web.CreateCredential(&internalWebauthn.User{User: authedUser}, sessionData, credentialData)
 	if credentialErr != nil {
-		c.JSON(500, helpers.ErrorUnknown())
+		c.JSON(500, exceptions.Builder("", exceptions.Unknown, exceptions.TryAgain))
 		return
 	}
 
@@ -127,7 +127,7 @@ func PostRegister(c *gin.Context) {
 		Save(db.Context)
 
 	if wcErr != nil {
-		c.JSON(500, helpers.ErrorUnknown())
+		c.JSON(500, exceptions.Builder("webauthnCredential", exceptions.Creating, exceptions.TryAgain))
 		return
 	}
 

@@ -6,6 +6,7 @@ import (
 	"github.com/pquerna/otp/totp"
 
 	"PasswordManager/api/lib/db"
+	"PasswordManager/api/lib/exceptions"
 	"PasswordManager/api/lib/helpers"
 	"PasswordManager/api/lib/smtp"
 )
@@ -20,41 +21,41 @@ func PostChallenge(c *gin.Context) {
 
 	bindingErr := c.Bind(&input)
 	if bindingErr != nil {
-		c.JSON(400, helpers.ErrorInvalid("body"))
+		c.JSON(400, exceptions.Builder("body", exceptions.Invalid, exceptions.JsonOrXml))
 		return
 	}
 
 	if input.ChallengeId == "" {
-		c.JSON(400, helpers.ErrorMissing("challengeId"))
+		c.JSON(400, exceptions.Builder("challengeId", exceptions.MissingParam))
 		return
 	}
 
 	if input.Code == "" {
-		c.JSON(400, helpers.ErrorMissing("code"))
+		c.JSON(400, exceptions.Builder("code", exceptions.MissingParam))
 		return
 	}
 
 	decodedChallengeId, dciErr := uuid.Parse(input.ChallengeId)
 	if dciErr != nil {
-		c.JSON(400, helpers.ErrorInvalid("challengeId"))
+		c.JSON(400, exceptions.Builder("challengeId", exceptions.ParsingParam, exceptions.Uuid))
 		return
 	}
 
 	challenge, challengeErr := db.GetUnexpiredChallengeViaId(decodedChallengeId)
 	if challengeErr != nil {
-		c.JSON(400, helpers.ErrorExpired("challenge"))
+		c.JSON(400, exceptions.Builder("challenge", exceptions.Invalid, exceptions.Expired))
 		return
 	}
 
 	foundCredential, foundCredentialErr := db.GetChallengeTotpCredential(challenge)
 	if foundCredentialErr != nil {
-		c.JSON(400, helpers.ErrorInvalid("challenge"))
+		c.JSON(400, exceptions.Builder("challenge", exceptions.Invalid))
 		return
 	}
 
 	foundUser, foundUserErr := db.GetChallengeUser(challenge)
 	if foundUserErr != nil {
-		c.JSON(500, helpers.ErrorUnknown())
+		c.JSON(400, exceptions.Builder("challenge", exceptions.Invalid))
 		return
 	}
 
@@ -67,13 +68,13 @@ func PostChallenge(c *gin.Context) {
 
 		token, encodedProtectedDatabaseKey, encodedProtectedDatabaseKeyIv, err := helpers.GenerateSession(foundUser)
 		if err != nil {
-			c.JSON(500, helpers.ErrorIssuing("session"))
+			c.JSON(500, exceptions.Builder("session", exceptions.Issuing, exceptions.TryAgain))
 			return
 		}
 
 		c.JSON(200, gin.H{"authToken": token, "protectedDatabaseKey": encodedProtectedDatabaseKey, "protectedDatabaseKeyIv": encodedProtectedDatabaseKeyIv})
 	} else if !valid {
 		go smtp.SendTemplate(foundUser.Email, "PasswordManager5 Unsuccessful Sign In Notification", smtp.SigninNotificationTemplate, smtp.SigninNotificationTemplateData{Successful: false})
-		c.JSON(403, gin.H{})
+		c.JSON(400, exceptions.Builder("code", exceptions.IncorrectChallenge))
 	}
 }

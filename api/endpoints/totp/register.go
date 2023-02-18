@@ -11,7 +11,7 @@ import (
 	"github.com/pquerna/otp/totp"
 
 	"PasswordManager/api/lib/db"
-	"PasswordManager/api/lib/helpers"
+	"PasswordManager/api/lib/exceptions"
 	"PasswordManager/ent"
 )
 
@@ -32,7 +32,7 @@ func GetRegister(c *gin.Context) {
 	})
 
 	if totpErr != nil {
-		c.JSON(500, helpers.ErrorCreating("totpKey"))
+		c.JSON(500, exceptions.Builder("totpCredential", exceptions.Creating, exceptions.TryAgain))
 		return
 	}
 
@@ -44,20 +44,20 @@ func GetRegister(c *gin.Context) {
 		Save(db.Context)
 
 	if credentialErr != nil {
-		c.JSON(500, helpers.ErrorCreating("totpCredential"))
+		c.JSON(500, exceptions.Builder("totpCredential", exceptions.Creating, exceptions.TryAgain))
 		return
 	}
 
 	secretQr, sqErr := totpKey.Image(512, 512)
 	if sqErr != nil {
-		c.JSON(500, helpers.ErrorCreating("totpSecretQr"))
+		c.JSON(500, exceptions.Builder("totpSecretQr", exceptions.Issuing, exceptions.TryAgain))
 		return
 	}
 
 	var buffer bytes.Buffer
 	imageErr := jpeg.Encode(&buffer, secretQr, nil)
 	if imageErr != nil {
-		c.JSON(500, helpers.ErrorCreating("totpSecretQr"))
+		c.JSON(500, exceptions.Builder("totpSecretQr", exceptions.Issuing, exceptions.TryAgain))
 		return
 	}
 
@@ -73,29 +73,29 @@ func PostRegister(c *gin.Context) {
 
 	bindingErr := c.Bind(&input)
 	if bindingErr != nil {
-		c.JSON(400, helpers.ErrorInvalid("body"))
+		c.JSON(400, exceptions.Builder("body", exceptions.Invalid, exceptions.JsonOrXml))
 		return
 	}
 
 	if input.TotpCredentialId == "" {
-		c.JSON(400, helpers.ErrorMissing("totpCredentialId"))
+		c.JSON(400, exceptions.Builder("totpCredentialId", exceptions.MissingParam))
 		return
 	}
 
 	decodedChallengeId, dciErr := uuid.Parse(input.TotpCredentialId)
 	if dciErr != nil {
-		c.JSON(400, helpers.ErrorInvalid("totpCredentialId"))
+		c.JSON(400, exceptions.Builder("totpCredentialId", exceptions.ParsingParam, exceptions.Uuid))
 		return
 	}
 
 	credential, credentialErr := db.GetUserTotpCredential(authedUser)
 	if credentialErr != nil {
-		c.JSON(400, helpers.ErrorInvalid("totpCredential"))
+		c.JSON(400, exceptions.Builder("totpCredential", exceptions.Invalid))
 		return
 	}
 
 	if credential.ID != decodedChallengeId {
-		c.JSON(400, helpers.ErrorInvalid("totpCredential"))
+		c.JSON(400, exceptions.Builder("totpCredential", exceptions.Invalid))
 		return
 	}
 
@@ -106,6 +106,6 @@ func PostRegister(c *gin.Context) {
 		c.JSON(200, gin.H{"totpCredentialId": credential.ID.String()})
 	} else if !valid {
 		db.Client.TotpCredential.DeleteOne(credential).Exec(db.Context)
-		c.JSON(400, helpers.ErrorInvalid("code"))
+		c.JSON(400, exceptions.Builder("code", exceptions.IncorrectChallenge))
 	}
 }
