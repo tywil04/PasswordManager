@@ -46,15 +46,10 @@ Status 400 (Erroneous)
 ----------------------
 {
     "error": {
-        "code": string,
-        "causee": string
+        "message": string,
+        "type": string
     }
 }
-
-
-Status 403 (Signin Credentials Incorrect)
------------------------------------------
-{}
 ```
 
 ### Example

@@ -48,8 +48,8 @@ Status 400 (Erroneous)
 ----------------------
 {
     "error": {
-        "code": string,
-        "causee": string
+        "message": string,
+        "type": string
     }
 }
 ```
