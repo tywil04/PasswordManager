@@ -227,120 +227,135 @@
 </script>
 
 <svelte:head>
-    <title>Password Manager - Sign in</title>
+    <title>Password Manager - Signin</title>
 </svelte:head>
 
 <main>
     <div class="outer">
         {#if view === "default"}
-            <div class="inner">
-                <p>
-                    To sign up, click the <span class="text-gray-500">Sign up</span> button to be redirected to the correct page.
-                    <br/>
-                    <br/>
-                    To sign in, enter your details and click the <span class="text-blue-500">Sign in</span> button.
-                </p>
+            <div class="innerLeft">
+                Signin
             </div>
-        
-            <form method="POST" class="inner space-y-5" use:enhance={signin}>
-                <EmailInput tabIndex="10" class="flex-grow" label="Email" name="email" description="Enter your email address." invalidMsg="Enter a valid email address.">
-                    <svelte:fragment slot="left">
-                        <Envelope size="30"strokeWidth="1"/>
-                    </svelte:fragment>
-                </EmailInput>
-                <PasswordInput tabIndex="10" class="flex-grow" label="Password" name="password" description="Enter a secure password." invalidMsg="Enter a valid secure password.">
-                    <svelte:fragment slot="left">
-                        <Key size="30"strokeWidth="1"/>
-                    </svelte:fragment>
-                </PasswordInput>
 
-                {#if submitError !== undefined}
-                    <div class="text-red-500 text-sm">• {submitError}</div>
-                {/if}
-
-                <div class="flex flex-row space-x-5">
-                    <Button tabIndex="10" class="flex-grow" variant="accent" type="submit">Sign in</Button>  
-                    <Button tabIndex="10" class="flex-grow" href="/auth/signup">Sign up</Button>          
-                </div>
-            </form>
+            <div class="innerRight">
+                <form method="POST" class="innerForm" use:enhance={signin}>
+                    <EmailInput tabIndex="10" class="flex-grow" label="Email" name="email" description="Enter your email address." invalidMsg="Enter a valid email address.">
+                        <svelte:fragment slot="left">
+                            <Envelope size="30"strokeWidth="1"/>
+                        </svelte:fragment>
+                    </EmailInput>
+                    <PasswordInput tabIndex="10" class="flex-grow" label="Password" name="password" description="Enter a secure password." invalidMsg="Enter a valid secure password.">
+                        <svelte:fragment slot="left">
+                            <Key size="30"strokeWidth="1"/>
+                        </svelte:fragment>
+                    </PasswordInput>
+    
+                    {#if submitError !== undefined}
+                        <div class="errorText">• {submitError}</div>
+                    {/if}
+    
+                    <div class="buttonRow">
+                        <Button tabIndex="10" class="flex-grow" variant="accent" type="submit">Sign in</Button>  
+                        <Button tabIndex="10" class="flex-grow" href="/auth/signup">Sign up</Button>          
+                    </div>
+                </form>
+            </div>
         {:else if view === "emailChallenge"}
-            <div class="inner">
-                <p>
-                    A code has been sent to your email address so we can verify you.
-                    <br/>
-                    <br/>
-                    Enter the code provided in the email and click the <span class="text-blue-500">Verify</span> button.
-                </p>
+            <div class="innerLeft">
+                Email Verification
             </div>
         
-            <form method="POST" class="inner space-y-5" use:enhance={emailChallenge}>
-                <TextInput tabIndex="10" class="flex-grow" label="Code" name="code" description="Enter the code from your email."/>
+            <div class="innerRight">
+                <p class="additionalText">
+                    A verification email has been sent to your inbox with a code, please enter the code and click verify.
+                </p>
 
-                {#if submitError !== undefined}
-                    <div class="text-red-500 text-sm">• {submitError}</div>
-                {/if}
-
-                <div class="flex flex-row space-x-5">
-                    <Button tabIndex="10" class="flex-grow" variant="accent" type="submit">Verify</Button>  
-                </div>
-            </form>
+                <form method="POST" class="innerForm" use:enhance={emailChallenge}>
+                    <TextInput tabIndex="10" class="flex-grow" label="Code" name="code" description="Enter the code from your email."/>
+    
+                    {#if submitError !== undefined}
+                        <div class="errorText">• {submitError}</div>
+                    {/if}
+    
+                    <div class="buttonRow">
+                        <Button tabIndex="10" class="flex-grow" variant="accent" type="submit">Verify</Button>  
+                    </div>
+                </form>
+            </div>
         {:else if view === "totpChallenge"}
-            <div class="inner">
-                <p>
-                    A code has been sent to your email address so we can verify you.
-                    <br/>
-                    <br/>
-                    Enter the code provided in the email and click the <span class="text-blue-500">Verify</span> button.
-                </p>
+            <div class="innerLeft">
+                Totp Verification
             </div>
         
-            <form method="POST" class="inner space-y-5" use:enhance={totpChallenge}>
-                <TextInput tabIndex="10" class="flex-grow" label="Code" name="code" description="Enter the code from your email."/>
+            <div class="innerRight">
+                <p class="additionalText">
+                    Use your authenticator app to generate a code. Once you have the code, please enter it and click verify.
+                </p>
 
-                {#if submitError !== undefined}
-                    <div class="text-red-500 text-sm">• {submitError}</div>
-                {/if}
+                <form method="POST" class="innerForm" use:enhance={totpChallenge}>
+                    <TextInput tabIndex="10" class="flex-grow" label="Code" name="code" description="Enter the code from your authenticator app."/>
 
-                <div class="flex flex-row space-x-5">
-                    <Button tabIndex="10" class="flex-grow" variant="accent" type="submit">Verify</Button>  
-                </div>
-            </form>
+                    {#if submitError !== undefined}
+                        <div class="errorText">• {submitError}</div>
+                    {/if}
+
+                    <div class="buttonRow">
+                        <Button tabIndex="10" class="flex-grow" variant="accent" type="submit">Verify</Button>  
+                    </div>
+                </form>
+            </div>
         {:else if view === "webauthnChallenge"}
-            <div class="inner">
-                <p>
-                    To start Webauthn verification click the <span class="text-blue-500">Start Webauthn</span> button.
-                </p>
+            <div class="innerLeft">
+                Webauthn Verification
             </div>
-        
-            <form method="POST" class="inner space-y-5" use:enhance={webauthnChallenge}>
+    
+            <div class="innerRight">
+                <p class="additionalText">
+                    Click the start 2FA button to start the 2FA process. You must use a credential you have already registered.
+                </p>
+
                 {#if submitError !== undefined}
-                    <div class="text-red-500 text-sm">• {submitError}</div>
+                    <div class="">• {submitError}</div>
                 {/if}
 
-                <div class="flex flex-row space-x-5">
-                    <Button tabIndex="10" class="flex-grow" variant="accent" type="submit">Start Webauthn</Button>  
-                </div>
-            </form>
-        {:else if view === "challengeSelector"}
-            <div class="inner">
-                <p>
-                    Select a 2FA method.
-                </p>
+                <form method="POST" class="innerForm" use:enhance={webauthnChallenge}>
+                    <div class="buttonRow">
+                        <Button tabIndex="10" class="flex-grow" variant="accent" type="submit">Start 2FA</Button>  
+                    </div>
+                </form>
             </div>
+        {:else if view === "challengeSelector"}
+            <div class="innerLeft">
+                2FA Selector
+            </div>
+
+            <div class="innerRight">
+                <p class="additionalText">
+                    Choose a method of 2FA to verify yourself with.
+                </p>
+
+                <form method="POST" class="innerForm" on:submit|preventDefault>
+                    <div class="selectorColumn">
+                        {#if availableChallenges.indexOf("email") !== -1}
+                            <div class="buttonRow">
+                                <Button tabIndex="10" class="flex-grow" type="submit" on:click={startEmailChallenge}>Email</Button>
+                            </div>
+                        {/if}
         
-            <form method="POST" class="inner space-y-5" on:submit|preventDefault>
-                {#if availableChallenges.indexOf("email") !== -1}
-                    <Button tabIndex="10" class="flex-grow" variant="accent" type="submit" on:click={startEmailChallenge}>Email</Button>
-                {/if}
-
-                {#if availableChallenges.indexOf("totp") !== -1}
-                    <Button tabIndex="10" class="flex-grow" variant="accent" type="submit" on:click={startTotpChallenge}>Email</Button>
-                {/if}
-
-                {#if availableChallenges.indexOf("webauthn") !== -1}
-                    <Button tabIndex="10" class="flex-grow" variant="accent" type="submit" on:click={startWebauthnChallenge}>Email</Button>
-                {/if}
-            </form>
+                        {#if availableChallenges.indexOf("totp") !== -1}
+                            <div class="buttonRow">
+                                <Button tabIndex="10" class="flex-grow" type="submit" on:click={startTotpChallenge}>Authenticator App</Button>
+                            </div>
+                        {/if}
+        
+                        {#if availableChallenges.indexOf("webauthn") !== -1}
+                            <div class="buttonRow">
+                                <Button tabIndex="10" class="flex-grow" type="submit" on:click={startWebauthnChallenge}>Webauthn</Button>
+                            </div>
+                        {/if}                    
+                    </div>
+                </form>
+            </div>
         {/if}
     </div>
 </main>
@@ -350,19 +365,40 @@
         @apply w-full h-full bg-blue-400 flex flex-col justify-center;
     }
 
-    div.outer {
-        @apply w-full h-fit flex flex-col justify-center space-y-5 p-16 md:p-0 md:space-x-5 md:space-y-0 md:flex-row;
+    .outer {
+        @apply w-full h-fit flex flex-row justify-center;
     }
 
-    div.inner {
-        @apply bg-white border border-black w-full h-fit md:w-fit duration-100 rounded-2xl;
+    .innerLeft {
+        writing-mode: vertical-rl;
+        @apply rotate-180 flex flex-col-reverse py-5 px-2 font-bold text-2xl text-gray-800 w-fit rounded-r-2xl border border-black bg-gray-100;
     }
 
-    form.inner {
-        @apply bg-white border border-black md:w-fit h-fit duration-100 p-5 rounded-2xl w-full min-w-[25%];
+    .innerRight {
+        @apply bg-white border border-l-0 border-black h-full duration-100 rounded-r-2xl max-w-[20%] w-[20%] flex flex-col;
     }
 
-    p {
-        @apply p-5 m-0 font-sans w-full md:max-w-[300px] text-sm;
+    .additionalText {
+        @apply p-5 pb-2 text-sm;
+    }
+
+    :global(.innerForm > *) {
+        @apply space-y-5 m-5 flex flex-col justify-end flex-grow;
+    }
+
+    .selectorColumn {
+        @apply flex flex-col space-y-2;
+    }
+
+    :global(.buttonRow) {
+        @apply flex flex-row;
+    }
+
+    :global(.buttonRow > *:not(:last-child)) {
+        @apply mr-5;
+    }
+
+    .errorText {
+        @apply text-red-500 text-sm;
     }
 </style>

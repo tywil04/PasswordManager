@@ -114,75 +114,70 @@
 </script>
 
 <svelte:head>
-    <title>Password Manager - Sign up</title>
+    <title>Password Manager - Signup</title>
 </svelte:head>
 
 <main>
     <div class="outer">
         {#if view === "default"}
-            <div class="inner">
-                <p>
-                    To sign in, click the <span class="text-gray-500">Sign in</span> button to be redirected to the correct page.
-                    <br/><br/>
-                    To sign up, ender your details and click the <span class="text-blue-500">Sign up</span> button. 
-                    <br/><br/>
-                    Your password must have at least a single lowercase letter, uppercase letter, numbers and special character.
-                    <br/><br/>
-                    Allowed special characters:
-                    <br/>
-                    <code class="text-gray-500">!#$%^'"`&*-=_+&gt;&lt;?;:()&#123;&#125;[].,@</code>
-                    <br/><br/>
-                    Your password must also have a length of 8 characters or more.
-                </p>
+            <div class="innerLeft">
+                Signup
             </div>
-        
-            <form method="POST" class="inner space-y-5" use:enhance={signup}>
-                <EmailInput tabIndex="10" class="flex-grow" label="Email" name="email" description="Enter your email address." invalidMsg="Enter a valid email address.">
-                    <svelte:fragment slot="left">
-                        <Envelope size="30"strokeWidth="1"/>
-                    </svelte:fragment>
-                </EmailInput>
-                <PasswordInput tabIndex="10" class="flex-grow" label="Password" name="password" description="Enter a secure password." invalidMsg="Enter a valid secure password.">
-                    <svelte:fragment slot="left">
-                        <Key size="30"strokeWidth="1"/>
-                    </svelte:fragment>
-                </PasswordInput>
-                <PasswordInput tabIndex="10" class="flex-grow" label="Confirm Password" name="passwordConfirm" description="Confirm your secure password." invalidMsg="Enter a valid secure password.">
-                    <svelte:fragment slot="left">
-                        <Key size="30"strokeWidth="1"/>
-                    </svelte:fragment>
-                </PasswordInput>
 
-                {#if submitError !== undefined}
-                    <div class="text-red-500 text-sm">• {submitError}</div>
-                {/if}
+            <div class="innerRight">
+                <p class="additionalText">
+                    Passwords must be 8 charaters longs have at least a single lowercase letter, uppercase letter, numbers and special character. Allowed special characters: <code class="text-gray-500">!#$%^'"`&*-=_+&gt;&lt;?;:()&#123;&#125;[].,@</code>.
+                </p>
 
-                <div class="flex flex-row space-x-5">
-                    <Button tabIndex="10" class="flex-grow" variant="accent" type="submit">Sign up</Button>  
-                    <Button tabIndex="10" class="flex-grow" href="/auth/signin">Sign in</Button>          
-                </div>
-            </form>
+                <form method="POST" class="innerForm" use:enhance={signup}>
+                    <EmailInput tabIndex="10" class="flex-grow" label="Email" name="email" description="Enter your email address." invalidMsg="Enter a valid email address.">
+                        <svelte:fragment slot="left">
+                            <Envelope size="30"strokeWidth="1"/>
+                        </svelte:fragment>
+                    </EmailInput>
+                    <PasswordInput tabIndex="10" class="flex-grow" label="Password" name="password" description="Enter a secure password." invalidMsg="Enter a valid secure password.">
+                        <svelte:fragment slot="left">
+                            <Key size="30"strokeWidth="1"/>
+                        </svelte:fragment>
+                    </PasswordInput>
+                    <PasswordInput tabIndex="10" class="flex-grow" label="Confirm Password" name="passwordConfirm" description="Confirm your secure password." invalidMsg="Enter a valid secure password.">
+                        <svelte:fragment slot="left">
+                            <Key size="30"strokeWidth="1"/>
+                        </svelte:fragment>
+                    </PasswordInput>
+    
+                    {#if submitError !== undefined}
+                        <div class="text-red-500 text-sm">• {submitError}</div>
+                    {/if}
+    
+                    <div class="buttonRow">
+                        <Button tabIndex="10" class="flex-grow" variant="accent" type="submit">Sign up</Button>  
+                        <Button tabIndex="10" class="flex-grow" href="/auth/signin">Sign in</Button>          
+                    </div>
+                </form>
+            </div>
         {:else if view === "emailChallenge"}
-            <div class="inner">
-                <p>
-                    A code has been sent to your email address so we can verify you and finish creating your account.
-                    <br/>
-                    <br/>
-                    Enter the code provided in the email and click the <span class="text-blue-500">Verify</span> button.
-                </p>
+            <div class="innerLeft">
+                Email Verification
             </div>
         
-            <form method="POST" class="inner space-y-5" use:enhance={emailChallenge}>
-                <TextInput tabIndex="10" class="flex-grow" label="Code" name="code" description="Enter the code from your email."/>
+            <div class="innerRight">
+                <p class="additionalText">
+                    A verification email has been sent to your inbox with a code, please enter the code and click verify.
+                </p>
 
-                {#if submitError !== undefined}
-                    <div class="text-red-500 text-sm">• {submitError}</div>
-                {/if}
-
-                <div class="flex flex-row space-x-5">
-                    <Button tabIndex="10" class="flex-grow" variant="accent" type="submit">Verify</Button>  
-                </div>
-            </form>
+                <form method="POST" class="innerForm" use:enhance={emailChallenge}>
+                    <TextInput tabIndex="10" class="flex-grow" label="Code" name="code" description="Enter the code from your email."/>
+    
+                    {#if submitError !== undefined}
+                        <div class="errorText">• {submitError}</div>
+                    {/if}
+    
+                    <div class="buttonRow">
+                        <Button tabIndex="10" class="flex-grow" variant="accent" type="submit">Verify</Button>  
+                    </div>
+                </form>
+            </div>
         {/if}
     </div>
 </main>
@@ -192,23 +187,36 @@
         @apply w-full h-full bg-blue-400 flex flex-col justify-center;
     }
 
-    div.outer {
-        @apply w-full h-fit flex flex-col justify-center space-y-5 p-16 md:p-0 md:space-x-5 md:space-y-0 md:flex-row;
+    .outer {
+        @apply w-full h-fit flex flex-row justify-center;
     }
 
-    div.inner {
-        @apply bg-white border border-black w-full h-fit md:w-fit duration-100 rounded-2xl;
+    .innerLeft {
+        writing-mode: vertical-rl;
+        @apply rotate-180 flex flex-col-reverse py-5 px-2 font-bold text-2xl text-gray-800 w-fit rounded-r-2xl border border-black bg-gray-100;
     }
 
-    form.inner {
-        @apply bg-white border border-black md:w-fit h-fit duration-100 p-5 rounded-2xl w-full min-w-[25%];
+    .innerRight {
+        @apply bg-white border border-l-0 border-black h-full duration-100 rounded-r-2xl max-w-[20%] w-[20%] flex flex-col;
     }
 
-    h1 {
-        @apply text-xl font-bold h-fit px-5 py-2.5 bg-gray-300/80 border-b border-black text-gray-800/80 rounded-t-[15px];
+    .additionalText {
+        @apply p-5 pb-2 text-sm;
     }
 
-    p {
-        @apply p-5 m-0 font-sans w-full md:max-w-[300px] text-sm;
+    :global(.innerForm > *) {
+        @apply space-y-5 m-5 flex flex-col justify-end flex-grow;
+    }
+
+    :global(.buttonRow) {
+        @apply flex flex-row;
+    }
+
+    :global(.buttonRow > *:not(:last-child)) {
+        @apply mr-5;
+    }
+
+    .errorText {
+        @apply text-red-500 text-sm;
     }
 </style>
