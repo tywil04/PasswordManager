@@ -9,14 +9,17 @@
     import * as cryptography from "$lib/js/cryptography.js"
     import * as validations from "$lib/js/validations.js"
     import * as storage from "$lib/js/storage.js"
+    import * as utils from "$lib/js/utils.js"
 
     import Button from "$lib/components/buttons/Button.svelte"
     import EmailInput from "$lib/components/inputs/EmailInput.svelte"
     import PasswordInput from "$lib/components/inputs/PasswordInput.svelte"
     import TextInput from "$lib/components/inputs/TextInput.svelte"
 
-    let view = "signin"
-    let viewData = ""
+    let view = "default"
+    let availableChallenges
+    let challengeId
+
     let masterKey
     let submitError 
 
@@ -48,15 +51,82 @@
 
         if (response.status !== 200) {
             submitError = json.error.code
+        } else if (response.status === 403) {
+            submitError = "Incorrect credentials"
         } else if (response.status === 200) {
-            view = json.challengeType
-            viewData = json[view + "Id"]
+            availableChallenges = json.availableChallenges
+            challengeId = json.challengeId
+
+            if (availableChallenges.length === 1 && availableChallenges[0] === "email") {
+                startEmailChallenge()
+            } else {
+                view = "challengeSelector"
+            }
         }
 
         cancel()
     }
 
-    async function emailChallenge({ data, cancel }) {
+
+    //
+
+
+    const startEmailChallenge = async () => {
+        submitError = undefined
+        view = "emailChallenge"
+        await utils.getJson(`/api/v1/email/challenge?challengeId=${challengeId}`)
+    } 
+
+    const emailChallenge = async ({ data, cancel }) => {
+        const code = data.get("code")
+
+        if (code === "" || code === null || code === undefined) {
+            cancel()
+            return
+        }
+
+        const postResponse = await fetch("/api/v1/email/challenge", {
+            method: "POST",
+            headers: {
+                "Content-type": "application/json",
+            },
+            body: JSON.stringify({
+                "challengeId": challengeId,
+                "code": code,
+            })
+        })
+        const postJson = await postResponse.json()
+
+        if (postResponse.status !== 200 && postResponse.status !== 403) {
+            submitError = postJson.error.code
+        } else if (postResponse.status === 403) {
+            submitError = "Incorrect code"
+        } else if (postResponse.status === 200) {
+            const databaseKey = await cryptography.unprotectDatabaseKey(masterKey, {
+                key: base64.decode(postJson.protectedDatabaseKey),
+                iv: base64.decode(postJson.protectedDatabaseKeyIv),
+            })
+            const exportedDatabaseKey = await cryptography.exportKey(databaseKey)
+
+            storage.setDatabaseKey(exportedDatabaseKey)
+            storage.setAuthToken(postJson.authToken)
+
+            goto("/home")
+        }
+
+        cancel()
+    }
+
+
+    //
+     
+
+    const startTotpChallenge = async () => {
+        submitError = undefined
+        view = "totpChallenge"
+    }
+
+    const totpChallenge = async ({ data, cancel }) => {
         submitError = undefined
 
         const code = data.get("code")
@@ -66,29 +136,31 @@
             return
         }
 
-        const response = await fetch("/api/v1/email/signinChallenge", {
+        const postResponse = await fetch("/api/v1/totp/challenge", {
             method: "POST",
             headers: {
                 "Content-type": "application/json",
             },
             body: JSON.stringify({
-                "emailChallengeId": viewData,
+                "challengeId": challengeId,
                 "code": code,
             })
         })
-        const json = await response.json()
+        const postJson = await postResponse.json()
 
-        if (response.status !== 200) {
-            submitError = json.error.code
-        } else if (response.status === 200) {
+        if (postResponse.status !== 200 && postResponse.status !== 403) {
+            submitError = postJson.error.code
+        } else if (postResponse.status === 403) {
+            submitError = "Incorrect code"
+        } else if (postResponse.status === 200) {
             const databaseKey = await cryptography.unprotectDatabaseKey(masterKey, {
-                key: base64.decode(json.protectedDatabaseKey),
-                iv: base64.decode(json.protectedDatabaseKeyIv),
+                key: base64.decode(postJson.protectedDatabaseKey),
+                iv: base64.decode(postJson.protectedDatabaseKeyIv),
             })
             const exportedDatabaseKey = await cryptography.exportKey(databaseKey)
 
             storage.setDatabaseKey(exportedDatabaseKey)
-            storage.setAuthToken(json.authToken)
+            storage.setAuthToken(postJson.authToken)
 
             goto("/home")
         }
@@ -96,46 +168,55 @@
         cancel()
     }
 
+
+    //
+
+
+    const startWebauthnChallenge = async () => {
+        submitError = undefined
+        view = "webauthnChallenge"
+    }
+
     async function webauthnChallenge({ cancel }) {
         submitError = undefined
 
-        const response = await fetch(`/api/v1/webauthn/signinChallenge?webauthnChallengeId=${viewData}`, {
+        const getResponse = await fetch(`/api/v1/webauthn/challenge?challengeId=${challengeId}`, {
             method: "GET",
             headers: {
                 "Content-type": "application/json",
             },
         })
-        const json = await response.json()
+        const getJson = await getResponse.json()
 
-        if (response.status !== 200) {
-            submitError = json.error.code
-        } else if (response.status === 200) {
-            const webauthnChallengeId = json.webauthnChallengeId
-            const credential = await webauthnJson.get(webauthnJson.parseRequestOptionsFromJSON(json.options))
-
-            const finishResponse = await fetch("/api/v1/webauthn/signinChallenge", {
+        if (getResponse.status !== 200) {
+            submitError = getJson.error.code
+        } else if (getResponse.status === 200) {
+            const credential = await webauthnJson.get(webauthnJson.parseRequestOptionsFromJSON(getJson.options))
+            const postResponse = await fetch("/api/v1/webauthn/challenge", {
                 method: "POST",
                 headers: {
                     "Content-type": "application/json",
                 },
                 body: JSON.stringify({
-                    webauthnChallengeId,
+                    challengeId: challengeId,
                     credential: credential,
                 })
             })
-            const finishJson = await finishResponse.json()
+            const postJson = await postResponse.json()
 
-            if (finishResponse.status !== 200) {
-                submitError = json.error.code
-            } else if (finishResponse.status === 200) {
+            if (postResponse.status !== 200 && postResponse.status !== 403) {
+                submitError = postJson.error.code
+            } else if (postResponse.status === 403) {
+                submitError = "Invalid webauthn"
+            } else if (postResponse.status === 200) {
                 const databaseKey = await cryptography.unprotectDatabaseKey(masterKey, {
-                    key: base64.decode(finishJson.protectedDatabaseKey),
-                    iv: base64.decode(finishJson.protectedDatabaseKeyIv),
+                    key: base64.decode(postJson.protectedDatabaseKey),
+                    iv: base64.decode(postJson.protectedDatabaseKeyIv),
                 })
                 const exportedDatabaseKey = await cryptography.exportKey(databaseKey)
 
                 storage.setDatabaseKey(exportedDatabaseKey)
-                storage.setAuthToken(finishJson.authToken)
+                storage.setAuthToken(postJson.authToken)
 
                 goto("/home")
             }
@@ -151,7 +232,7 @@
 
 <main>
     <div class="outer">
-        {#if view === "signin"}
+        {#if view === "default"}
             <div class="inner">
                 <p>
                     To sign up, click the <span class="text-gray-500">Sign up</span> button to be redirected to the correct page.
@@ -203,6 +284,27 @@
                     <Button tabIndex="10" class="flex-grow" variant="accent" type="submit">Verify</Button>  
                 </div>
             </form>
+        {:else if view === "totpChallenge"}
+            <div class="inner">
+                <p>
+                    A code has been sent to your email address so we can verify you.
+                    <br/>
+                    <br/>
+                    Enter the code provided in the email and click the <span class="text-blue-500">Verify</span> button.
+                </p>
+            </div>
+        
+            <form method="POST" class="inner space-y-5" use:enhance={totpChallenge}>
+                <TextInput tabIndex="10" class="flex-grow" label="Code" name="code" description="Enter the code from your email."/>
+
+                {#if submitError !== undefined}
+                    <div class="text-red-500 text-sm">• {submitError}</div>
+                {/if}
+
+                <div class="flex flex-row space-x-5">
+                    <Button tabIndex="10" class="flex-grow" variant="accent" type="submit">Verify</Button>  
+                </div>
+            </form>
         {:else if view === "webauthnChallenge"}
             <div class="inner">
                 <p>
@@ -218,6 +320,26 @@
                 <div class="flex flex-row space-x-5">
                     <Button tabIndex="10" class="flex-grow" variant="accent" type="submit">Start Webauthn</Button>  
                 </div>
+            </form>
+        {:else if view === "challengeSelector"}
+            <div class="inner">
+                <p>
+                    Select a 2FA method.
+                </p>
+            </div>
+        
+            <form method="POST" class="inner space-y-5" on:submit|preventDefault>
+                {#if availableChallenges.indexOf("email") !== -1}
+                    <Button tabIndex="10" class="flex-grow" variant="accent" type="submit" on:click={startEmailChallenge}>Email</Button>
+                {/if}
+
+                {#if availableChallenges.indexOf("totp") !== -1}
+                    <Button tabIndex="10" class="flex-grow" variant="accent" type="submit" on:click={startTotpChallenge}>Email</Button>
+                {/if}
+
+                {#if availableChallenges.indexOf("webauthn") !== -1}
+                    <Button tabIndex="10" class="flex-grow" variant="accent" type="submit" on:click={startWebauthnChallenge}>Email</Button>
+                {/if}
             </form>
         {/if}
     </div>

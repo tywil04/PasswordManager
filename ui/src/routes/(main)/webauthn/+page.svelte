@@ -27,7 +27,7 @@
         if (response.status !== 200) {
             submitError = json.error.code
         } else if (response.status === 200) {
-            const webauthnChallengeId = json.webauthnChallengeId
+            const webauthnChallengeId = json.webauthnRegisterChallengeId
             const credential = await webauthnJson.create(webauthnJson.parseCreationOptionsFromJSON(json.options))
 
             const finishResponse = await fetch("/api/v1/webauthn/register", {
@@ -37,7 +37,7 @@
                     "Authorization": authToken,
                 },
                 body: JSON.stringify({
-                    webauthnChallengeId: webauthnChallengeId,
+                    webauthnRegisterChallengeId: webauthnChallengeId,
                     name: name,
                     credential: credential,
                 })

@@ -29,3 +29,23 @@ export function base64ToUrlBase64(text) {
 export function base64UrlToBase64(text) {
     return text.replace(/\-/g, "\+").replace(/\_/g, "\/")
 }
+
+export async function getJson(url, body, headers={}) {
+    return await fetch(url, {
+        method: "GET",
+        headers: Object.assign({}, {
+            "Content-type": "application/json",
+        }, headers),
+        body: JSON.stringify(body)
+    })
+}
+
+export async function postJson(url, body={}, headers={}) {
+    return await fetch(url, {
+        method: "POST",
+        headers: Object.assign({}, {
+            "Content-type": "application/json",
+        }, headers),
+        body: JSON.stringify(body)
+    })
+}

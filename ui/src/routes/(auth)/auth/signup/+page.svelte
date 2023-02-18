@@ -3,19 +3,22 @@
     import { goto } from "$app/navigation"
 
     import * as base64 from "base64-arraybuffer"
+    import { Envelope, Key } from "svelte-heros-v2"
 
     import * as cryptography from "$lib/js/cryptography.js"
     import * as validations from "$lib/js/validations.js"
-    import { Envelope, Key } from "svelte-heros-v2"
+    import * as storage from "$lib/js/storage.js"
+    import * as utils from "$lib/js/utils.js"
 
     import Button from "$lib/components/buttons/Button.svelte"
     import EmailInput from "$lib/components/inputs/EmailInput.svelte"
     import PasswordInput from "$lib/components/inputs/PasswordInput.svelte"
     import TextInput from "$lib/components/inputs/TextInput.svelte"
 
-    let view = "signup"
-    let viewData = ""
+    let view = "default"
+    let challengeId
 
+    let masterKey
     let submitError 
 
     async function signup({ data, cancel }) {
@@ -30,7 +33,7 @@
             return
         }
 
-        let masterKey = await cryptography.generateMasterKey(password, email)
+        masterKey = await cryptography.generateMasterKey(password, email)
         let masterHash = await cryptography.generateMasterHash(password, masterKey) 
         let databaseKey = await cryptography.generateDatabaseKey()
         let protectedDatabaseKey = await cryptography.protectDatabaseKey(masterKey, databaseKey)
@@ -52,16 +55,24 @@
         if (response.status !== 200) {
             submitError = json.error.code
         } else if (response.status === 200) {
-            view = "emailChallenge"
-            viewData = json.emailChallengeId
+            challengeId = json.challengeId
+            await startEmailChallenge()
         }
 
         cancel()
     }
 
-    async function emailChallenge({ data, cancel }) {
-        submitError = undefined
 
+    //
+
+
+    const startEmailChallenge = async () => {
+        submitError = undefined
+        view = "emailChallenge"
+        await utils.getJson(`/api/v1/email/challenge?challengeId=${challengeId}`)
+    } 
+
+    const emailChallenge = async ({ data, cancel }) => {
         const code = data.get("code")
 
         if (code === "" || code === null || code === undefined) {
@@ -69,22 +80,33 @@
             return
         }
 
-        const response = await fetch("/api/v1/email/signupChallenge", {
+        const postResponse = await fetch("/api/v1/email/challenge", {
             method: "POST",
             headers: {
                 "Content-type": "application/json",
             },
             body: JSON.stringify({
-                emailChallengeId: viewData,
-                code: code,
+                "challengeId": challengeId,
+                "code": code,
             })
         })
-        const json = await response.json()
+        const postJson = await postResponse.json()
 
-        if (response.status !== 200) {
-            submitError = json.error.code
-        } else if (response.status === 200) {
-            goto("/auth/signin")
+        if (postResponse.status !== 200 && postResponse.status !== 403) {
+            submitError = postJson.error.code
+        } else if (postResponse.status === 403) {
+            submitError = "Incorrect code"
+        } else if (postResponse.status === 200) {
+            const databaseKey = await cryptography.unprotectDatabaseKey(masterKey, {
+                key: base64.decode(postJson.protectedDatabaseKey),
+                iv: base64.decode(postJson.protectedDatabaseKeyIv),
+            })
+            const exportedDatabaseKey = await cryptography.exportKey(databaseKey)
+
+            storage.setDatabaseKey(exportedDatabaseKey)
+            storage.setAuthToken(postJson.authToken)
+
+            goto("/home")
         }
 
         cancel()
@@ -97,7 +119,7 @@
 
 <main>
     <div class="outer">
-        {#if view === "signup"}
+        {#if view === "default"}
             <div class="inner">
                 <p>
                     To sign in, click the <span class="text-gray-500">Sign in</span> button to be redirected to the correct page.
