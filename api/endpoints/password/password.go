@@ -13,9 +13,7 @@ import (
 	"PasswordManager/ent"
 )
 
-type GetInput struct {
-	PasswordId string `form:"passwordId" json:"passwordId" xml:"passwordId"`
-}
+type GetInput struct{}
 
 type PostInput struct {
 	Name             string `form:"name" json:"name" xml:"name"`
@@ -30,11 +28,11 @@ type PostInput struct {
 		KeyIv   string `form:"keyIv" json:"keyIv" xml:"keyIv"`
 		Value   string `form:"value" json:"value" xml:"value"`
 		ValueIv string `form:"valueIv" json:"valueIv" xml:"valueIv"`
-	}
+	} `form:"additionalFields" json:"additionalFields" xml:"additionalFields"`
 	Urls []struct {
 		Url   string `form:"url" json:"url" xml:"url"`
 		UrlIv string `form:"urlIv" json:"urlIv" xml:"urlIv"`
-	}
+	} `form:"urls" json:"urls" xml:"urls"`
 }
 
 type DeleteInput struct {
@@ -44,81 +42,14 @@ type DeleteInput struct {
 func Get(c *gin.Context) {
 	authedUser := c.MustGet("authedUser").(*ent.User)
 
-	var input GetInput
-
-	bindingErr := c.Bind(&input)
-	if bindingErr != nil {
-		c.JSON(400, exceptions.Builder("body", exceptions.Invalid, exceptions.JsonOrXml))
+	passwords, passwordsErr := db.GetUserPasswords(authedUser)
+	if passwordsErr != nil {
+		c.JSON(500, exceptions.Builder("", exceptions.Unknown, exceptions.TryAgain))
 		return
 	}
 
-	if input.PasswordId == "" {
-		passwords, passwordsErr := db.GetUserPasswords(authedUser)
-		if passwordsErr != nil {
-			c.JSON(500, exceptions.Builder("", exceptions.Unknown, exceptions.TryAgain))
-			return
-		}
-
-		jsonPasswords := make([]gin.H, len(passwords))
-		for index, password := range passwords {
-			additionalFields, afErr := db.GetPasswordAdditionalFields(password)
-			if afErr != nil {
-				c.JSON(500, exceptions.Builder("", exceptions.Unknown, exceptions.TryAgain))
-				return
-			}
-
-			urls, uErr := db.GetPasswordUrls(password)
-			if uErr != nil {
-				c.JSON(500, exceptions.Builder("", exceptions.Unknown, exceptions.TryAgain))
-				return
-			}
-
-			jsonAdditionalFields := make([]gin.H, len(additionalFields))
-			for afIndex, additionalField := range additionalFields {
-				jsonAdditionalFields[afIndex] = gin.H{
-					"key":     additionalField.Key,
-					"keyIv":   additionalField.KeyIv,
-					"value":   additionalField.Value,
-					"valueIv": additionalField.ValueIv,
-				}
-			}
-
-			jsonUrls := make([]gin.H, len(urls))
-			for uIndex, url := range urls {
-				jsonUrls[uIndex] = gin.H{
-					"url":   url.URL,
-					"urlIv": url.UrlIv,
-				}
-			}
-
-			jsonPasswords[index] = gin.H{
-				"id":               password.ID.String(),
-				"name":             password.Name,
-				"nameIv":           password.NameIv,
-				"username":         password.Username,
-				"usernameIv":       password.UsernameIv,
-				"password":         password.Password,
-				"passwordIv":       password.PasswordIv,
-				"colour":           password.Colour,
-				"additionalFields": jsonAdditionalFields,
-				"urls":             jsonUrls,
-			}
-		}
-
-		c.JSON(200, gin.H{"passwords": jsonPasswords})
-	} else {
-		decodedPasswordId, dpiErr := uuid.Parse(input.PasswordId)
-		if dpiErr != nil {
-			c.JSON(400, exceptions.Builder("passwordId", exceptions.ParsingParam, exceptions.Uuid))
-			return
-		}
-
-		password, passwordErr := db.GetUserPassword(authedUser, decodedPasswordId)
-		if passwordErr != nil {
-			c.JSON(400, exceptions.Builder("password", exceptions.Invalid, exceptions.Owns))
-			return
-		}
-
+	jsonPasswords := make([]gin.H, len(passwords))
+	for index, password := range passwords {
 		additionalFields, afErr := db.GetPasswordAdditionalFields(password)
 		if afErr != nil {
 			c.JSON(500, exceptions.Builder("", exceptions.Unknown, exceptions.TryAgain))
@@ -149,7 +80,7 @@ func Get(c *gin.Context) {
 			}
 		}
 
-		jsonPassword := gin.H{
+		jsonPasswords[index] = gin.H{
 			"id":               password.ID.String(),
 			"name":             password.Name,
 			"nameIv":           password.NameIv,
@@ -161,9 +92,9 @@ func Get(c *gin.Context) {
 			"additionalFields": jsonAdditionalFields,
 			"urls":             jsonUrls,
 		}
-
-		c.JSON(200, gin.H{"password": jsonPassword})
 	}
+
+	c.JSON(200, gin.H{"passwords": jsonPasswords})
 }
 
 func Post(c *gin.Context) {

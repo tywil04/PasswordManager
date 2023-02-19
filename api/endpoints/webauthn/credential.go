@@ -9,9 +9,7 @@ import (
 	"PasswordManager/ent"
 )
 
-type GetCredentialInput struct {
-	WebauthnCredentialId string `form:"webauthnCredentialId" json:"webauthnCredentialId" xml:"webauthnCredentialId"`
-}
+type GetCredentialInput struct{}
 
 type DeleteCredentialInput struct {
 	WebauthnCredentialId string `form:"webauthnCredentialId" json:"webauthnCredentialId" xml:"webauthnCredentialId"`
@@ -20,52 +18,22 @@ type DeleteCredentialInput struct {
 func GetCredential(c *gin.Context) {
 	authedUser := c.MustGet("authedUser").(*ent.User)
 
-	var input GetCredentialInput
-
-	bindingErr := c.Bind(&input)
-	if bindingErr != nil {
-		c.JSON(400, exceptions.Builder("body", exceptions.Invalid, exceptions.JsonOrXml))
+	credentials, credentialErr := db.GetUserWebauthnCredentials(authedUser)
+	if credentialErr != nil {
+		c.JSON(500, exceptions.Builder("", exceptions.Unknown, exceptions.TryAgain))
 		return
 	}
 
-	if input.WebauthnCredentialId == "" {
-		credentials, credentialErr := db.GetUserWebauthnCredentials(authedUser)
-		if credentialErr != nil {
-			c.JSON(500, exceptions.Builder("", exceptions.Unknown, exceptions.TryAgain))
-			return
-		}
-
-		jsonCredentials := make([]gin.H, len(credentials))
-		for index, credential := range credentials {
-			jsonCredentials[index] = gin.H{
-				"id":        credential.ID.String(),
-				"name":      credential.Name,
-				"createdAt": credential.CreatedAt,
-			}
-		}
-
-		c.JSON(200, gin.H{"webauthnCredentials": jsonCredentials})
-	} else {
-		decodedCredentialId, dciErr := uuid.Parse(input.WebauthnCredentialId)
-		if dciErr != nil {
-			c.JSON(400, exceptions.Builder("webauthnCredentialId", exceptions.ParsingParam, exceptions.Uuid))
-			return
-		}
-
-		credential, credentialErr := db.GetUserWebauthnCredential(authedUser, decodedCredentialId)
-		if credentialErr != nil {
-			c.JSON(400, exceptions.Builder("webauthnCredential", exceptions.Invalid))
-			return
-		}
-
-		jsonCredential := gin.H{
+	jsonCredentials := make([]gin.H, len(credentials))
+	for index, credential := range credentials {
+		jsonCredentials[index] = gin.H{
 			"id":        credential.ID.String(),
 			"name":      credential.Name,
 			"createdAt": credential.CreatedAt,
 		}
-
-		c.JSON(200, gin.H{"webauthnCredential": jsonCredential})
 	}
+
+	c.JSON(200, gin.H{"webauthnCredentials": jsonCredentials})
 }
 
 func DeleteCredential(c *gin.Context) {
