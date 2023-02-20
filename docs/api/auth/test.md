@@ -14,23 +14,23 @@ This API is public, however, it is strongly recommended that you use an official
 // DESCRIPTION HERE //
 
 ### Request Format
-```
-Headers:
---------
+#### Headers
+```json
 {}
+```
 
-
-Params:
--------
+#### Params
+```json
 {}
 ```
 
 ### Response Format
-```
-Status 200:
------------
+#### 200
+```json
 {}
 ```
 
 ### Example
-// EXAMPLE HERE //
+```javascript
+// JAVASCRIPT EXAMPLE HERE
+```

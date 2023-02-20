@@ -18,57 +18,47 @@ This endpoints starts the signup process. The response contains a list of all th
 - `protectedDatabaseKey` must be a base64 encoded string, if its not an error will be returned.
 - `protectedDatabaseKeyIv` must be a base64 encoded string, if its not an error will be returned.
 
-Challenge endpoints:
-- Email: `/api/v1/email/challenge`
-- Totp: `/api/v1/totp/challenge`
-- WebAuthn: `/api/v1/webauthn/challenge`
-
 ### Request Format
-```
-Headers:
---------
+#### Headers
+```json
 {}
+```
 
-
-Params:
--------
+#### Params
+```json
 {
-    "email": email string,
-    "masterHash": base64 string,
-    "protectedDatabaseKey": base64 string,
-    "protectedDatabaseKeyIv": base64 string
+    "email": "string",
+    "masterHash": "string",
+    "protectedDatabaseKey": "string",
+    "protectedDatabaseKeyIv": "string"
 }
 ```
 
 ### Response Format
-```
-Status 200:
------------
+#### 200
+```json
 {
-    "challengeId": uuid string,
+    "challengeId": "uuid string",
     "availableChallenges": [
-        string,
-        ...
+        "string"
     ]
 }
-
-
-Status 400 (Client Error):
---------------------------
+```
+#### 400 (Client Error)
+```json
 {
     "error": {
-        "code": string,
-        "message": string
+        "code": "string",
+        "message": "string"
     }
 }
-
-
-Status 500 (Server Error):
---------------------------
+```
+#### 500 (Server Error)
+```json
 {
     "error": {
-        "code": string,
-        "message": string
+        "code": "string",
+        "message": "string"
     }
 }
 ```
@@ -87,7 +77,7 @@ let protectedDatabaseKey = await cryptography.protectDatabaseKey(masterKey, data
 const response = await fetch("/api/v1/auth/signup", {
     method: "POST",
     headers: {
-        "Content-type": "application/json",
+        "Content-type": "application/json", // json or xml is allowed
     },
     body: JSON.stringify({
         email: email,
@@ -98,5 +88,5 @@ const response = await fetch("/api/v1/auth/signup", {
 })
 const json = await response.json()
 
-console.log(json)
+console.log(json) // print response to console
 ```

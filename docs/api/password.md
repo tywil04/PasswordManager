@@ -14,201 +14,192 @@ This API is public, however, it is strongly recommended that you use an official
 // DESCRIPTION HERE //
 
 ### Request Format
-```
-Headers:
---------
+#### Headers
+```json
 {
-    "Authorization": valid authToken
+    "Authorization": "valid authToken"
 }
+```
 
-
-Params:
--------
+#### Params
+```json
 {}
 ```
 
 ### Response Format
-```
-Status 200:
------------
+#### 200
+```json
 {
     "passwords": [
         {
-            "id": uuid string,
-            "name": base64 string,
-            "nameIv": base64 string,
-            "username": base64 string,
-            "usernameIv": base64 string,
-            "password": base64 string,
-            "passwordIv": base64 string,
+            "id": "uuid string",
+            "name": "base64 string",
+            "nameIv": "base64 string",
+            "username": "base64 string",
+            "usernameIv": "base64 string",
+            "password": "base64 string",
+            "passwordIv": "base64 string",
             "colour": "hex colour string",
             "additionalFields": [
                 {
-                    "key": base64 string,
-                    "keyIv": base64 string,
-                    "value": base64 string,
-                    "valueIv": base64 string
+                    "key": "base64 string",
+                    "keyIv": "base64 string",
+                    "value": "base64 string",
+                    "valueIv": "base64 string"
                 }
             ],
             "urls": [
                 {
-                    "url": base64 string,
-                    "urlIv": base64 string
+                    "url": "base64 string",
+                    "urlIv": "base64 string"
                 }
             ]
-        },
-        ...
+        }
     ]
 }
-
-
-Status 500 (Server Error):
---------------------------
+```
+#### 500 (Server Error)
+```json
 {
     "error": {
-        "code": string,
-        "message": string
+        "code": "string",
+        "message": "string"
     }
 }
 ```
 
 ### Example
-// EXAMPLE HERE //
+```javascript
+// JAVASCRIPT EXAMPLE HERE
+```
 
 ## POST
 ### Description
 // DESCRIPTION HERE //
 
 ### Request Format
-```
-Headers:
---------
+#### Headers
+```json
 {
-    "Authorization": valid authToken
+    "Authorization": "valid authToken"
 }
+```
 
-
-Params:
--------
+#### Params
+```json
 {
-    "name": string,
-    "nameIv": string,
-    "username": string,
-    "usernameIv": string,
-    "password": string,
-    "passwordIv": string,
-    "colour": string,
+    "name": "string",
+    "nameIv": "string",
+    "username": "string",
+    "usernameIv": "string",
+    "password": "string",
+    "passwordIv": "string",
+    "colour": "string",
     "additionalFields": [
         {
-            "key": string,
-            "keyIv": string,
-            "value": string,
-            "valueIv": string
-        },
-        ...
+            "key": "string",
+            "keyIv": "string",
+            "value": "string",
+            "valueIv": "string"
+        }
     ],
     "urls": [
         {
-            "url": string,
-            "urlIv": string
-        },
-        ...
+            "url": "string",
+            "urlIv": "string"
+        }
     ],
-    "passwordId": string
+    "passwordId": "string"
 }
 ```
 
 ### Response Format
-```
-Status 200:
------------
+#### 200
+```json
 {
-    "passwordId": uuid string
+    "passwordId": "uuid string"
 }
-
-
-Status 400 (Client Error):
---------------------------
+```
+#### 400 (Client Error)
+```json
 {
     "error": {
-        "code": string,
-        "message": string
+        "code": "string",
+        "message": "string"
     }
 }
-
-
-Status 500 (Server Error):
---------------------------
+```
+#### 500 (Server Error)
+```json
 {
     "error": {
-        "code": string,
-        "message": string
+        "code": "string",
+        "message": "string"
     }
 }
 ```
 
 ### Example
-// EXAMPLE HERE //
+```javascript
+// JAVASCRIPT EXAMPLE HERE
+```
 
 ## DELETE
 ### Description
 // DESCRIPTION HERE //
 
 ### Request Format
-```
-Headers:
---------
+#### Headers
+```json
 {
-    "Authorization": valid authToken
+    "Authorization": "valid authToken"
 }
+```
 
-
-Params:
--------
+#### Params
+```json
 {
-    "name": string,
-    "nameIv": string,
-    "username": string,
-    "usernameIv": string,
-    "password": string,
-    "passwordIv": string,
-    "colour": string,
+    "name": "string",
+    "nameIv": "string",
+    "username": "string",
+    "usernameIv": "string",
+    "password": "string",
+    "passwordIv": "string",
+    "colour": "string",
     "additionalFields": [
         {
-            "key": string,
-            "keyIv": string,
-            "value": string,
-            "valueIv": string
-        },
-        ...
+            "key": "string",
+            "keyIv": "string",
+            "value": "string",
+            "valueIv": "string"
+        }
     ],
     "urls": [
         {
-            "url": string,
-            "urlIv": string
-        },
-        ...
+            "url": "string",
+            "urlIv": "string"
+        }
     ],
-    "passwordId": string
+    "passwordId": "string"
 }
 ```
 
 ### Response Format
-```
-Status 200:
------------
+#### 200
+```json
 {}
-
-
-Status 400 (Client Error):
---------------------------
+```
+#### 400 (Client Error)
+```json
 {
     "error": {
-        "code": string,
-        "message": string
+        "code": "string",
+        "message": "string"
     }
 }
 ```
 
 ### Example
-// EXAMPLE HERE //
+```javascript
+// JAVASCRIPT EXAMPLE HERE
+```

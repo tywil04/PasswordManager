@@ -14,162 +14,155 @@ This API is public, however, it is strongly recommended that you use an official
 // DESCRIPTION HERE //
 
 ### Request Format
-```
-Headers:
---------
+#### Headers
+```json
 {}
+```
 
-
-Params:
--------
+#### Params
+```json
 {
-    "challengeId": string,
+    "challengeId": "string",
     "credential": {
-        "authenticatorAttachment": string,
-        "id": string,
-        "rawId": string,
+        "authenticatorAttachment": "string",
+        "id": "string",
+        "rawId": "string",
         "response": {
-            "authenticatorData": string,
-            "clientDataJSON": string,
-            "signature": string
+            "authenticatorData": "string",
+            "clientDataJSON": "string",
+            "signature": "string"
         },
-        "type": string
+        "type": "string"
     }
 }
 ```
 
 ### Response Format
-```
-Status 200:
------------
+#### 200
+```json
 {
     "options": {
         "publicKey": {
-            "challenge": url base64 string,
+            "challenge": "url base64 string",
             "rp": {
-                "name": string,
-                "[icon]": string,
-                "id": string
+                "name": "string",
+                "[icon]": "string",
+                "id": "string"
             },
             "user": {
-                "name": string,
-                "[icon]": string,
-                "[displayName]": string,
-                "id": url base64 string
+                "name": "string",
+                "[icon]": "string",
+                "[displayName]": "string",
+                "id": "url base64 string"
             },
             "[pubKeyCredParams]": [
                 {
-                    "type": string,
-                    "alg": int
-                },
-                ...
+                    "type": "string",
+                    "alg": "int"
+                }
             ],
             "[authenticatorSelection]": {
-                "[authenticatorAttachment]": string,
-                "[requireResidentKey]": bool,
-                "[residentKey]": string,
-                "[userVerification]": string
+                "[authenticatorAttachment]": "string",
+                "[requireResidentKey]": "bool",
+                "[residentKey]": "string",
+                "[userVerification]": "string"
             },
-            "[timeout]": int,
+            "[timeout]": "int",
             "[excludeCredentials]": [
                 {
-                    "type": string,
-                    "id": url base64 string,
+                    "type": "string",
+                    "id": "url base64 string",
                     "[transports]": [
-                        string,
-                        ...
+                        "string"
                     ]
-                },
-                ...
+                }
             ],
-            "[attestation]": string
+            "[attestation]": "string"
         }
     }
 }
-
-
-Status 400 (Client Error):
---------------------------
+```
+#### 400 (Client Error)
+```json
 {
     "error": {
-        "code": string,
-        "message": string
+        "code": "string",
+        "message": "string"
     }
 }
-
-
-Status 500 (Server Error):
---------------------------
+```
+#### 500 (Server Error)
+```json
 {
     "error": {
-        "code": string,
-        "message": string
+        "code": "string",
+        "message": "string"
     }
 }
 ```
 
 ### Example
-// EXAMPLE HERE //
+```javascript
+// JAVASCRIPT EXAMPLE HERE
+```
 
 ## POST
 ### Description
 // DESCRIPTION HERE //
 
 ### Request Format
-```
-Headers:
---------
+#### Headers
+```json
 {}
+```
 
-
-Params:
--------
+#### Params
+```json
 {
-    "challengeId": string,
+    "challengeId": "string",
     "credential": {
-        "authenticatorAttachment": string,
-        "id": string,
-        "rawId": string,
+        "authenticatorAttachment": "string",
+        "id": "string",
+        "rawId": "string",
         "response": {
-            "authenticatorData": string,
-            "clientDataJSON": string,
-            "signature": string
+            "authenticatorData": "string",
+            "clientDataJSON": "string",
+            "signature": "string"
         },
-        "type": string
+        "type": "string"
     }
 }
 ```
 
 ### Response Format
-```
-Status 200:
------------
+#### 200
+```json
 {
-    "authToken": authToken string,
-    "protectedDatabaseKey": base64 string,
-    "protectedDatabaseKeyIv": base64 string
+    "authToken": "authToken string",
+    "protectedDatabaseKey": "base64 string",
+    "protectedDatabaseKeyIv": "base64 string"
 }
-
-
-Status 400 (Client Error):
---------------------------
+```
+#### 400 (Client Error)
+```json
 {
     "error": {
-        "code": string,
-        "message": string
+        "code": "string",
+        "message": "string"
     }
 }
-
-
-Status 500 (Server Error):
---------------------------
+```
+#### 500 (Server Error)
+```json
 {
     "error": {
-        "code": string,
-        "message": string
+        "code": "string",
+        "message": "string"
     }
 }
 ```
 
 ### Example
-// EXAMPLE HERE //
+```javascript
+// JAVASCRIPT EXAMPLE HERE
+```

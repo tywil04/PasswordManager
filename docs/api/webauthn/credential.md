@@ -14,94 +14,90 @@ This API is public, however, it is strongly recommended that you use an official
 // DESCRIPTION HERE //
 
 ### Request Format
-```
-Headers:
---------
+#### Headers
+```json
 {
-    "Authorization": valid authToken
+    "Authorization": "valid authToken"
 }
+```
 
-
-Params:
--------
+#### Params
+```json
 {}
 ```
 
 ### Response Format
-```
-Status 200:
------------
+#### 200
+```json
 {
     "webauthnCredentials": [
         {
-            "id": uuid string,
-            "name": string,
+            "id": "uuid string",
+            "name": "string",
             "createdAt": "time"
-        },
-        ...
+        }
     ]
 }
-
-
-Status 500 (Server Error):
---------------------------
+```
+#### 500 (Server Error)
+```json
 {
     "error": {
-        "code": string,
-        "message": string
+        "code": "string",
+        "message": "string"
     }
 }
 ```
 
 ### Example
-// EXAMPLE HERE //
+```javascript
+// JAVASCRIPT EXAMPLE HERE
+```
 
 ## DELETE
 ### Description
 // DESCRIPTION HERE //
 
 ### Request Format
-```
-Headers:
---------
+#### Headers
+```json
 {
-    "Authorization": valid authToken
+    "Authorization": "valid authToken"
 }
+```
 
-
-Params:
--------
+#### Params
+```json
 {
-    "webauthnCredentialId": string
+    "webauthnCredentialId": "string"
 }
 ```
 
 ### Response Format
-```
-Status 200:
------------
+#### 200
+```json
 {}
-
-
-Status 400 (Client Error):
---------------------------
+```
+#### 400 (Client Error)
+```json
 {
     "error": {
-        "code": string,
-        "message": string
+        "code": "string",
+        "message": "string"
     }
 }
-
-
-Status 500 (Server Error):
---------------------------
+```
+#### 500 (Server Error)
+```json
 {
     "error": {
-        "code": string,
-        "message": string
+        "code": "string",
+        "message": "string"
     }
 }
 ```
 
 ### Example
-// EXAMPLE HERE //
+```javascript
+// JAVASCRIPT EXAMPLE HERE
+```

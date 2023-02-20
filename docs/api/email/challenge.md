@@ -14,99 +14,95 @@ This API is public, however, it is strongly recommended that you use an official
 // DESCRIPTION HERE //
 
 ### Request Format
-```
-Headers:
---------
+#### Headers
+```json
 {}
+```
 
-
-Params:
--------
+#### Params
+```json
 {
-    "challengeId": string,
-    "code": string
+    "challengeId": "string",
+    "code": "string"
 }
 ```
 
 ### Response Format
-```
-Status 200:
------------
+#### 200
+```json
 {}
-
-
-Status 400 (Client Error):
---------------------------
+```
+#### 400 (Client Error)
+```json
 {
     "error": {
-        "code": string,
-        "message": string
+        "code": "string",
+        "message": "string"
     }
 }
-
-
-Status 500 (Server Error):
---------------------------
+```
+#### 500 (Server Error)
+```json
 {
     "error": {
-        "code": string,
-        "message": string
+        "code": "string",
+        "message": "string"
     }
 }
 ```
 
 ### Example
-// EXAMPLE HERE //
+```javascript
+// JAVASCRIPT EXAMPLE HERE
+```
 
 ## POST
 ### Description
 // DESCRIPTION HERE //
 
 ### Request Format
-```
-Headers:
---------
+#### Headers
+```json
 {}
+```
 
-
-Params:
--------
+#### Params
+```json
 {
-    "challengeId": string,
-    "code": string
+    "challengeId": "string",
+    "code": "string"
 }
 ```
 
 ### Response Format
-```
-Status 200:
------------
+#### 200
+```json
 {
-    "authToken": authToken string,
-    "protectedDatabaseKey": base64 string,
-    "protectedDatabaseKeyIv": base64 string
+    "authToken": "authToken string",
+    "protectedDatabaseKey": "base64 string",
+    "protectedDatabaseKeyIv": "base64 string"
 }
-
-
-Status 400 (Client Error):
---------------------------
+```
+#### 400 (Client Error)
+```json
 {
     "error": {
-        "code": string,
-        "message": string
+        "code": "string",
+        "message": "string"
     }
 }
-
-
-Status 500 (Server Error):
---------------------------
+```
+#### 500 (Server Error)
+```json
 {
     "error": {
-        "code": string,
-        "message": string
+        "code": "string",
+        "message": "string"
     }
 }
 ```
 
 ### Example
-// EXAMPLE HERE //
+```javascript
+// JAVASCRIPT EXAMPLE HERE
+```

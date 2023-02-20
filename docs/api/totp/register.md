@@ -14,82 +14,80 @@ This API is public, however, it is strongly recommended that you use an official
 // DESCRIPTION HERE //
 
 ### Request Format
-```
-Headers:
---------
+#### Headers
+```json
 {
-    "Authorization": valid authToken
+    "Authorization": "valid authToken"
 }
+```
 
-
-Params:
--------
+#### Params
+```json
 {}
 ```
 
 ### Response Format
-```
-Status 200:
------------
+#### 200
+```json
 {
-    "totpCredentialId": uuid string,
-    "totpSecret": base64 string,
-    "totpSecretQr": base64 string
+    "totpCredentialId": "uuid string",
+    "totpSecret": "base64 string",
+    "totpSecretQr": "base64 string"
 }
-
-
-Status 500 (Server Error):
---------------------------
+```
+#### 500 (Server Error)
+```json
 {
     "error": {
-        "code": string,
-        "message": string
+        "code": "string",
+        "message": "string"
     }
 }
 ```
 
 ### Example
-// EXAMPLE HERE //
+```javascript
+// JAVASCRIPT EXAMPLE HERE
+```
 
 ## POST
 ### Description
 // DESCRIPTION HERE //
 
 ### Request Format
-```
-Headers:
---------
+#### Headers
+```json
 {
-    "Authorization": valid authToken
+    "Authorization": "valid authToken"
 }
+```
 
-
-Params:
--------
+#### Params
+```json
 {
-    "totpCredentialId": string,
-    "code": string
+    "totpCredentialId": "string",
+    "code": "string"
 }
 ```
 
 ### Response Format
-```
-Status 200:
------------
+#### 200
+```json
 {
-    "totpCredentialId": uuid string
+    "totpCredentialId": "uuid string"
 }
-
-
-Status 400 (Client Error):
---------------------------
+```
+#### 400 (Client Error)
+```json
 {
     "error": {
-        "code": string,
-        "message": string
+        "code": "string",
+        "message": "string"
     }
 }
 ```
 
 ### Example
-// EXAMPLE HERE //
+```javascript
+// JAVASCRIPT EXAMPLE HERE
+```

@@ -39,45 +39,37 @@ This API is public, however, it is strongly recommended that you use an official
 // DESCRIPTION HERE //
 
 ### Request Format
-```
-Headers:
---------
+#### Headers
+```json
 {json.dumps(data["headers"], indent=4) or "None"}
+```
 
-
-Params:
--------
+#### Params
+```json
 {json.dumps(data["input"], indent=4) or "None"}
 ```
 
 ### Response Format
-```
 """
 
         for status, responseData in sorted(data["responses"].items(), key=lambda x: int(x[0])):
-            underline = ""
-            
             if status == 500:
                 status = "500 (Server Error)"
             elif status == 400:
                 status = "400 (Client Error)"
                 
-            for i in range(len(f"Status {status}:")):
-                underline += "-"
-            content += f"""Status {status}:
-{underline}
+            content += f"""#### {status}
+```json
 {json.dumps(responseData, indent=4) or "None"}
-
-
-"""
-        content = content[:-3]
-        content += f"""
 ```
-
+"""
+        content += f"""
 ### Example
-// EXAMPLE HERE //"""
+```javascript
+// JAVASCRIPT EXAMPLE HERE
+```"""
 
-    return content.replace('"..."', "...").replace('"valid authToken"', "valid authToken").replace('"authToken string"', "authToken string").replace('"string"', "string").replace('"url base64 string"', "url base64 string").replace('"base64 string"', "base64 string").replace('"uuid string"', "uuid string").replace('"int"', "int").replace('"bool"', "bool")
+    return content
 
         
 
@@ -176,8 +168,7 @@ for (dirPath, dirNames, fileNames) in os.walk(path):
                                         {
                                             "type": "string",
                                             "alg": "int",
-                                        },
-                                        "...",
+                                        }
                                     ],
                                     "[authenticatorSelection]": {
                                         "[authenticatorAttachment]": "string",
@@ -190,23 +181,21 @@ for (dirPath, dirNames, fileNames) in os.walk(path):
                                         {
                                             "type": "string",
                                             "id": "url base64 string",
-                                            "[transports]": ["string", "..."]
-                                        },
-                                        "...",
+                                            "[transports]": ["string"]
+                                        }
                                     ],
                                     "[attestation]": "string",
                                 }
                             }
                         elif key == "availableChallenges":
-                            returnResponseDict[key] = ["string", "..."]
+                            returnResponseDict[key] = ["string"]
                         elif key == "webauthnCredentials":
                             returnResponseDict[key] = [
                                 {
                                     "id": "uuid string",
                                     "name": "string",
                                     "createdAt": "time",
-                                },
-                                "...",
+                                }
                             ]
                         elif key == "webauthnCredential":
                             returnResponseDict[key] = {
@@ -239,8 +228,7 @@ for (dirPath, dirNames, fileNames) in os.walk(path):
                                             "urlIv": "base64 string",
                                         },
                                     ],
-                                },
-                                "...",
+                                }
                             ]
                         elif key == "password":
                             returnResponseDict[key] = {
@@ -286,7 +274,7 @@ for (dirPath, dirNames, fileNames) in os.walk(path):
                             thirdEmbededStructContinue = False
                             name =  parts[1].replace('form:"', "").replace('" json:"', "//").split("//")[0]
                             if thirdEmbededIsArray:
-                                embededStructDataLocation[name] = [thirdEmbededStructDataLocation, "..."]
+                                embededStructDataLocation[name] = [thirdEmbededStructDataLocation]
                             else:
                                 embededStructDataLocation[name] = thirdEmbededStructDataLocation
                             thirdEmbededIsArray = False
@@ -306,7 +294,7 @@ for (dirPath, dirNames, fileNames) in os.walk(path):
                             embededStructContinue = False
                             name =  parts[1].replace('form:"', "").replace('" json:"', "//").split("//")[0]
                             if embededIsArray:
-                                structDataLocation[name] = [embededStructDataLocation, "..."]
+                                structDataLocation[name] = [embededStructDataLocation]
                             else:
                                 structDataLocation[name] = embededStructDataLocation
                             embededIsArray = False
@@ -350,7 +338,7 @@ for path, data in data.items():
     markdown = formatMarkdown(path, data)
     fileName = f"{outputPath}{path.replace(apiPrefix, '')}.md"
     os.makedirs(os.path.dirname(fileName), exist_ok=True)
-    with open(fileName, "a") as fileWriter:
-        fileWriter.write("\n\n" + markdown)
+    with open(fileName, "w+") as fileWriter:
+        fileWriter.write(markdown)
 
 print("Success")
