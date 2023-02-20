@@ -27,10 +27,10 @@ This endpoints starts the signup process. The response contains a list of all th
 #### Params
 ```json
 {
-    "email": "string",
-    "masterHash": "string",
-    "protectedDatabaseKey": "string",
-    "protectedDatabaseKeyIv": "string"
+    "email": "email string",
+    "masterHash": "base64 string",
+    "protectedDatabaseKey": "base64 string",
+    "protectedDatabaseKeyIv": "base64 string"
 }
 ```
 
