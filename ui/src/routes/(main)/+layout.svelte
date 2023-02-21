@@ -1,15 +1,9 @@
 <script>
     import { enhance } from "$app/forms"
+    import * as server from "$lib/js/server.js"
 
-    async function signout({ cancel }) {
-        await fetch("/api/v1/auth/signout", {
-            method: "DELETE",
-            headers: {
-                "Content-type": "application/json",
-                "Authorization": sessionStorage.getItem("PasswordManager:authToken"),
-            }
-        })
-        sessionStorage.clear()
+    const signoutForm = async ({ cancel }) => {
+        await server.signout()
         cancel()
     }
 </script>
@@ -24,7 +18,7 @@
     </div>
 
     <div class="navBlock justify-end">
-        <form method="POST" use:enhance={signout}>
+        <form method="POST" use:enhance={signoutForm}>
             <button type="submit" class="navLink">Sign out</button>
         </form>
     </div>
