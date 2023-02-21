@@ -64,7 +64,7 @@ This endpoints starts the signup process. The response contains a list of all th
 ```
 
 ### Example
-This example uses JavaScript and my WebCrypto wrapper (`ui/lib/cryptography`) alongside `base64-arraybuffer` from npm. The `masterHash` is generated exactly as show in the `signupFlow.png` diagram.
+This example uses JavaScript and my WebCrypto wrapper (`ui/lib/cryptography.js`) alongside `base64-arraybuffer` from npm. The `masterHash` is generated exactly as show in the `signupFlow.png` diagram.
 ```javascript
 const email = "example@example.org"
 const password = "examplePassword"

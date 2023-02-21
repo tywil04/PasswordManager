@@ -4,6 +4,8 @@
 
 import os
 import json
+from docx import Document
+from docx.shared import Pt, Inches
 
 path = "/home/tyler/Development/PasswordManager5/api/endpoints"
 apiPrefix = "/api/v1"
@@ -71,7 +73,128 @@ This API is public, however, it is strongly recommended that you use an official
 
     return content
 
+def startDocxFormat(doc):
+    doc.add_page_break()
+    doc.add_heading("API Docs", level=1)
+    doc.add_paragraph("If a GET request requires parameters, the parameters can only be passed using query parameters. (GET requests does not support body).")
+    doc.add_paragraph("All requests need to have a `Content-type` header that is either `application/json` or `application/xml`, requests wont work otherwise.")
+    doc.add_paragraph("Required/Optional Request/Response parameters are denoted like so:")
+    doc.add_paragraph("`required param` or `<required param>`", style="List Paragraph")
+    doc.add_paragraph("`[optional param]` ", style="List Paragraph")
+    doc.add_paragraph("This API is public, however, it is strongly recommended that you use an official client.")
+
+def formatDocx(doc, path, entries):
+    doc.add_page_break()
+
+    style = doc.styles['Normal']
+    font = style.font
+    font.name = "Calibri (Body)"
+    font.size = Pt(11)
+
+    tableStyle = doc.styles["List Table 1 Light Accent 5"]
+    tableFont = tableStyle.font
+    tableFont.name = "Cascadia Code"
+    tableFont.size = Pt(8)
+    tableFont.bold = False
+
+    doc.add_heading(path, level=1)
+    
+    for method, data in entries.items():
+        doc.add_heading(method, level=2)
         
+        doc.add_heading("Description", level=3)
+        doc.add_paragraph("// DESCRIPTION HERE //", style=style)
+
+        # doc.add_paragraph("", style="No Spacing")
+        doc.add_heading("Request Format", level=3)
+        
+        table = doc.add_table(rows=2, cols=2, style=tableStyle)
+        table.rows[0].cells[0].text = "Headers"
+        for paragraph in table.rows[0].cells[0].paragraphs:
+            for run in paragraph.runs:
+                run.font.bold = True 
+
+        table.rows[0].cells[1].text = "Params"
+        for paragraph in table.rows[0].cells[1].paragraphs:
+            for run in paragraph.runs:
+                run.font.bold = True 
+
+        table.rows[1].cells[0].text = json.dumps(data["headers"], indent=4).replace('": "', '": ').replace('",\n', ",\n").replace('"\n', "\n").replace('"string', "string")
+
+        if table.rows[1].cells[0].text == "{}":
+            table.rows[1].cells[0].text = "None"
+
+        for paragraph in table.rows[1].cells[0].paragraphs:
+            for run in paragraph.runs:
+                run.font.name = "Cascadia Code"
+                run.font.size = Pt(8)
+                run.font.bold = False 
+
+        table.rows[1].cells[1].text = json.dumps(data["input"], indent=4).replace('": "', '": ').replace('",\n', ",\n").replace('"\n', "\n").replace('"string', "string")
+
+        if table.rows[1].cells[1].text == "{}":
+            table.rows[1].cells[1].text = "None"
+
+        for paragraph in table.rows[1].cells[1].paragraphs:
+            for run in paragraph.runs:
+                run.font.name = "Cascadia Code"
+                run.font.size = Pt(8)
+                run.font.bold = False 
+
+        # doc.add_paragraph("", style="No Spacing")
+        doc.add_heading("Response Format", level=3)
+
+        table1 = doc.add_table(rows=2, cols=1, style=tableStyle)
+        table1.autofit = True
+        table1.allow_autofit = True
+
+        if len(data["responses"]) - 1 != 0:
+            table2 = doc.add_table(rows=2, cols=len(data["responses"]) - 1, style=tableStyle)
+            table2.autofit = True
+            table2.allow_autofit = True
+
+            table1Selected = True
+            col = 0
+
+            for status, responseData in sorted(data["responses"].items(), key=lambda x: int(x[0])):
+                if table1Selected:
+                    table1.rows[0].cells[col].text = f"Status {status}"
+                    for paragraph in table1.rows[0].cells[col].paragraphs:
+                        for run in paragraph.runs:
+                            run.font.bold = True 
+
+                    table1.rows[1].cells[col].text = json.dumps(responseData, indent=4).replace('": "', '": ').replace('",\n', ",\n").replace('"\n', "\n").replace('"string', "string")
+
+                    if table1.rows[1].cells[col].text == "{}":
+                        table1.rows[1].cells[col].text = "None"
+
+                    for paragraph in table1.rows[1].cells[col].paragraphs:
+                        for run in paragraph.runs:
+                            run.font.name = "Cascadia Code"
+                            run.font.size = Pt(8)
+                            run.font.bold = False 
+                    table1Selected = not table1Selected
+                else:
+                    table2.rows[0].cells[col].text = f"Status {status}"
+                    for paragraph in table2.rows[0].cells[col].paragraphs:
+                        for run in paragraph.runs:
+                            run.font.bold = True 
+
+                    table2.rows[1].cells[col].text = json.dumps(responseData, indent=4).replace('": "', '": ').replace('",\n', ",\n").replace('"\n', "\n").replace('"string', "string")
+
+                    if table2.rows[1].cells[col].text == "{}":
+                        table2.rows[1].cells[col].text = "None"
+
+                    for paragraph in table2.rows[1].cells[col].paragraphs:
+                        for run in paragraph.runs:
+                            run.font.name = "Cascadia Code"
+                            run.font.size = Pt(8)
+                            run.font.bold = False 
+                    col += 1
+
+        # doc.add_paragraph("", style="No Spacing")
+        doc.add_heading("Example", level=3)
+        doc.add_paragraph("// JAVASCRIPT EXAMPLE HERE //")
 
 for (dirPath, dirNames, fileNames) in os.walk(path):
     for fileName in fileNames:
@@ -194,15 +317,9 @@ for (dirPath, dirNames, fileNames) in os.walk(path):
                                 {
                                     "id": "uuid string",
                                     "name": "string",
-                                    "createdAt": "time",
+                                    "createdAt": "time string",
                                 }
                             ]
-                        elif key == "webauthnCredential":
-                            returnResponseDict[key] = {
-                                "id": "uuid string",
-                                "name": "string",
-                                "createdAt": "time",
-                            }
                         elif key == "passwords":
                             returnResponseDict[key] = [
                                 {
@@ -230,31 +347,6 @@ for (dirPath, dirNames, fileNames) in os.walk(path):
                                     ],
                                 }
                             ]
-                        elif key == "password":
-                            returnResponseDict[key] = {
-                                "id": "uuid string",
-                                "name": "base64 string",
-                                "nameIv": "base64 string",
-                                "username": "base64 string",
-                                "usernameIv": "base64 string",
-                                "password": "base64 string",
-                                "passwordIv": "base64 string",
-                                "colour": "hex colour string",
-                                "additionalFields": [
-                                    {
-                                        "key": "base64 string",
-                                        "keyIv": "base64 string",
-                                        "value": "base64 string",
-                                        "valueIv": "base64 string",
-                                    },
-                                ],
-                                "urls": [
-                                    {
-                                        "url": "base64 string",
-                                        "urlIv": "base64 string",
-                                    },
-                                ],
-                            }
                         elif key == "authToken":
                             returnResponseDict[key] = "authToken string"
                         else:
@@ -334,11 +426,16 @@ for (dirPath, dirNames, fileNames) in os.walk(path):
                                 name = parts[1].replace('form:"', "").replace('" json:"', "//").split("//")[0]
                                 structDataLocation[name] = expectedType
 
+doc = Document(docx="/home/tyler/Development/PasswordManager5/docs/Tyler Williams - Computer Science Project.docx")
+startDocxFormat(doc)
 for path, data in data.items():
-    markdown = formatMarkdown(path, data)
-    fileName = f"{outputPath}{path.replace(apiPrefix, '')}.md"
-    os.makedirs(os.path.dirname(fileName), exist_ok=True)
-    with open(fileName, "w+") as fileWriter:
-        fileWriter.write(markdown)
+    # markdown = formatMarkdown(path, data)
+    # fileName = f"{outputPath}{path.replace(apiPrefix, '')}.md"
+    # os.makedirs(os.path.dirname(fileName), exist_ok=True)
+    # with open(fileName, "w+") as fileWriter:
+    #     fileWriter.write(markdown)
+    formatDocx(doc, path, data)
+
+doc.save(outputPath + "/test.docx")
 
 print("Success")
