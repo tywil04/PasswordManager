@@ -19,6 +19,7 @@ const (
 	InUse
 	NotInUse
 	Owns
+	Authtoken
 	TryAgain
 )
 
@@ -42,6 +43,8 @@ func (a Addition) String() string {
 		return "Are you sure it's in use?"
 	case Owns:
 		return "Are you sure you own it?"
+	case Authtoken:
+		return "Are you sure it's both a non-expired and valid authToken?"
 	case TryAgain:
 		return "Please try again later."
 	}
@@ -53,6 +56,7 @@ type Error int64
 const (
 	MissingParam Error = iota
 	InvalidParam
+	InvalidHeader
 	ParsingParam
 	Invalid
 	Creating
@@ -70,6 +74,8 @@ func (e Error) String() (string, string) {
 		return "missingParam", "Missing parameter '%s'."
 	case InvalidParam:
 		return "invalidParam", "Invalid parameter '%s'."
+	case InvalidHeader:
+		return "invalidHeader", "Invalid header '%s'."
 	case ParsingParam:
 		return "parsingParam", "Failed to parse parameter '%s'."
 	case Invalid:
