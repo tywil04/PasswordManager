@@ -18,45 +18,28 @@ import (
 )
 
 type GetChallengeInput struct {
-	ChallengeId string `form:"challengeId" json:"challengeId" xml:"challengeId"`
+	ChallengeId string `form:"challengeId" json:"challengeId" xml:"challengeId" pmParseType:"uuid"`
 }
 
 type PostChallengeInput struct {
-	ChallengeId string `form:"challengeId" json:"challengeId" xml:"challengeId"`
+	ChallengeId string `form:"challengeId" json:"challengeId" xml:"challengeId" pmParseType:"uuid"`
 	Credential  struct {
-		AuthenticatorAttachment string `form:"authenticatorAttachment" json:"authenticatorAttachment" xml:"authenticatorAttachment"`
-		Id                      string `form:"id" json:"id" xml:"id"`
-		RawId                   string `form:"rawId" json:"rawId" xml:"rawId"`
+		AuthenticatorAttachment string `form:"authenticatorAttachment" json:"authenticatorAttachment" xml:"authenticatorAttachment" pmOptional:"true"`
+		Id                      string `form:"id" json:"id" xml:"id" pmOptional:"true"`
+		RawId                   string `form:"rawId" json:"rawId" xml:"rawId" pmOptional:"true"`
 		Response                struct {
-			AuthenticatorData string `form:"authenticatorData" json:"authenticatorData" xml:"authenticatorData"`
-			ClientDataJSON    string `form:"clientDataJSON" json:"clientDataJSON" xml:"clientDataJSON"`
-			Signature         string `form:"signature" json:"signature" xml:"signature"`
-		} `form:"response" json:"response" xml:"response"`
-		Type string `form:"type" json:"type" xml:"type"`
+			AuthenticatorData string `form:"authenticatorData" json:"authenticatorData" xml:"authenticatorData" pmOptional:"true"`
+			ClientDataJSON    string `form:"clientDataJSON" json:"clientDataJSON" xml:"clientDataJSON" pmOptional:"true"`
+			Signature         string `form:"signature" json:"signature" xml:"signature" pmOptional:"true"`
+		} `form:"response" json:"response" xml:"response" pmOptional:"true"`
+		Type string `form:"type" json:"type" xml:"type" pmOptional:"true"`
 	} `form:"credential" json:"credential" xml:"credential"`
 }
 
 func GetChallenge(c *gin.Context) {
-	var input GetChallengeInput
+	params := c.GetStringMap("params")
 
-	bindingErr := c.Bind(&input)
-	if bindingErr != nil {
-		c.JSON(400, exceptions.Builder("body", exceptions.Invalid, exceptions.JsonOrXml))
-		return
-	}
-
-	if input.ChallengeId == "" {
-		c.JSON(400, exceptions.Builder("challengeId", exceptions.MissingParam))
-		return
-	}
-
-	decodedChallengeId, dciErr := uuid.Parse(input.ChallengeId)
-	if dciErr != nil {
-		c.JSON(400, exceptions.Builder("challengeId", exceptions.ParsingParam, exceptions.Uuid))
-		return
-	}
-
-	challenge, challengeErr := db.GetUnexpiredChallengeViaId(decodedChallengeId)
+	challenge, challengeErr := db.GetUnexpiredChallengeViaId(params["challengeId"].(uuid.UUID))
 	if challengeErr != nil {
 		c.JSON(400, exceptions.Builder("challenge", exceptions.Invalid, exceptions.Expired))
 		return
@@ -97,26 +80,9 @@ func GetChallenge(c *gin.Context) {
 }
 
 func PostChallenge(c *gin.Context) {
-	var input PostChallengeInput
+	params := c.GetStringMap("params")
 
-	bindingErr := c.Bind(&input)
-	if bindingErr != nil {
-		c.JSON(400, exceptions.Builder("body", exceptions.Invalid, exceptions.JsonOrXml))
-		return
-	}
-
-	if input.ChallengeId == "" {
-		c.JSON(400, exceptions.Builder("challengeId", exceptions.MissingParam))
-		return
-	}
-
-	decodedChallengeId, dciErr := uuid.Parse(input.ChallengeId)
-	if dciErr != nil {
-		c.JSON(400, exceptions.Builder("challengeId", exceptions.ParsingParam, exceptions.Uuid))
-		return
-	}
-
-	challenge, challengeErr := db.GetUnexpiredChallengeViaId(decodedChallengeId)
+	challenge, challengeErr := db.GetUnexpiredChallengeViaId(params["challengeId"].(uuid.UUID))
 	if challengeErr != nil {
 		c.JSON(400, exceptions.Builder("challenge", exceptions.Invalid, exceptions.Expired))
 		return
@@ -142,7 +108,7 @@ func PostChallenge(c *gin.Context) {
 		Extensions:           protocol.AuthenticationExtensions(foundWebauthnChallenge.Extensions),
 	}
 
-	data, _ := json.Marshal(input.Credential)
+	data, _ := json.Marshal(params["credential"].(map[string]any))
 	dataReader := bytes.NewReader(data)
 
 	credentialData, cdErr := protocol.ParseCredentialRequestResponseBody(dataReader)

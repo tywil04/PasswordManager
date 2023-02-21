@@ -9,7 +9,8 @@ import (
 type Addition int64
 
 const (
-	Base64 Addition = iota
+	Undefined Addition = iota
+	Base64
 	Uuid
 	HexColour
 	Email
@@ -96,7 +97,9 @@ func Builder(agent string, e Error, additions ...Addition) gin.H {
 	message := fmt.Sprintf(etMessage, agent)
 
 	for _, addition := range additions {
-		message += " " + addition.String()
+		if addition != Undefined {
+			message += " " + addition.String()
+		}
 	}
 
 	return gin.H{"error": gin.H{"type": etName, "message": message}}

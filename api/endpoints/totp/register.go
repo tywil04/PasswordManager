@@ -18,7 +18,7 @@ import (
 type GetRegisterInput struct{}
 
 type PostRegisterInput struct {
-	TotpCredentialId string `form:"totpCredentialId" json:"totpCredentialId" xml:"totpCredentialId"`
+	TotpCredentialId string `form:"totpCredentialId" json:"totpCredentialId" xml:"totpCredentialId" pmParseType:"uuid"`
 	Code             string `form:"code" json:"code" xml:"code"`
 }
 
@@ -68,25 +68,7 @@ func GetRegister(c *gin.Context) {
 
 func PostRegister(c *gin.Context) {
 	authedUser := c.MustGet("authedUser").(*ent.User)
-
-	var input PostRegisterInput
-
-	bindingErr := c.Bind(&input)
-	if bindingErr != nil {
-		c.JSON(400, exceptions.Builder("body", exceptions.Invalid, exceptions.JsonOrXml))
-		return
-	}
-
-	if input.TotpCredentialId == "" {
-		c.JSON(400, exceptions.Builder("totpCredentialId", exceptions.MissingParam))
-		return
-	}
-
-	decodedChallengeId, dciErr := uuid.Parse(input.TotpCredentialId)
-	if dciErr != nil {
-		c.JSON(400, exceptions.Builder("totpCredentialId", exceptions.ParsingParam, exceptions.Uuid))
-		return
-	}
+	params := c.GetStringMap("params")
 
 	credential, credentialErr := db.GetUserTotpCredential(authedUser)
 	if credentialErr != nil {
@@ -94,12 +76,12 @@ func PostRegister(c *gin.Context) {
 		return
 	}
 
-	if credential.ID != decodedChallengeId {
-		c.JSON(400, exceptions.Builder("totpCredential", exceptions.Invalid))
+	if credential.ID != params["totpCredentialId"].(uuid.UUID) {
+		c.JSON(400, exceptions.Builder("totpCredentialId", exceptions.InvalidParam, exceptions.Uuid))
 		return
 	}
 
-	valid := totp.Validate(input.Code, credential.Secret)
+	valid := totp.Validate(params["code"].(string), credential.Secret)
 	if valid {
 		credential.Update().SetValidated(true).Exec(db.Context)
 		authedUser.Update().SetTotpEnabled(true).Exec(db.Context)

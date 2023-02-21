@@ -12,7 +12,7 @@ import (
 type GetCredentialInput struct{}
 
 type DeleteCredentialInput struct {
-	WebauthnCredentialId string `form:"webauthnCredentialId" json:"webauthnCredentialId" xml:"webauthnCredentialId"`
+	WebauthnCredentialId string `form:"webauthnCredentialId" json:"webauthnCredentialId" xml:"webauthnCredentialId" pmParseType:"uuid"`
 }
 
 func GetCredential(c *gin.Context) {
@@ -38,27 +38,9 @@ func GetCredential(c *gin.Context) {
 
 func DeleteCredential(c *gin.Context) {
 	authedUser := c.MustGet("authedUser").(*ent.User)
+	params := c.GetStringMap("params")
 
-	var input DeleteCredentialInput
-
-	bindingErr := c.Bind(&input)
-	if bindingErr != nil {
-		c.JSON(400, exceptions.Builder("body", exceptions.Invalid, exceptions.JsonOrXml))
-		return
-	}
-
-	if input.WebauthnCredentialId == "" {
-		c.JSON(400, exceptions.Builder("webauthnCredentialId", exceptions.MissingParam))
-		return
-	}
-
-	decodedCredentialId, dciErr := uuid.Parse(input.WebauthnCredentialId)
-	if dciErr != nil {
-		c.JSON(400, exceptions.Builder("webauthnCredentialId", exceptions.ParsingParam, exceptions.Uuid))
-		return
-	}
-
-	dcErr := db.DeleteUserWebauthnCredentialViaId(authedUser, decodedCredentialId)
+	dcErr := db.DeleteUserWebauthnCredentialViaId(authedUser, params["webauthnCredentialId"].(uuid.UUID))
 	if dcErr != nil {
 		c.JSON(500, exceptions.Builder("webauthnCredential", exceptions.Deleting, exceptions.TryAgain))
 		return

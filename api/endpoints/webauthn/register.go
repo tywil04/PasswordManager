@@ -18,7 +18,7 @@ import (
 type GetRegisterInput struct{}
 
 type PostRegisterInput struct {
-	WebauthnRegisterChallengeId string `form:"webauthnRegisterChallengeId" json:"webauthnRegisterChallengeId" xml:"webauthnRegisterChallengeId"`
+	WebauthnRegisterChallengeId string `form:"webauthnRegisterChallengeId" json:"webauthnRegisterChallengeId" xml:"webauthnRegisterChallengeId" pmParseType:"uuid"`
 	Name                        string `form:"name" json:"name" xml:"json"`
 	Credential                  struct {
 		AuthenticatorAttachment string `form:"authenticatorAttachment" json:"authenticatorAttachment" xml:"authenticatorAttachment"`
@@ -60,27 +60,9 @@ func GetRegister(c *gin.Context) {
 
 func PostRegister(c *gin.Context) {
 	authedUser := c.MustGet("authedUser").(*ent.User)
+	params := c.GetStringMap("params")
 
-	var input PostRegisterInput
-
-	bindingErr := c.Bind(&input)
-	if bindingErr != nil {
-		c.JSON(400, exceptions.Builder("body", exceptions.Invalid, exceptions.JsonOrXml))
-		return
-	}
-
-	if input.WebauthnRegisterChallengeId == "" {
-		c.JSON(400, exceptions.Builder("webauthnRegisterChallengeId", exceptions.MissingParam))
-		return
-	}
-
-	decodedChallengeId, dciErr := uuid.Parse(input.WebauthnRegisterChallengeId)
-	if dciErr != nil {
-		c.JSON(400, exceptions.Builder("webauthnRegisterChallengeId", exceptions.ParsingParam, exceptions.Uuid))
-		return
-	}
-
-	foundWebauthnChallenge, fwcErr := db.GetUserWebauthnRegisterChallengeViaId(authedUser, decodedChallengeId)
+	foundWebauthnChallenge, fwcErr := db.GetUserWebauthnRegisterChallengeViaId(authedUser, params["webauthnRegisterChallengeId"].(uuid.UUID))
 	if fwcErr != nil {
 		c.JSON(400, exceptions.Builder("webauthnRegisterChallenge", exceptions.Invalid))
 		return
@@ -94,7 +76,7 @@ func PostRegister(c *gin.Context) {
 		Extensions:           protocol.AuthenticationExtensions(foundWebauthnChallenge.Extensions),
 	}
 
-	data, _ := json.Marshal(input.Credential)
+	data, _ := json.Marshal(params["credential"].(map[string]any))
 	dataReader := bytes.NewReader(data)
 
 	credentialData, cdErr := protocol.ParseCredentialCreationResponseBody(dataReader)
@@ -122,7 +104,7 @@ func PostRegister(c *gin.Context) {
 		SetAaguid(credential.Authenticator.AAGUID).
 		SetSignCount(credential.Authenticator.SignCount).
 		SetCloneWarning(credential.Authenticator.CloneWarning).
-		SetName(input.Name).
+		SetName(params["name"].(string)).
 		SetUser(authedUser).
 		Save(db.Context)
 

@@ -12,35 +12,18 @@ import (
 )
 
 type GetChallengeInput struct {
-	ChallengeId string `form:"challengeId" json:"challengeId" xml:"challengeId"`
+	ChallengeId string `form:"challengeId" json:"challengeId" xml:"challengeId" pmParseType:"uuid"`
 }
 
 type PostChallengeInput struct {
-	ChallengeId string `form:"challengeId" json:"challengeId" xml:"challengeId"`
+	ChallengeId string `form:"challengeId" json:"challengeId" xml:"challengeId" pmParseType:"uuid"`
 	Code        string `form:"code" json:"code" xml:"code"`
 }
 
 func GetChallenge(c *gin.Context) {
-	var input GetChallengeInput
+	params := c.GetStringMap("params")
 
-	bindingErr := c.Bind(&input)
-	if bindingErr != nil {
-		c.JSON(400, exceptions.Builder("body", exceptions.Invalid, exceptions.JsonOrXml))
-		return
-	}
-
-	if input.ChallengeId == "" {
-		c.JSON(400, exceptions.Builder("challengeId", exceptions.MissingParam))
-		return
-	}
-
-	decodedChallengeId, dciErr := uuid.Parse(input.ChallengeId)
-	if dciErr != nil {
-		c.JSON(400, exceptions.Builder("challengeId", exceptions.ParsingParam, exceptions.Uuid))
-		return
-	}
-
-	challenge, challengeErr := db.GetUnexpiredChallengeViaId(decodedChallengeId)
+	challenge, challengeErr := db.GetUnexpiredChallengeViaId(params["challengeId"].(uuid.UUID))
 	if challengeErr != nil {
 		c.JSON(400, exceptions.Builder("challenge", exceptions.Invalid, exceptions.Expired))
 		return
@@ -72,31 +55,9 @@ func GetChallenge(c *gin.Context) {
 }
 
 func PostChallenge(c *gin.Context) {
-	var input PostChallengeInput
+	params := c.GetStringMap("params")
 
-	bindingErr := c.Bind(&input)
-	if bindingErr != nil {
-		c.JSON(400, exceptions.Builder("body", exceptions.Invalid, exceptions.JsonOrXml))
-		return
-	}
-
-	if input.ChallengeId == "" {
-		c.JSON(400, exceptions.Builder("challengeId", exceptions.MissingParam))
-		return
-	}
-
-	if input.Code == "" {
-		c.JSON(400, exceptions.Builder("code", exceptions.MissingParam))
-		return
-	}
-
-	decodedChallengeId, dciErr := uuid.Parse(input.ChallengeId)
-	if dciErr != nil {
-		c.JSON(400, exceptions.Builder("challengeId", exceptions.ParsingParam, exceptions.Uuid))
-		return
-	}
-
-	challenge, challengeErr := db.GetUnexpiredChallengeViaId(decodedChallengeId)
+	challenge, challengeErr := db.GetUnexpiredChallengeViaId(params["challengeId"].(uuid.UUID))
 	if challengeErr != nil {
 		c.JSON(400, exceptions.Builder("challenge", exceptions.Invalid, exceptions.Expired))
 		return
@@ -114,7 +75,7 @@ func PostChallenge(c *gin.Context) {
 		return
 	}
 
-	sameCode := cryptography.ConstantTimeCompare([]byte(foundChallenge.Code), []byte(input.Code))
+	sameCode := cryptography.ConstantTimeCompare([]byte(foundChallenge.Code), []byte(params["code"].(string)))
 	if !sameCode {
 		c.JSON(400, exceptions.Builder("code", exceptions.IncorrectChallenge))
 		go smtp.SendTemplate(foundUser.Email, "PasswordManager5 Unsuccessful Sign In Notification", smtp.SigninNotificationTemplate, smtp.SigninNotificationTemplateData{Successful: false})

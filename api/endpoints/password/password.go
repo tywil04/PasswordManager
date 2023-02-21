@@ -1,9 +1,7 @@
 package password
 
 import (
-	"encoding/base64"
 	"fmt"
-	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -16,22 +14,22 @@ import (
 type GetInput struct{}
 
 type PostInput struct {
-	Name             string `form:"name" json:"name" xml:"name"`
-	NameIv           string `form:"nameIv" json:"nameIv" xml:"nameIv"`
-	Username         string `form:"username" json:"username" xml:"username"`
-	UsernameIv       string `form:"usernameIv" json:"usernameIv" xml:"usernameIv"`
-	Password         string `form:"password" json:"password" xml:"password"`
-	PasswordIv       string `form:"passwordIv" json:"passwordIv" xml:"passwordIv"`
-	Colour           string `form:"colour" json:"colour" xml:"colour"`
+	Name             string `form:"name" json:"name" xml:"name" pmParseType:"base64"`
+	NameIv           string `form:"nameIv" json:"nameIv" xml:"nameIv" pmParseType:"base64"`
+	Username         string `form:"username" json:"username" xml:"username" pmParseType:"base64"`
+	UsernameIv       string `form:"usernameIv" json:"usernameIv" xml:"usernameIv" pmParseType:"base64"`
+	Password         string `form:"password" json:"password" xml:"password" pmParseType:"base64"`
+	PasswordIv       string `form:"passwordIv" json:"passwordIv" xml:"passwordIv" pmParseType:"base64"`
+	Colour           string `form:"colour" json:"colour" xml:"colour" pmParseType:"hexcolour"`
 	AdditionalFields []struct {
-		Key     string `form:"key" json:"key" xml:"key"`
-		KeyIv   string `form:"keyIv" json:"keyIv" xml:"keyIv"`
-		Value   string `form:"value" json:"value" xml:"value"`
-		ValueIv string `form:"valueIv" json:"valueIv" xml:"valueIv"`
+		Key     string `form:"key" json:"key" xml:"key" pmParseType:"base64"`
+		KeyIv   string `form:"keyIv" json:"keyIv" xml:"keyIv" pmParseType:"base64"`
+		Value   string `form:"value" json:"value" xml:"value" pmParseType:"base64"`
+		ValueIv string `form:"valueIv" json:"valueIv" xml:"valueIv" pmParseType:"base64"`
 	} `form:"additionalFields" json:"additionalFields" xml:"additionalFields"`
 	Urls []struct {
-		Url   string `form:"url" json:"url" xml:"url"`
-		UrlIv string `form:"urlIv" json:"urlIv" xml:"urlIv"`
+		Url   string `form:"url" json:"url" xml:"url" pmParseType:"base64"`
+		UrlIv string `form:"urlIv" json:"urlIv" xml:"urlIv" pmParseType:"base64"`
 	} `form:"urls" json:"urls" xml:"urls"`
 }
 
@@ -99,124 +97,16 @@ func Get(c *gin.Context) {
 
 func Post(c *gin.Context) {
 	authedUser := c.MustGet("authedUser").(*ent.User)
+	params := c.GetStringMap("params")
 
-	var input PostInput
-
-	bindingErr := c.Bind(&input)
-	if bindingErr != nil {
-		c.JSON(400, exceptions.Builder("body", exceptions.Invalid, exceptions.JsonOrXml))
-		return
-	}
-
-	if input.Name == "" {
-		c.JSON(400, exceptions.Builder("name", exceptions.MissingParam))
-		return
-	}
-
-	if input.NameIv == "" {
-		c.JSON(400, exceptions.Builder("nameIv", exceptions.MissingParam))
-		return
-	}
-
-	if input.Username == "" {
-		c.JSON(400, exceptions.Builder("username", exceptions.MissingParam))
-		return
-	}
-
-	if input.UsernameIv == "" {
-		c.JSON(400, exceptions.Builder("usernameIv", exceptions.MissingParam))
-		return
-	}
-
-	if input.Password == "" {
-		c.JSON(400, exceptions.Builder("password", exceptions.MissingParam))
-		return
-	}
-
-	if input.PasswordIv == "" {
-		c.JSON(400, exceptions.Builder("passwordIv", exceptions.MissingParam))
-		return
-	}
-
-	if input.Colour == "" {
-		c.JSON(400, exceptions.Builder("colour", exceptions.MissingParam))
-		return
-	}
-
-	decodedName, dnErr := base64.StdEncoding.DecodeString(input.Name)
-	if dnErr != nil {
-		c.JSON(400, exceptions.Builder("name", exceptions.ParsingParam, exceptions.Base64))
-		return
-	}
-
-	decodedNameIv, dniErr := base64.StdEncoding.DecodeString(input.NameIv)
-	if dniErr != nil {
-		c.JSON(400, exceptions.Builder("nameIv", exceptions.ParsingParam, exceptions.Base64))
-		return
-	}
-
-	decodedUsername, duErr := base64.StdEncoding.DecodeString(input.Username)
-	if duErr != nil {
-		c.JSON(400, exceptions.Builder("username", exceptions.ParsingParam, exceptions.Base64))
-		return
-	}
-
-	decodedUsernameIv, duiErr := base64.StdEncoding.DecodeString(input.UsernameIv)
-	if duiErr != nil {
-		c.JSON(400, exceptions.Builder("usernameIv", exceptions.ParsingParam, exceptions.Base64))
-		return
-	}
-
-	decodedPassword, dpErr := base64.StdEncoding.DecodeString(input.Password)
-	if dpErr != nil {
-		c.JSON(400, exceptions.Builder("password", exceptions.ParsingParam, exceptions.Base64))
-		return
-	}
-
-	decodedPasswordIv, dpiErr := base64.StdEncoding.DecodeString(input.PasswordIv)
-	if dpiErr != nil {
-		c.JSON(400, exceptions.Builder("passwordIv", exceptions.ParsingParam, exceptions.Base64))
-		return
-	}
-
-	_, hexErr := strconv.ParseInt(input.Colour, 16, 64)
-	if hexErr != nil {
-		c.JSON(400, exceptions.Builder("colour", exceptions.ParsingParam, exceptions.HexColour))
-		return
-	}
-
-	additionalFields := make([]*ent.AdditionalField, len(input.AdditionalFields))
-	for index, additionalField := range input.AdditionalFields {
-		decodedKey, dkErr := base64.StdEncoding.DecodeString(additionalField.Key)
-		if dkErr != nil {
-			exceptions.Builder(fmt.Sprintf("additionalFields[%d].key", index), exceptions.InvalidParam, exceptions.Base64)
-			c.JSON(400, exceptions.Builder(fmt.Sprintf("additionalFields[%d].key", index), exceptions.InvalidParam, exceptions.Base64))
-			return
-		}
-
-		decodedKeyIv, dkiErr := base64.StdEncoding.DecodeString(additionalField.KeyIv)
-		if dkiErr != nil {
-			c.JSON(400, exceptions.Builder(fmt.Sprintf("additionalFields[%d].keyIv", index), exceptions.InvalidParam, exceptions.Base64))
-			return
-		}
-
-		decodedValue, dvErr := base64.StdEncoding.DecodeString(additionalField.Value)
-		if dvErr != nil {
-			c.JSON(400, exceptions.Builder(fmt.Sprintf("additionalFields[%d].value", index), exceptions.InvalidParam, exceptions.Base64))
-			return
-		}
-
-		decodedValueIv, dviErr := base64.StdEncoding.DecodeString(additionalField.ValueIv)
-		if dviErr != nil {
-			c.JSON(400, exceptions.Builder(fmt.Sprintf("additionalFields[%d].valueIv", index), exceptions.InvalidParam, exceptions.Base64))
-			return
-		}
-
+	additionalFields := params["additionalFields"].([]map[string]any)
+	entAdditionalFields := make([]*ent.AdditionalField, len(additionalFields))
+	for index, additionalField := range additionalFields {
 		newAdditionalField, nafErr := db.Client.AdditionalField.Create().
-			SetKey(decodedKey).
-			SetKeyIv(decodedKeyIv).
-			SetValue(decodedValue).
-			SetValueIv(decodedValueIv).
+			SetKey(additionalField["key"].([]byte)).
+			SetKeyIv(additionalField["keyIv"].([]byte)).
+			SetValue(additionalField["value"].([]byte)).
+			SetValueIv(additionalField["valueIv"].([]byte)).
 			Save(db.Context)
 
 		if nafErr != nil {
@@ -224,26 +114,15 @@ func Post(c *gin.Context) {
 			return
 		}
 
-		additionalFields[index] = newAdditionalField
+		entAdditionalFields[index] = newAdditionalField
 	}
 
-	urls := make([]*ent.Url, len(input.Urls))
-	for index, url := range input.Urls {
-		decodedUrl, duErr := base64.StdEncoding.DecodeString(url.Url)
-		if duErr != nil {
-			c.JSON(400, exceptions.Builder(fmt.Sprintf("urls[%d].url", index), exceptions.InvalidParam, exceptions.Base64))
-			return
-		}
-
-		decodedUrlIv, duiErr := base64.StdEncoding.DecodeString(url.UrlIv)
-		if duiErr != nil {
-			c.JSON(400, exceptions.Builder(fmt.Sprintf("urls[%d].urlIv", index), exceptions.InvalidParam, exceptions.Base64))
-			return
-		}
-
+	urls := params["urls"].([]map[string]any)
+	entUrls := make([]*ent.Url, len(urls))
+	for index, url := range urls {
 		newUrl, nuErr := db.Client.Url.Create().
-			SetURL(decodedUrl).
-			SetUrlIv(decodedUrlIv).
+			SetURL(url["url"].([]byte)).
+			SetUrlIv(url["urlIv"].([]byte)).
 			Save(db.Context)
 
 		if nuErr != nil {
@@ -251,53 +130,35 @@ func Post(c *gin.Context) {
 			return
 		}
 
-		urls[index] = newUrl
+		entUrls[index] = newUrl
 	}
 
-	password, passwordErr := db.Client.Password.Create().
+	newPassword, newPasswordErr := db.Client.Password.Create().
 		SetUser(authedUser).
-		SetName(decodedName).
-		SetNameIv(decodedNameIv).
-		SetUsername(decodedUsername).
-		SetUsernameIv(decodedUsernameIv).
-		SetPassword(decodedPassword).
-		SetPasswordIv(decodedPasswordIv).
-		SetColour(input.Colour).
-		AddAdditionalFields(additionalFields...).
-		AddUrls(urls...).
+		SetName(params["name"].([]byte)).
+		SetNameIv(params["nameIv"].([]byte)).
+		SetUsername(params["username"].([]byte)).
+		SetUsernameIv(params["usernameIv"].([]byte)).
+		SetPassword(params["password"].([]byte)).
+		SetPasswordIv(params["passwordIv"].([]byte)).
+		SetColour(params["colour"].(string)).
+		AddAdditionalFields(entAdditionalFields...).
+		AddUrls(entUrls...).
 		Save(db.Context)
 
-	if passwordErr != nil {
+	if newPasswordErr != nil {
 		c.JSON(500, exceptions.Builder("password", exceptions.Creating, exceptions.TryAgain))
 		return
 	}
 
-	c.JSON(200, gin.H{"passwordId": password.ID.String()})
+	c.JSON(200, gin.H{"passwordId": newPassword.ID.String()})
 }
 
 func Delete(c *gin.Context) {
 	authedUser := c.MustGet("authedUser").(*ent.User)
+	params := c.GetStringMap("params")
 
-	var input DeleteInput
-
-	bindingErr := c.Bind(&input)
-	if bindingErr != nil {
-		c.JSON(400, exceptions.Builder("body", exceptions.Invalid, exceptions.JsonOrXml))
-		return
-	}
-
-	if input.PasswordId == "" {
-		c.JSON(400, exceptions.Builder("passwordId", exceptions.MissingParam))
-		return
-	}
-
-	decodedPasswordId, dpiErr := uuid.Parse(input.PasswordId)
-	if dpiErr != nil {
-		c.JSON(400, exceptions.Builder("passwordId", exceptions.ParsingParam, exceptions.Uuid))
-		return
-	}
-
-	dpErr := db.DeleteUserPasswordViaId(authedUser, decodedPasswordId)
+	dpErr := db.DeleteUserPasswordViaId(authedUser, params["passwordId"].(uuid.UUID))
 	if dpErr != nil {
 		c.JSON(400, exceptions.Builder("password", exceptions.Deleting))
 		return
