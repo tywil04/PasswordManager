@@ -16,3 +16,15 @@ export async function isAuthed() {
         return false
     }
 }
+
+export async function signout() {
+    await fetch("/api/v1/auth/signout", {
+        method: "DELETE",
+        headers: {
+            "Content-type": "application/json",
+            "Authorization": sessionStorage.getItem("PasswordManager:authToken"),
+        }
+    })
+    sessionStorage.clear()
+    location.reload()
+}

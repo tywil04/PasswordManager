@@ -375,7 +375,7 @@
     }
 
     .innerRight {
-        @apply bg-white border border-l-0 border-black h-full duration-100 rounded-r-2xl max-w-[20%] w-[20%] flex flex-col;
+        @apply bg-white border border-l-0 border-black h-full duration-100 rounded-r-2xl md:max-w-[40%] lg:max-w-[30%] w-[100%] flex flex-col;
     }
 
     .additionalText {
