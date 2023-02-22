@@ -74,7 +74,7 @@
     const startEmailChallenge = async () => {
         submitError = undefined
         view = "emailChallenge"
-        await utils.getJson(`/api/v1/email/challenge?challengeId=${challengeId}`)
+        await utils.getJson(`/api/v1/2fa/email/challenge?challengeId=${challengeId}`)
     } 
 
     const emailChallenge = async ({ data, cancel }) => {
@@ -85,7 +85,7 @@
             return
         }
 
-        const postResponse = await fetch("/api/v1/email/challenge", {
+        const postResponse = await fetch("/api/v1/2fa/email/challenge", {
             method: "POST",
             headers: {
                 "Content-type": "application/json",
@@ -136,7 +136,7 @@
             return
         }
 
-        const postResponse = await fetch("/api/v1/totp/challenge", {
+        const postResponse = await fetch("/api/v1/2fa/totp/challenge", {
             method: "POST",
             headers: {
                 "Content-type": "application/json",
@@ -180,7 +180,7 @@
     async function webauthnChallenge({ cancel }) {
         submitError = undefined
 
-        const getResponse = await fetch(`/api/v1/webauthn/challenge?challengeId=${challengeId}`, {
+        const getResponse = await fetch(`/api/v1/2fa/webauthn/challenge?challengeId=${challengeId}`, {
             method: "GET",
             headers: {
                 "Content-type": "application/json",
@@ -192,7 +192,7 @@
             submitError = getJson.error.code
         } else if (getResponse.status === 200) {
             const credential = await webauthnJson.get(webauthnJson.parseRequestOptionsFromJSON(getJson.options))
-            const postResponse = await fetch("/api/v1/webauthn/challenge", {
+            const postResponse = await fetch("/api/v1/2fa/webauthn/challenge", {
                 method: "POST",
                 headers: {
                     "Content-type": "application/json",

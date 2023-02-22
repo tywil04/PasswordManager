@@ -69,7 +69,7 @@
     const startEmailChallenge = async () => {
         submitError = undefined
         view = "emailChallenge"
-        await utils.getJson(`/api/v1/email/challenge?challengeId=${challengeId}`)
+        await utils.getJson(`/api/v1/2fa/email/challenge?challengeId=${challengeId}`)
     } 
 
     const emailChallenge = async ({ data, cancel }) => {
@@ -80,7 +80,7 @@
             return
         }
 
-        const postResponse = await fetch("/api/v1/email/challenge", {
+        const postResponse = await fetch("/api/v1/2fa/email/challenge", {
             method: "POST",
             headers: {
                 "Content-type": "application/json",
