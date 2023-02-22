@@ -11,6 +11,10 @@ import (
 	"PasswordManager/api/lib/smtp"
 )
 
+const (
+	ChallengeDescription string = ""
+)
+
 type GetChallengeInput struct {
 	ChallengeId string `form:"challengeId" json:"challengeId" xml:"challengeId" pmParseType:"uuid"`
 }

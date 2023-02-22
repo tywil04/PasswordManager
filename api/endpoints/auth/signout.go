@@ -1,4 +1,4 @@
-package signout
+package auth
 
 import (
 	"github.com/gin-gonic/gin"
@@ -8,9 +8,13 @@ import (
 	"PasswordManager/ent"
 )
 
-type DeleteInput struct{}
+const (
+	SignoutDescription string = ""
+)
 
-func Delete(c *gin.Context) {
+type DeleteSignoutInput struct{}
+
+func DeleteSignout(c *gin.Context) {
 	authedUser := c.MustGet("authedUser").(*ent.User)
 	authedSession := c.MustGet("authedSession").(*ent.Session)
 

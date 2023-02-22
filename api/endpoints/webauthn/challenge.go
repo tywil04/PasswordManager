@@ -17,6 +17,10 @@ import (
 	internalWebauthn "PasswordManager/api/lib/webauthn"
 )
 
+const (
+	ChallengeDescription string = ""
+)
+
 type GetChallengeInput struct {
 	ChallengeId string `form:"challengeId" json:"challengeId" xml:"challengeId" pmParseType:"uuid"`
 }

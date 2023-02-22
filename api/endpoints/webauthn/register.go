@@ -15,6 +15,10 @@ import (
 	"PasswordManager/ent"
 )
 
+const (
+	RegisterDescription string = ""
+)
+
 type GetRegisterInput struct{}
 
 type PostRegisterInput struct {

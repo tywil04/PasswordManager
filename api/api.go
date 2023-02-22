@@ -3,49 +3,53 @@ package api
 import (
 	"github.com/gin-gonic/gin"
 
-	"PasswordManager/api/endpoints/auth/signin"
-	"PasswordManager/api/endpoints/auth/signout"
-	"PasswordManager/api/endpoints/auth/signup"
-	"PasswordManager/api/endpoints/auth/test"
+	"PasswordManager/api/endpoints/auth"
 	"PasswordManager/api/endpoints/email"
 	"PasswordManager/api/endpoints/password"
 	"PasswordManager/api/endpoints/totp"
-	webauthnEndpoints "PasswordManager/api/endpoints/webauthn"
+	"PasswordManager/api/endpoints/webauthn"
 	"PasswordManager/api/lib/db"
 	"PasswordManager/api/lib/middleware"
 	"PasswordManager/api/lib/smtp"
-	internalWebauthn "PasswordManager/api/lib/webauthn"
+	webauthnBackend "PasswordManager/api/lib/webauthn"
 )
 
 func Start(router *gin.Engine) {
 	// Config
 	db.Connect()
 	smtp.Connect()
-	internalWebauthn.Register()
+	webauthnBackend.Register()
 
 	// Endpoints
-	authNotRequired := router.Group("/")
-	authNotRequired.POST("/api/v1/auth/signup", middleware.ProcessParams(signup.PostInput{}), signup.Post)
-	authNotRequired.POST("/api/v1/auth/signin", middleware.ProcessParams(signin.PostInput{}), signin.Post)
-	authNotRequired.GET("/api/v1/email/challenge", middleware.ProcessParams(email.GetChallengeInput{}), email.GetChallenge)
-	authNotRequired.POST("/api/v1/email/challenge", middleware.ProcessParams(email.PostChallengeInput{}), email.PostChallenge)
-	authNotRequired.GET("/api/v1/webauthn/challenge", middleware.ProcessParams(webauthnEndpoints.GetChallengeInput{}), webauthnEndpoints.GetChallenge)
-	authNotRequired.POST("/api/v1/webauthn/challenge", middleware.ProcessParams(webauthnEndpoints.PostChallengeInput{}), webauthnEndpoints.PostChallenge)
-	authNotRequired.POST("/api/v1/totp/challenge", middleware.ProcessParams(totp.PostChallengeInput{}), totp.PostChallenge)
+	apiV1 := router.Group("/api/v1")
 
-	authRequired := router.Group("/")
-	authRequired.Use(middleware.AuthMiddleware())
-	authRequired.DELETE("/api/v1/auth/signout", middleware.ProcessParams(signout.DeleteInput{}), signout.Delete)
-	authRequired.GET("/api/v1/auth/test", middleware.ProcessParams(test.GetInput{}), test.Get)
-	authRequired.GET("/api/v1/password", middleware.ProcessParams(password.GetInput{}), password.Get)
-	authRequired.POST("/api/v1/password", middleware.ProcessParams(password.PostInput{}), password.Post)
-	authRequired.DELETE("/api/v1/password", middleware.ProcessParams(password.DeleteInput{}), password.Delete)
-	authRequired.GET("/api/v1/webauthn/register", middleware.ProcessParams(webauthnEndpoints.GetRegisterInput{}), webauthnEndpoints.GetRegister)
-	authRequired.POST("/api/v1/webauthn/register", middleware.ProcessParams(webauthnEndpoints.PostRegisterInput{}), webauthnEndpoints.PostRegister)
-	authRequired.GET("/api/v1/webauthn/credential", middleware.ProcessParams(webauthnEndpoints.GetCredentialInput{}), webauthnEndpoints.GetCredential)
-	authRequired.DELETE("/api/v1/webauthn/credential", middleware.ProcessParams(webauthnEndpoints.DeleteCredentialInput{}), webauthnEndpoints.DeleteCredential)
-	authRequired.GET("/api/v1/totp/register", middleware.ProcessParams(totp.GetRegisterInput{}), totp.GetRegister)
-	authRequired.POST("/api/v1/totp/register", middleware.ProcessParams(totp.PostRegisterInput{}), totp.PostRegister)
+	authGroup := apiV1.Group("/")
+	authGroup.Use(middleware.AuthMiddleware())
+
+	unauthGroup := apiV1.Group("/")
+
+	unauthGroup.POST("/auth/signup", middleware.ProcessParams(auth.PostSignupInput{}), auth.PostSignup)
+	unauthGroup.POST("/auth/signin", middleware.ProcessParams(auth.PostSigninInput{}), auth.PostSignin)
+	authGroup.DELETE("/auth/signout", middleware.ProcessParams(auth.DeleteSignoutInput{}), auth.DeleteSignout)
+	authGroup.GET("/auth/test", middleware.ProcessParams(auth.GetTestInput{}), auth.GetTest)
+
+	authGroup.GET("/email/challenge", middleware.ProcessParams(email.GetChallengeInput{}), email.GetChallenge)
+	authGroup.POST("/email/challenge", middleware.ProcessParams(email.PostChallengeInput{}), email.PostChallenge)
+
+	unauthGroup.GET("/webauthn/challenge", middleware.ProcessParams(webauthn.GetChallengeInput{}), webauthn.GetChallenge)
+	unauthGroup.POST("/webauthn/challenge", middleware.ProcessParams(webauthn.PostChallengeInput{}), webauthn.PostChallenge)
+	authGroup.GET("/webauthn/register", middleware.ProcessParams(webauthn.GetRegisterInput{}), webauthn.GetRegister)
+	authGroup.POST("/webauthn/register", middleware.ProcessParams(webauthn.PostRegisterInput{}), webauthn.PostRegister)
+	authGroup.GET("/webauthn/credential", middleware.ProcessParams(webauthn.GetCredentialInput{}), webauthn.GetCredential)
+	authGroup.DELETE("/webauthn/credential", middleware.ProcessParams(webauthn.DeleteCredentialInput{}), webauthn.DeleteCredential)
+
+	unauthGroup.POST("/totp/challenge", middleware.ProcessParams(totp.PostChallengeInput{}), totp.PostChallenge)
+	authGroup.GET("/totp/register", middleware.ProcessParams(totp.GetRegisterInput{}), totp.GetRegister)
+	authGroup.POST("/totp/register", middleware.ProcessParams(totp.PostRegisterInput{}), totp.PostRegister)
+
+	authGroup.GET("/password", middleware.ProcessParams(password.GetInput{}), password.Get)
+	authGroup.POST("/password", middleware.ProcessParams(password.PostInput{}), password.Post)
+	authGroup.DELETE("/password", middleware.ProcessParams(password.DeleteInput{}), password.Delete)
 }
 
 func Stop() {
