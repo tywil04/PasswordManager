@@ -35,8 +35,8 @@ func Start(router *gin.Engine) {
 	authGroup.GET("/auth/test", middleware.ProcessParams(auth.GetTestInput{}), auth.GetTest)
 
 	// 2FA Endpoints
-	authGroup.GET("/2fa/email/challenge", middleware.ProcessParams(email.GetChallengeInput{}), email.GetChallenge)
-	authGroup.POST("/2fa/email/challenge", middleware.ProcessParams(email.PostChallengeInput{}), email.PostChallenge)
+	unauthGroup.GET("/2fa/email/challenge", middleware.ProcessParams(email.GetChallengeInput{}), email.GetChallenge)
+	unauthGroup.POST("/2fa/email/challenge", middleware.ProcessParams(email.PostChallengeInput{}), email.PostChallenge)
 
 	unauthGroup.GET("/2fa/webauthn/challenge", middleware.ProcessParams(webauthn.GetChallengeInput{}), webauthn.GetChallenge)
 	unauthGroup.POST("/2fa/webauthn/challenge", middleware.ProcessParams(webauthn.PostChallengeInput{}), webauthn.PostChallenge)
