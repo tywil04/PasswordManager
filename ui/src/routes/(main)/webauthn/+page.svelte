@@ -15,7 +15,7 @@
         const name = data.get("name")
         const authToken = await storage.getAuthToken()
 
-        const response = await fetch(`/api/v1/webauthn/register`, {
+        const response = await fetch(`/api/v1/2fa/webauthn/register`, {
             method: "GET",
             headers: {
                 "Content-type": "application/json",
@@ -30,7 +30,7 @@
             const webauthnChallengeId = json.webauthnRegisterChallengeId
             const credential = await webauthnJson.create(webauthnJson.parseCreationOptionsFromJSON(json.options))
 
-            const finishResponse = await fetch("/api/v1/webauthn/register", {
+            const finishResponse = await fetch("/api/v1/2fa/webauthn/register", {
                 method: "POST",
                 headers: {
                     "Content-type": "application/json",
