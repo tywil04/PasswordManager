@@ -11,6 +11,10 @@ import (
 	"PasswordManager/ent"
 )
 
+const (
+	Description string = ""
+)
+
 type GetInput struct{}
 
 type PostInput struct {
