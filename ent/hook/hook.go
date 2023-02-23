@@ -104,6 +104,18 @@ func (f UserFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error)
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.UserMutation", m)
 }
 
+// The VaultFunc type is an adapter to allow the use of ordinary
+// function as Vault mutator.
+type VaultFunc func(context.Context, *ent.VaultMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f VaultFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.VaultMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.VaultMutation", m)
+}
+
 // The WebAuthnChallengeFunc type is an adapter to allow the use of ordinary
 // function as WebAuthnChallenge mutator.
 type WebAuthnChallengeFunc func(context.Context, *ent.WebAuthnChallengeMutation) (ent.Value, error)

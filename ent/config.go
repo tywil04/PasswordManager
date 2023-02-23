@@ -35,6 +35,7 @@ type (
 		TotpCredential            []ent.Hook
 		Url                       []ent.Hook
 		User                      []ent.Hook
+		Vault                     []ent.Hook
 		WebAuthnChallenge         []ent.Hook
 		WebAuthnCredential        []ent.Hook
 		WebAuthnRegisterChallenge []ent.Hook
@@ -48,6 +49,7 @@ type (
 		TotpCredential            []ent.Interceptor
 		Url                       []ent.Interceptor
 		User                      []ent.Interceptor
+		Vault                     []ent.Interceptor
 		WebAuthnChallenge         []ent.Interceptor
 		WebAuthnCredential        []ent.Interceptor
 		WebAuthnRegisterChallenge []ent.Interceptor

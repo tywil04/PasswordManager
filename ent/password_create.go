@@ -6,7 +6,7 @@ import (
 	"PasswordManager/ent/additionalfield"
 	"PasswordManager/ent/password"
 	"PasswordManager/ent/url"
-	"PasswordManager/ent/user"
+	"PasswordManager/ent/vault"
 	"context"
 	"errors"
 	"fmt"
@@ -65,14 +65,6 @@ func (pc *PasswordCreate) SetColour(s string) *PasswordCreate {
 	return pc
 }
 
-// SetNillableColour sets the "colour" field if the given value is not nil.
-func (pc *PasswordCreate) SetNillableColour(s *string) *PasswordCreate {
-	if s != nil {
-		pc.SetColour(*s)
-	}
-	return pc
-}
-
 // SetID sets the "id" field.
 func (pc *PasswordCreate) SetID(u uuid.UUID) *PasswordCreate {
 	pc.mutation.SetID(u)
@@ -117,23 +109,23 @@ func (pc *PasswordCreate) AddUrls(u ...*Url) *PasswordCreate {
 	return pc.AddURLIDs(ids...)
 }
 
-// SetUserID sets the "user" edge to the User entity by ID.
-func (pc *PasswordCreate) SetUserID(id uuid.UUID) *PasswordCreate {
-	pc.mutation.SetUserID(id)
+// SetVaultID sets the "vault" edge to the Vault entity by ID.
+func (pc *PasswordCreate) SetVaultID(id uuid.UUID) *PasswordCreate {
+	pc.mutation.SetVaultID(id)
 	return pc
 }
 
-// SetNillableUserID sets the "user" edge to the User entity by ID if the given value is not nil.
-func (pc *PasswordCreate) SetNillableUserID(id *uuid.UUID) *PasswordCreate {
+// SetNillableVaultID sets the "vault" edge to the Vault entity by ID if the given value is not nil.
+func (pc *PasswordCreate) SetNillableVaultID(id *uuid.UUID) *PasswordCreate {
 	if id != nil {
-		pc = pc.SetUserID(*id)
+		pc = pc.SetVaultID(*id)
 	}
 	return pc
 }
 
-// SetUser sets the "user" edge to the User entity.
-func (pc *PasswordCreate) SetUser(u *User) *PasswordCreate {
-	return pc.SetUserID(u.ID)
+// SetVault sets the "vault" edge to the Vault entity.
+func (pc *PasswordCreate) SetVault(v *Vault) *PasswordCreate {
+	return pc.SetVaultID(v.ID)
 }
 
 // Mutation returns the PasswordMutation object of the builder.
@@ -226,6 +218,9 @@ func (pc *PasswordCreate) check() error {
 		if err := password.PasswordIvValidator(v); err != nil {
 			return &ValidationError{Name: "passwordIv", err: fmt.Errorf(`ent: validator failed for field "Password.passwordIv": %w`, err)}
 		}
+	}
+	if _, ok := pc.mutation.Colour(); !ok {
+		return &ValidationError{Name: "colour", err: errors.New(`ent: missing required field "Password.colour"`)}
 	}
 	return nil
 }
@@ -334,24 +329,24 @@ func (pc *PasswordCreate) createSpec() (*Password, *sqlgraph.CreateSpec) {
 		}
 		_spec.Edges = append(_spec.Edges, edge)
 	}
-	if nodes := pc.mutation.UserIDs(); len(nodes) > 0 {
+	if nodes := pc.mutation.VaultIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
-			Table:   password.UserTable,
-			Columns: []string{password.UserColumn},
+			Table:   password.VaultTable,
+			Columns: []string{password.VaultColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeUUID,
-					Column: user.FieldID,
+					Column: vault.FieldID,
 				},
 			},
 		}
 		for _, k := range nodes {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
-		_node.user_passwords = &nodes[0]
+		_node.vault_passwords = &nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec

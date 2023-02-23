@@ -1,4 +1,4 @@
-package password
+package vault
 
 import (
 	"fmt"
@@ -15,9 +15,12 @@ const (
 	Description string = ""
 )
 
-type GetInput struct{}
+type GetPasswordInput struct {
+	VaultId string `form:"vaultId" json:"vaultId" xml:"vaultId" pmParseType:"uuid"`
+}
 
-type PostInput struct {
+type PostPasswordInput struct {
+	VaultId          string `form:"vaultId" json:"vaultId" xml:"vaultId" pmParseType:"uuid"`
 	Name             string `form:"name" json:"name" xml:"name" pmParseType:"base64"`
 	NameIv           string `form:"nameIv" json:"nameIv" xml:"nameIv" pmParseType:"base64"`
 	Username         string `form:"username" json:"username" xml:"username" pmParseType:"base64"`
@@ -37,14 +40,22 @@ type PostInput struct {
 	} `form:"urls" json:"urls" xml:"urls"`
 }
 
-type DeleteInput struct {
+type DeletePasswordInput struct {
+	VaultId    string `form:"vaultId" json:"vaultId" xml:"vaultId" pmParseType:"uuid"`
 	PasswordId string `form:"passwordId" json:"passwordId" xml:"passwordId"`
 }
 
-func Get(c *gin.Context) {
+func GetPassword(c *gin.Context) {
 	authedUser := c.MustGet("authedUser").(*ent.User)
+	params := c.GetStringMap("params")
 
-	passwords, passwordsErr := db.GetUserPasswords(authedUser)
+	vault, vaultErr := db.GetUserVault(authedUser, params["vaultId"].(uuid.UUID))
+	if vaultErr != nil {
+		c.JSON(400, exceptions.Builder("vaultId", exceptions.InvalidParam, exceptions.Uuid, exceptions.Owns))
+		return
+	}
+
+	passwords, passwordsErr := db.GetVaultPasswords(vault)
 	if passwordsErr != nil {
 		c.JSON(500, exceptions.Builder("", exceptions.Unknown, exceptions.TryAgain))
 		return
@@ -99,9 +110,15 @@ func Get(c *gin.Context) {
 	c.JSON(200, gin.H{"passwords": jsonPasswords})
 }
 
-func Post(c *gin.Context) {
+func PostPassword(c *gin.Context) {
 	authedUser := c.MustGet("authedUser").(*ent.User)
 	params := c.GetStringMap("params")
+
+	vault, vaultErr := db.GetUserVault(authedUser, params["vaultId"].(uuid.UUID))
+	if vaultErr != nil {
+		c.JSON(400, exceptions.Builder("vaultId", exceptions.InvalidParam, exceptions.Uuid, exceptions.Owns))
+		return
+	}
 
 	additionalFields := params["additionalFields"].([]map[string]any)
 	entAdditionalFields := make([]*ent.AdditionalField, len(additionalFields))
@@ -138,7 +155,7 @@ func Post(c *gin.Context) {
 	}
 
 	newPassword, newPasswordErr := db.Client.Password.Create().
-		SetUser(authedUser).
+		SetVault(vault).
 		SetName(params["name"].([]byte)).
 		SetNameIv(params["nameIv"].([]byte)).
 		SetUsername(params["username"].([]byte)).
@@ -158,11 +175,17 @@ func Post(c *gin.Context) {
 	c.JSON(200, gin.H{"passwordId": newPassword.ID.String()})
 }
 
-func Delete(c *gin.Context) {
+func DeletePassword(c *gin.Context) {
 	authedUser := c.MustGet("authedUser").(*ent.User)
 	params := c.GetStringMap("params")
 
-	dpErr := db.DeleteUserPasswordViaId(authedUser, params["passwordId"].(uuid.UUID))
+	vault, vaultErr := db.GetUserVault(authedUser, params["vaultId"].(uuid.UUID))
+	if vaultErr != nil {
+		c.JSON(400, exceptions.Builder("vaultId", exceptions.InvalidParam, exceptions.Uuid, exceptions.Owns))
+		return
+	}
+
+	dpErr := db.DeleteVaultPasswordViaId(vault, params["passwordId"].(uuid.UUID))
 	if dpErr != nil {
 		c.JSON(400, exceptions.Builder("password", exceptions.Deleting))
 		return

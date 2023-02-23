@@ -7,7 +7,7 @@ import (
 	"PasswordManager/ent/password"
 	"PasswordManager/ent/predicate"
 	"PasswordManager/ent/url"
-	"PasswordManager/ent/user"
+	"PasswordManager/ent/vault"
 	"context"
 	"database/sql/driver"
 	"fmt"
@@ -28,7 +28,7 @@ type PasswordQuery struct {
 	predicates           []predicate.Password
 	withAdditionalFields *AdditionalFieldQuery
 	withUrls             *URLQuery
-	withUser             *UserQuery
+	withVault            *VaultQuery
 	withFKs              bool
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
@@ -110,9 +110,9 @@ func (pq *PasswordQuery) QueryUrls() *URLQuery {
 	return query
 }
 
-// QueryUser chains the current query on the "user" edge.
-func (pq *PasswordQuery) QueryUser() *UserQuery {
-	query := (&UserClient{config: pq.config}).Query()
+// QueryVault chains the current query on the "vault" edge.
+func (pq *PasswordQuery) QueryVault() *VaultQuery {
+	query := (&VaultClient{config: pq.config}).Query()
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
 		if err := pq.prepareQuery(ctx); err != nil {
 			return nil, err
@@ -123,8 +123,8 @@ func (pq *PasswordQuery) QueryUser() *UserQuery {
 		}
 		step := sqlgraph.NewStep(
 			sqlgraph.From(password.Table, password.FieldID, selector),
-			sqlgraph.To(user.Table, user.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, password.UserTable, password.UserColumn),
+			sqlgraph.To(vault.Table, vault.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, password.VaultTable, password.VaultColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(pq.driver.Dialect(), step)
 		return fromU, nil
@@ -324,7 +324,7 @@ func (pq *PasswordQuery) Clone() *PasswordQuery {
 		predicates:           append([]predicate.Password{}, pq.predicates...),
 		withAdditionalFields: pq.withAdditionalFields.Clone(),
 		withUrls:             pq.withUrls.Clone(),
-		withUser:             pq.withUser.Clone(),
+		withVault:            pq.withVault.Clone(),
 		// clone intermediate query.
 		sql:  pq.sql.Clone(),
 		path: pq.path,
@@ -353,14 +353,14 @@ func (pq *PasswordQuery) WithUrls(opts ...func(*URLQuery)) *PasswordQuery {
 	return pq
 }
 
-// WithUser tells the query-builder to eager-load the nodes that are connected to
-// the "user" edge. The optional arguments are used to configure the query builder of the edge.
-func (pq *PasswordQuery) WithUser(opts ...func(*UserQuery)) *PasswordQuery {
-	query := (&UserClient{config: pq.config}).Query()
+// WithVault tells the query-builder to eager-load the nodes that are connected to
+// the "vault" edge. The optional arguments are used to configure the query builder of the edge.
+func (pq *PasswordQuery) WithVault(opts ...func(*VaultQuery)) *PasswordQuery {
+	query := (&VaultClient{config: pq.config}).Query()
 	for _, opt := range opts {
 		opt(query)
 	}
-	pq.withUser = query
+	pq.withVault = query
 	return pq
 }
 
@@ -448,10 +448,10 @@ func (pq *PasswordQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Pas
 		loadedTypes = [3]bool{
 			pq.withAdditionalFields != nil,
 			pq.withUrls != nil,
-			pq.withUser != nil,
+			pq.withVault != nil,
 		}
 	)
-	if pq.withUser != nil {
+	if pq.withVault != nil {
 		withFKs = true
 	}
 	if withFKs {
@@ -489,9 +489,9 @@ func (pq *PasswordQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Pas
 			return nil, err
 		}
 	}
-	if query := pq.withUser; query != nil {
-		if err := pq.loadUser(ctx, query, nodes, nil,
-			func(n *Password, e *User) { n.Edges.User = e }); err != nil {
+	if query := pq.withVault; query != nil {
+		if err := pq.loadVault(ctx, query, nodes, nil,
+			func(n *Password, e *Vault) { n.Edges.Vault = e }); err != nil {
 			return nil, err
 		}
 	}
@@ -560,14 +560,14 @@ func (pq *PasswordQuery) loadUrls(ctx context.Context, query *URLQuery, nodes []
 	}
 	return nil
 }
-func (pq *PasswordQuery) loadUser(ctx context.Context, query *UserQuery, nodes []*Password, init func(*Password), assign func(*Password, *User)) error {
+func (pq *PasswordQuery) loadVault(ctx context.Context, query *VaultQuery, nodes []*Password, init func(*Password), assign func(*Password, *Vault)) error {
 	ids := make([]uuid.UUID, 0, len(nodes))
 	nodeids := make(map[uuid.UUID][]*Password)
 	for i := range nodes {
-		if nodes[i].user_passwords == nil {
+		if nodes[i].vault_passwords == nil {
 			continue
 		}
-		fk := *nodes[i].user_passwords
+		fk := *nodes[i].vault_passwords
 		if _, ok := nodeids[fk]; !ok {
 			ids = append(ids, fk)
 		}
@@ -576,7 +576,7 @@ func (pq *PasswordQuery) loadUser(ctx context.Context, query *UserQuery, nodes [
 	if len(ids) == 0 {
 		return nil
 	}
-	query.Where(user.IDIn(ids...))
+	query.Where(vault.IDIn(ids...))
 	neighbors, err := query.All(ctx)
 	if err != nil {
 		return err
@@ -584,7 +584,7 @@ func (pq *PasswordQuery) loadUser(ctx context.Context, query *UserQuery, nodes [
 	for _, n := range neighbors {
 		nodes, ok := nodeids[n.ID]
 		if !ok {
-			return fmt.Errorf(`unexpected foreign-key "user_passwords" returned %v`, n.ID)
+			return fmt.Errorf(`unexpected foreign-key "vault_passwords" returned %v`, n.ID)
 		}
 		for i := range nodes {
 			assign(nodes[i], n)

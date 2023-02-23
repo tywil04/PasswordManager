@@ -34,7 +34,7 @@ func (User) Edges() []ent.Edge {
 		edge.To("totpCredential", TotpCredential.Type).Unique(),
 		edge.To("webauthnCredentials", WebAuthnCredential.Type),
 		edge.To("webauthnRegisterChallenges", WebAuthnRegisterChallenge.Type),
-		edge.To("passwords", Password.Type),
+		edge.To("vaults", Vault.Type),
 		edge.To("sessions", Session.Type),
 		edge.To("challenges", Challenge.Type),
 	}

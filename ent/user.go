@@ -46,8 +46,8 @@ type UserEdges struct {
 	WebauthnCredentials []*WebAuthnCredential `json:"webauthnCredentials,omitempty"`
 	// WebauthnRegisterChallenges holds the value of the webauthnRegisterChallenges edge.
 	WebauthnRegisterChallenges []*WebAuthnRegisterChallenge `json:"webauthnRegisterChallenges,omitempty"`
-	// Passwords holds the value of the passwords edge.
-	Passwords []*Password `json:"passwords,omitempty"`
+	// Vaults holds the value of the vaults edge.
+	Vaults []*Vault `json:"vaults,omitempty"`
 	// Sessions holds the value of the sessions edge.
 	Sessions []*Session `json:"sessions,omitempty"`
 	// Challenges holds the value of the challenges edge.
@@ -88,13 +88,13 @@ func (e UserEdges) WebauthnRegisterChallengesOrErr() ([]*WebAuthnRegisterChallen
 	return nil, &NotLoadedError{edge: "webauthnRegisterChallenges"}
 }
 
-// PasswordsOrErr returns the Passwords value or an error if the edge
+// VaultsOrErr returns the Vaults value or an error if the edge
 // was not loaded in eager-loading.
-func (e UserEdges) PasswordsOrErr() ([]*Password, error) {
+func (e UserEdges) VaultsOrErr() ([]*Vault, error) {
 	if e.loadedTypes[3] {
-		return e.Passwords, nil
+		return e.Vaults, nil
 	}
-	return nil, &NotLoadedError{edge: "passwords"}
+	return nil, &NotLoadedError{edge: "vaults"}
 }
 
 // SessionsOrErr returns the Sessions value or an error if the edge
@@ -217,9 +217,9 @@ func (u *User) QueryWebauthnRegisterChallenges() *WebAuthnRegisterChallengeQuery
 	return NewUserClient(u.config).QueryWebauthnRegisterChallenges(u)
 }
 
-// QueryPasswords queries the "passwords" edge of the User entity.
-func (u *User) QueryPasswords() *PasswordQuery {
-	return NewUserClient(u.config).QueryPasswords(u)
+// QueryVaults queries the "vaults" edge of the User entity.
+func (u *User) QueryVaults() *VaultQuery {
+	return NewUserClient(u.config).QueryVaults(u)
 }
 
 // QuerySessions queries the "sessions" edge of the User entity.

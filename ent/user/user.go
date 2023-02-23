@@ -33,8 +33,8 @@ const (
 	EdgeWebauthnCredentials = "webauthnCredentials"
 	// EdgeWebauthnRegisterChallenges holds the string denoting the webauthnregisterchallenges edge name in mutations.
 	EdgeWebauthnRegisterChallenges = "webauthnRegisterChallenges"
-	// EdgePasswords holds the string denoting the passwords edge name in mutations.
-	EdgePasswords = "passwords"
+	// EdgeVaults holds the string denoting the vaults edge name in mutations.
+	EdgeVaults = "vaults"
 	// EdgeSessions holds the string denoting the sessions edge name in mutations.
 	EdgeSessions = "sessions"
 	// EdgeChallenges holds the string denoting the challenges edge name in mutations.
@@ -62,13 +62,13 @@ const (
 	WebauthnRegisterChallengesInverseTable = "web_authn_register_challenges"
 	// WebauthnRegisterChallengesColumn is the table column denoting the webauthnRegisterChallenges relation/edge.
 	WebauthnRegisterChallengesColumn = "user_webauthn_register_challenges"
-	// PasswordsTable is the table that holds the passwords relation/edge.
-	PasswordsTable = "passwords"
-	// PasswordsInverseTable is the table name for the Password entity.
-	// It exists in this package in order to avoid circular dependency with the "password" package.
-	PasswordsInverseTable = "passwords"
-	// PasswordsColumn is the table column denoting the passwords relation/edge.
-	PasswordsColumn = "user_passwords"
+	// VaultsTable is the table that holds the vaults relation/edge.
+	VaultsTable = "vaults"
+	// VaultsInverseTable is the table name for the Vault entity.
+	// It exists in this package in order to avoid circular dependency with the "vault" package.
+	VaultsInverseTable = "vaults"
+	// VaultsColumn is the table column denoting the vaults relation/edge.
+	VaultsColumn = "user_vaults"
 	// SessionsTable is the table that holds the sessions relation/edge.
 	SessionsTable = "sessions"
 	// SessionsInverseTable is the table name for the Session entity.

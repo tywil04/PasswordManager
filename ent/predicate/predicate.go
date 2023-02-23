@@ -30,6 +30,9 @@ type Url func(*sql.Selector)
 // User is the predicate function for user builders.
 type User func(*sql.Selector)
 
+// Vault is the predicate function for vault builders.
+type Vault func(*sql.Selector)
+
 // WebAuthnChallenge is the predicate function for webauthnchallenge builders.
 type WebAuthnChallenge func(*sql.Selector)
 

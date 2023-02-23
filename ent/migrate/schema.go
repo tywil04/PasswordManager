@@ -80,8 +80,8 @@ var (
 		{Name: "username_iv", Type: field.TypeBytes},
 		{Name: "password", Type: field.TypeBytes},
 		{Name: "password_iv", Type: field.TypeBytes},
-		{Name: "colour", Type: field.TypeString, Nullable: true},
-		{Name: "user_passwords", Type: field.TypeUUID, Nullable: true},
+		{Name: "colour", Type: field.TypeString},
+		{Name: "vault_passwords", Type: field.TypeUUID, Nullable: true},
 	}
 	// PasswordsTable holds the schema information for the "passwords" table.
 	PasswordsTable = &schema.Table{
@@ -90,9 +90,9 @@ var (
 		PrimaryKey: []*schema.Column{PasswordsColumns[0]},
 		ForeignKeys: []*schema.ForeignKey{
 			{
-				Symbol:     "passwords_users_passwords",
+				Symbol:     "passwords_vaults_passwords",
 				Columns:    []*schema.Column{PasswordsColumns[8]},
-				RefColumns: []*schema.Column{UsersColumns[0]},
+				RefColumns: []*schema.Column{VaultsColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
 		},
@@ -194,6 +194,28 @@ var (
 			},
 		},
 	}
+	// VaultsColumns holds the columns for the "vaults" table.
+	VaultsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "name", Type: field.TypeString},
+		{Name: "colour", Type: field.TypeString},
+		{Name: "user_vaults", Type: field.TypeUUID, Nullable: true},
+	}
+	// VaultsTable holds the schema information for the "vaults" table.
+	VaultsTable = &schema.Table{
+		Name:       "vaults",
+		Columns:    VaultsColumns,
+		PrimaryKey: []*schema.Column{VaultsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "vaults_users_vaults",
+				Columns:    []*schema.Column{VaultsColumns[4]},
+				RefColumns: []*schema.Column{UsersColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+		},
+	}
 	// WebAuthnChallengesColumns holds the columns for the "web_authn_challenges" table.
 	WebAuthnChallengesColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID},
@@ -280,6 +302,7 @@ var (
 		TotpCredentialsTable,
 		UrlsTable,
 		UsersTable,
+		VaultsTable,
 		WebAuthnChallengesTable,
 		WebAuthnCredentialsTable,
 		WebAuthnRegisterChallengesTable,
@@ -290,11 +313,12 @@ func init() {
 	AdditionalFieldsTable.ForeignKeys[0].RefTable = PasswordsTable
 	ChallengesTable.ForeignKeys[0].RefTable = UsersTable
 	EmailChallengesTable.ForeignKeys[0].RefTable = ChallengesTable
-	PasswordsTable.ForeignKeys[0].RefTable = UsersTable
+	PasswordsTable.ForeignKeys[0].RefTable = VaultsTable
 	SessionsTable.ForeignKeys[0].RefTable = UsersTable
 	TotpCredentialsTable.ForeignKeys[0].RefTable = ChallengesTable
 	TotpCredentialsTable.ForeignKeys[1].RefTable = UsersTable
 	UrlsTable.ForeignKeys[0].RefTable = PasswordsTable
+	VaultsTable.ForeignKeys[0].RefTable = UsersTable
 	WebAuthnChallengesTable.ForeignKeys[0].RefTable = ChallengesTable
 	WebAuthnCredentialsTable.ForeignKeys[0].RefTable = UsersTable
 	WebAuthnRegisterChallengesTable.ForeignKeys[0].RefTable = UsersTable

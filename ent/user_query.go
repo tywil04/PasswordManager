@@ -4,11 +4,11 @@ package ent
 
 import (
 	"PasswordManager/ent/challenge"
-	"PasswordManager/ent/password"
 	"PasswordManager/ent/predicate"
 	"PasswordManager/ent/session"
 	"PasswordManager/ent/totpcredential"
 	"PasswordManager/ent/user"
+	"PasswordManager/ent/vault"
 	"PasswordManager/ent/webauthncredential"
 	"PasswordManager/ent/webauthnregisterchallenge"
 	"context"
@@ -32,7 +32,7 @@ type UserQuery struct {
 	withTotpCredential             *TotpCredentialQuery
 	withWebauthnCredentials        *WebAuthnCredentialQuery
 	withWebauthnRegisterChallenges *WebAuthnRegisterChallengeQuery
-	withPasswords                  *PasswordQuery
+	withVaults                     *VaultQuery
 	withSessions                   *SessionQuery
 	withChallenges                 *ChallengeQuery
 	// intermediate query (i.e. traversal path).
@@ -137,9 +137,9 @@ func (uq *UserQuery) QueryWebauthnRegisterChallenges() *WebAuthnRegisterChalleng
 	return query
 }
 
-// QueryPasswords chains the current query on the "passwords" edge.
-func (uq *UserQuery) QueryPasswords() *PasswordQuery {
-	query := (&PasswordClient{config: uq.config}).Query()
+// QueryVaults chains the current query on the "vaults" edge.
+func (uq *UserQuery) QueryVaults() *VaultQuery {
+	query := (&VaultClient{config: uq.config}).Query()
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
 		if err := uq.prepareQuery(ctx); err != nil {
 			return nil, err
@@ -150,8 +150,8 @@ func (uq *UserQuery) QueryPasswords() *PasswordQuery {
 		}
 		step := sqlgraph.NewStep(
 			sqlgraph.From(user.Table, user.FieldID, selector),
-			sqlgraph.To(password.Table, password.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, user.PasswordsTable, user.PasswordsColumn),
+			sqlgraph.To(vault.Table, vault.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, user.VaultsTable, user.VaultsColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(uq.driver.Dialect(), step)
 		return fromU, nil
@@ -396,7 +396,7 @@ func (uq *UserQuery) Clone() *UserQuery {
 		withTotpCredential:             uq.withTotpCredential.Clone(),
 		withWebauthnCredentials:        uq.withWebauthnCredentials.Clone(),
 		withWebauthnRegisterChallenges: uq.withWebauthnRegisterChallenges.Clone(),
-		withPasswords:                  uq.withPasswords.Clone(),
+		withVaults:                     uq.withVaults.Clone(),
 		withSessions:                   uq.withSessions.Clone(),
 		withChallenges:                 uq.withChallenges.Clone(),
 		// clone intermediate query.
@@ -438,14 +438,14 @@ func (uq *UserQuery) WithWebauthnRegisterChallenges(opts ...func(*WebAuthnRegist
 	return uq
 }
 
-// WithPasswords tells the query-builder to eager-load the nodes that are connected to
-// the "passwords" edge. The optional arguments are used to configure the query builder of the edge.
-func (uq *UserQuery) WithPasswords(opts ...func(*PasswordQuery)) *UserQuery {
-	query := (&PasswordClient{config: uq.config}).Query()
+// WithVaults tells the query-builder to eager-load the nodes that are connected to
+// the "vaults" edge. The optional arguments are used to configure the query builder of the edge.
+func (uq *UserQuery) WithVaults(opts ...func(*VaultQuery)) *UserQuery {
+	query := (&VaultClient{config: uq.config}).Query()
 	for _, opt := range opts {
 		opt(query)
 	}
-	uq.withPasswords = query
+	uq.withVaults = query
 	return uq
 }
 
@@ -555,7 +555,7 @@ func (uq *UserQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*User, e
 			uq.withTotpCredential != nil,
 			uq.withWebauthnCredentials != nil,
 			uq.withWebauthnRegisterChallenges != nil,
-			uq.withPasswords != nil,
+			uq.withVaults != nil,
 			uq.withSessions != nil,
 			uq.withChallenges != nil,
 		}
@@ -602,10 +602,10 @@ func (uq *UserQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*User, e
 			return nil, err
 		}
 	}
-	if query := uq.withPasswords; query != nil {
-		if err := uq.loadPasswords(ctx, query, nodes,
-			func(n *User) { n.Edges.Passwords = []*Password{} },
-			func(n *User, e *Password) { n.Edges.Passwords = append(n.Edges.Passwords, e) }); err != nil {
+	if query := uq.withVaults; query != nil {
+		if err := uq.loadVaults(ctx, query, nodes,
+			func(n *User) { n.Edges.Vaults = []*Vault{} },
+			func(n *User, e *Vault) { n.Edges.Vaults = append(n.Edges.Vaults, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -716,7 +716,7 @@ func (uq *UserQuery) loadWebauthnRegisterChallenges(ctx context.Context, query *
 	}
 	return nil
 }
-func (uq *UserQuery) loadPasswords(ctx context.Context, query *PasswordQuery, nodes []*User, init func(*User), assign func(*User, *Password)) error {
+func (uq *UserQuery) loadVaults(ctx context.Context, query *VaultQuery, nodes []*User, init func(*User), assign func(*User, *Vault)) error {
 	fks := make([]driver.Value, 0, len(nodes))
 	nodeids := make(map[uuid.UUID]*User)
 	for i := range nodes {
@@ -727,21 +727,21 @@ func (uq *UserQuery) loadPasswords(ctx context.Context, query *PasswordQuery, no
 		}
 	}
 	query.withFKs = true
-	query.Where(predicate.Password(func(s *sql.Selector) {
-		s.Where(sql.InValues(user.PasswordsColumn, fks...))
+	query.Where(predicate.Vault(func(s *sql.Selector) {
+		s.Where(sql.InValues(user.VaultsColumn, fks...))
 	}))
 	neighbors, err := query.All(ctx)
 	if err != nil {
 		return err
 	}
 	for _, n := range neighbors {
-		fk := n.user_passwords
+		fk := n.user_vaults
 		if fk == nil {
-			return fmt.Errorf(`foreign-key "user_passwords" is nil for node %v`, n.ID)
+			return fmt.Errorf(`foreign-key "user_vaults" is nil for node %v`, n.ID)
 		}
 		node, ok := nodeids[*fk]
 		if !ok {
-			return fmt.Errorf(`unexpected foreign-key "user_passwords" returned %v for node %v`, *fk, n.ID)
+			return fmt.Errorf(`unexpected foreign-key "user_vaults" returned %v for node %v`, *fk, n.ID)
 		}
 		assign(node, n)
 	}

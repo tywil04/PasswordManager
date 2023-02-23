@@ -431,24 +431,24 @@ func HasWebauthnRegisterChallengesWith(preds ...predicate.WebAuthnRegisterChalle
 	})
 }
 
-// HasPasswords applies the HasEdge predicate on the "passwords" edge.
-func HasPasswords() predicate.User {
+// HasVaults applies the HasEdge predicate on the "vaults" edge.
+func HasVaults() predicate.User {
 	return predicate.User(func(s *sql.Selector) {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, PasswordsTable, PasswordsColumn),
+			sqlgraph.Edge(sqlgraph.O2M, false, VaultsTable, VaultsColumn),
 		)
 		sqlgraph.HasNeighbors(s, step)
 	})
 }
 
-// HasPasswordsWith applies the HasEdge predicate on the "passwords" edge with a given conditions (other predicates).
-func HasPasswordsWith(preds ...predicate.Password) predicate.User {
+// HasVaultsWith applies the HasEdge predicate on the "vaults" edge with a given conditions (other predicates).
+func HasVaultsWith(preds ...predicate.Vault) predicate.User {
 	return predicate.User(func(s *sql.Selector) {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
-			sqlgraph.To(PasswordsInverseTable, FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, PasswordsTable, PasswordsColumn),
+			sqlgraph.To(VaultsInverseTable, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, VaultsTable, VaultsColumn),
 		)
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {

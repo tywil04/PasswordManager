@@ -12,6 +12,7 @@ import (
 	"PasswordManager/ent/totpcredential"
 	"PasswordManager/ent/url"
 	"PasswordManager/ent/user"
+	"PasswordManager/ent/vault"
 	"PasswordManager/ent/webauthnchallenge"
 	"PasswordManager/ent/webauthncredential"
 	"PasswordManager/ent/webauthnregisterchallenge"
@@ -172,6 +173,20 @@ func init() {
 	userDescID := userFields[0].Descriptor()
 	// user.DefaultID holds the default value on creation for the id field.
 	user.DefaultID = userDescID.Default.(func() uuid.UUID)
+	vaultFields := schema.Vault{}.Fields()
+	_ = vaultFields
+	// vaultDescCreatedAt is the schema descriptor for createdAt field.
+	vaultDescCreatedAt := vaultFields[1].Descriptor()
+	// vault.DefaultCreatedAt holds the default value on creation for the createdAt field.
+	vault.DefaultCreatedAt = vaultDescCreatedAt.Default.(func() time.Time)
+	// vaultDescName is the schema descriptor for name field.
+	vaultDescName := vaultFields[2].Descriptor()
+	// vault.NameValidator is a validator for the "name" field. It is called by the builders before save.
+	vault.NameValidator = vaultDescName.Validators[0].(func(string) error)
+	// vaultDescID is the schema descriptor for id field.
+	vaultDescID := vaultFields[0].Descriptor()
+	// vault.DefaultID holds the default value on creation for the id field.
+	vault.DefaultID = vaultDescID.Default.(func() uuid.UUID)
 	webauthnchallengeFields := schema.WebAuthnChallenge{}.Fields()
 	_ = webauthnchallengeFields
 	// webauthnchallengeDescID is the schema descriptor for id field.

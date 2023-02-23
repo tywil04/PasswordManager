@@ -7,7 +7,7 @@ import (
 	"PasswordManager/ent/password"
 	"PasswordManager/ent/predicate"
 	"PasswordManager/ent/url"
-	"PasswordManager/ent/user"
+	"PasswordManager/ent/vault"
 	"context"
 	"errors"
 	"fmt"
@@ -73,20 +73,6 @@ func (pu *PasswordUpdate) SetColour(s string) *PasswordUpdate {
 	return pu
 }
 
-// SetNillableColour sets the "colour" field if the given value is not nil.
-func (pu *PasswordUpdate) SetNillableColour(s *string) *PasswordUpdate {
-	if s != nil {
-		pu.SetColour(*s)
-	}
-	return pu
-}
-
-// ClearColour clears the value of the "colour" field.
-func (pu *PasswordUpdate) ClearColour() *PasswordUpdate {
-	pu.mutation.ClearColour()
-	return pu
-}
-
 // AddAdditionalFieldIDs adds the "additionalFields" edge to the AdditionalField entity by IDs.
 func (pu *PasswordUpdate) AddAdditionalFieldIDs(ids ...uuid.UUID) *PasswordUpdate {
 	pu.mutation.AddAdditionalFieldIDs(ids...)
@@ -117,23 +103,23 @@ func (pu *PasswordUpdate) AddUrls(u ...*Url) *PasswordUpdate {
 	return pu.AddURLIDs(ids...)
 }
 
-// SetUserID sets the "user" edge to the User entity by ID.
-func (pu *PasswordUpdate) SetUserID(id uuid.UUID) *PasswordUpdate {
-	pu.mutation.SetUserID(id)
+// SetVaultID sets the "vault" edge to the Vault entity by ID.
+func (pu *PasswordUpdate) SetVaultID(id uuid.UUID) *PasswordUpdate {
+	pu.mutation.SetVaultID(id)
 	return pu
 }
 
-// SetNillableUserID sets the "user" edge to the User entity by ID if the given value is not nil.
-func (pu *PasswordUpdate) SetNillableUserID(id *uuid.UUID) *PasswordUpdate {
+// SetNillableVaultID sets the "vault" edge to the Vault entity by ID if the given value is not nil.
+func (pu *PasswordUpdate) SetNillableVaultID(id *uuid.UUID) *PasswordUpdate {
 	if id != nil {
-		pu = pu.SetUserID(*id)
+		pu = pu.SetVaultID(*id)
 	}
 	return pu
 }
 
-// SetUser sets the "user" edge to the User entity.
-func (pu *PasswordUpdate) SetUser(u *User) *PasswordUpdate {
-	return pu.SetUserID(u.ID)
+// SetVault sets the "vault" edge to the Vault entity.
+func (pu *PasswordUpdate) SetVault(v *Vault) *PasswordUpdate {
+	return pu.SetVaultID(v.ID)
 }
 
 // Mutation returns the PasswordMutation object of the builder.
@@ -183,9 +169,9 @@ func (pu *PasswordUpdate) RemoveUrls(u ...*Url) *PasswordUpdate {
 	return pu.RemoveURLIDs(ids...)
 }
 
-// ClearUser clears the "user" edge to the User entity.
-func (pu *PasswordUpdate) ClearUser() *PasswordUpdate {
-	pu.mutation.ClearUser()
+// ClearVault clears the "vault" edge to the Vault entity.
+func (pu *PasswordUpdate) ClearVault() *PasswordUpdate {
+	pu.mutation.ClearVault()
 	return pu
 }
 
@@ -292,9 +278,6 @@ func (pu *PasswordUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	if value, ok := pu.mutation.Colour(); ok {
 		_spec.SetField(password.FieldColour, field.TypeString, value)
-	}
-	if pu.mutation.ColourCleared() {
-		_spec.ClearField(password.FieldColour, field.TypeString)
 	}
 	if pu.mutation.AdditionalFieldsCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -404,33 +387,33 @@ func (pu *PasswordUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if pu.mutation.UserCleared() {
+	if pu.mutation.VaultCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
-			Table:   password.UserTable,
-			Columns: []string{password.UserColumn},
+			Table:   password.VaultTable,
+			Columns: []string{password.VaultColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeUUID,
-					Column: user.FieldID,
+					Column: vault.FieldID,
 				},
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := pu.mutation.UserIDs(); len(nodes) > 0 {
+	if nodes := pu.mutation.VaultIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
-			Table:   password.UserTable,
-			Columns: []string{password.UserColumn},
+			Table:   password.VaultTable,
+			Columns: []string{password.VaultColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeUUID,
-					Column: user.FieldID,
+					Column: vault.FieldID,
 				},
 			},
 		}
@@ -501,20 +484,6 @@ func (puo *PasswordUpdateOne) SetColour(s string) *PasswordUpdateOne {
 	return puo
 }
 
-// SetNillableColour sets the "colour" field if the given value is not nil.
-func (puo *PasswordUpdateOne) SetNillableColour(s *string) *PasswordUpdateOne {
-	if s != nil {
-		puo.SetColour(*s)
-	}
-	return puo
-}
-
-// ClearColour clears the value of the "colour" field.
-func (puo *PasswordUpdateOne) ClearColour() *PasswordUpdateOne {
-	puo.mutation.ClearColour()
-	return puo
-}
-
 // AddAdditionalFieldIDs adds the "additionalFields" edge to the AdditionalField entity by IDs.
 func (puo *PasswordUpdateOne) AddAdditionalFieldIDs(ids ...uuid.UUID) *PasswordUpdateOne {
 	puo.mutation.AddAdditionalFieldIDs(ids...)
@@ -545,23 +514,23 @@ func (puo *PasswordUpdateOne) AddUrls(u ...*Url) *PasswordUpdateOne {
 	return puo.AddURLIDs(ids...)
 }
 
-// SetUserID sets the "user" edge to the User entity by ID.
-func (puo *PasswordUpdateOne) SetUserID(id uuid.UUID) *PasswordUpdateOne {
-	puo.mutation.SetUserID(id)
+// SetVaultID sets the "vault" edge to the Vault entity by ID.
+func (puo *PasswordUpdateOne) SetVaultID(id uuid.UUID) *PasswordUpdateOne {
+	puo.mutation.SetVaultID(id)
 	return puo
 }
 
-// SetNillableUserID sets the "user" edge to the User entity by ID if the given value is not nil.
-func (puo *PasswordUpdateOne) SetNillableUserID(id *uuid.UUID) *PasswordUpdateOne {
+// SetNillableVaultID sets the "vault" edge to the Vault entity by ID if the given value is not nil.
+func (puo *PasswordUpdateOne) SetNillableVaultID(id *uuid.UUID) *PasswordUpdateOne {
 	if id != nil {
-		puo = puo.SetUserID(*id)
+		puo = puo.SetVaultID(*id)
 	}
 	return puo
 }
 
-// SetUser sets the "user" edge to the User entity.
-func (puo *PasswordUpdateOne) SetUser(u *User) *PasswordUpdateOne {
-	return puo.SetUserID(u.ID)
+// SetVault sets the "vault" edge to the Vault entity.
+func (puo *PasswordUpdateOne) SetVault(v *Vault) *PasswordUpdateOne {
+	return puo.SetVaultID(v.ID)
 }
 
 // Mutation returns the PasswordMutation object of the builder.
@@ -611,9 +580,9 @@ func (puo *PasswordUpdateOne) RemoveUrls(u ...*Url) *PasswordUpdateOne {
 	return puo.RemoveURLIDs(ids...)
 }
 
-// ClearUser clears the "user" edge to the User entity.
-func (puo *PasswordUpdateOne) ClearUser() *PasswordUpdateOne {
-	puo.mutation.ClearUser()
+// ClearVault clears the "vault" edge to the Vault entity.
+func (puo *PasswordUpdateOne) ClearVault() *PasswordUpdateOne {
+	puo.mutation.ClearVault()
 	return puo
 }
 
@@ -745,9 +714,6 @@ func (puo *PasswordUpdateOne) sqlSave(ctx context.Context) (_node *Password, err
 	if value, ok := puo.mutation.Colour(); ok {
 		_spec.SetField(password.FieldColour, field.TypeString, value)
 	}
-	if puo.mutation.ColourCleared() {
-		_spec.ClearField(password.FieldColour, field.TypeString)
-	}
 	if puo.mutation.AdditionalFieldsCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
@@ -856,33 +822,33 @@ func (puo *PasswordUpdateOne) sqlSave(ctx context.Context) (_node *Password, err
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if puo.mutation.UserCleared() {
+	if puo.mutation.VaultCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
-			Table:   password.UserTable,
-			Columns: []string{password.UserColumn},
+			Table:   password.VaultTable,
+			Columns: []string{password.VaultColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeUUID,
-					Column: user.FieldID,
+					Column: vault.FieldID,
 				},
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := puo.mutation.UserIDs(); len(nodes) > 0 {
+	if nodes := puo.mutation.VaultIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
-			Table:   password.UserTable,
-			Columns: []string{password.UserColumn},
+			Table:   password.VaultTable,
+			Columns: []string{password.VaultColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeUUID,
-					Column: user.FieldID,
+					Column: vault.FieldID,
 				},
 			},
 		}

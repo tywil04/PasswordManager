@@ -4,10 +4,10 @@ package ent
 
 import (
 	"PasswordManager/ent/challenge"
-	"PasswordManager/ent/password"
 	"PasswordManager/ent/session"
 	"PasswordManager/ent/totpcredential"
 	"PasswordManager/ent/user"
+	"PasswordManager/ent/vault"
 	"PasswordManager/ent/webauthncredential"
 	"PasswordManager/ent/webauthnregisterchallenge"
 	"context"
@@ -161,19 +161,19 @@ func (uc *UserCreate) AddWebauthnRegisterChallenges(w ...*WebAuthnRegisterChalle
 	return uc.AddWebauthnRegisterChallengeIDs(ids...)
 }
 
-// AddPasswordIDs adds the "passwords" edge to the Password entity by IDs.
-func (uc *UserCreate) AddPasswordIDs(ids ...uuid.UUID) *UserCreate {
-	uc.mutation.AddPasswordIDs(ids...)
+// AddVaultIDs adds the "vaults" edge to the Vault entity by IDs.
+func (uc *UserCreate) AddVaultIDs(ids ...uuid.UUID) *UserCreate {
+	uc.mutation.AddVaultIDs(ids...)
 	return uc
 }
 
-// AddPasswords adds the "passwords" edges to the Password entity.
-func (uc *UserCreate) AddPasswords(p ...*Password) *UserCreate {
-	ids := make([]uuid.UUID, len(p))
-	for i := range p {
-		ids[i] = p[i].ID
+// AddVaults adds the "vaults" edges to the Vault entity.
+func (uc *UserCreate) AddVaults(v ...*Vault) *UserCreate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
 	}
-	return uc.AddPasswordIDs(ids...)
+	return uc.AddVaultIDs(ids...)
 }
 
 // AddSessionIDs adds the "sessions" edge to the Session entity by IDs.
@@ -440,17 +440,17 @@ func (uc *UserCreate) createSpec() (*User, *sqlgraph.CreateSpec) {
 		}
 		_spec.Edges = append(_spec.Edges, edge)
 	}
-	if nodes := uc.mutation.PasswordsIDs(); len(nodes) > 0 {
+	if nodes := uc.mutation.VaultsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   user.PasswordsTable,
-			Columns: []string{user.PasswordsColumn},
+			Table:   user.VaultsTable,
+			Columns: []string{user.VaultsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeUUID,
-					Column: password.FieldID,
+					Column: vault.FieldID,
 				},
 			},
 		}
