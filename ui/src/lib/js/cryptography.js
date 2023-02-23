@@ -4,12 +4,12 @@ export const config = {
   masterKey: {
     keyFunction: "PBKDF2",
     digest: "SHA-512",
-    iterations: 100000,
+    iterations: 250000,
   },
   masterHash: {
     keyFunction: "PBKDF2",
     digest: "SHA-512",
-    iterations: 100000,
+    iterations: 250000,
     size: 512,
   },
   databaseKey: {
@@ -49,7 +49,6 @@ export async function importDatabaseKey(key) {
     ["encrypt", "decrypt"]
   )
 }
-
 
 export async function exportKey(key) {
   return await crypto.subtle.exportKey("raw", key)

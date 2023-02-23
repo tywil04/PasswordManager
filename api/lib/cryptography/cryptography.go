@@ -7,18 +7,39 @@ import (
 	"crypto/sha512"
 	"crypto/subtle"
 	"math/big"
+	"os"
 
-	"golang.org/x/crypto/pbkdf2"
+	"golang.org/x/crypto/argon2"
 )
 
-var StrengthenMasterHashIterations = 150000
-var StrengthenMasterHashLength = 512 / 8
-var StrengthenMasterHashDigest = sha512.New
+// https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html#introduction
+var (
+	masterHashPasses    uint32 = 3
+	masterHashMemory    uint32 = 64 * 1024
+	masterHashThreads   uint8  = 4
+	masterHashKeyLength uint32 = 32 // AES-256 needs 32-byte key
+)
 
-var RSASize = 4096
+var (
+	rsaSize = 4096
+)
 
 func StrengthenMasterHash(masterHash []byte, salt []byte) []byte {
-	return pbkdf2.Key(masterHash, salt, StrengthenMasterHashIterations, StrengthenMasterHashLength, StrengthenMasterHashDigest)
+	if pepper := os.Getenv("CRYPTO_PEPPER"); pepper != "" {
+		pepperedMasterHash := append(masterHash, []byte(pepper)...)
+		return argon2.IDKey(pepperedMasterHash, salt, masterHashPasses, masterHashMemory, masterHashThreads, masterHashKeyLength)
+	}
+	return argon2.IDKey(masterHash, salt, masterHashPasses, masterHashMemory, masterHashThreads, masterHashKeyLength)
+
+	// var StrengthenMasterHashIterations = 300000
+	// var StrengthenMasterHashLength = 512 / 8
+	// var StrengthenMasterHashDigest = sha512.New
+	// return pbkdf2.Key(masterHash, salt, StrengthenMasterHashIterations, StrengthenMasterHashLength, StrengthenMasterHashDigest)
+}
+
+func CompareMasterHash(strengthenedMasterHash []byte, masterHash []byte, salt []byte) bool {
+	testStrengthenedMasterHash := StrengthenMasterHash(masterHash, salt)
+	return subtle.ConstantTimeCompare(strengthenedMasterHash, testStrengthenedMasterHash) == 1
 }
 
 func RandomBytes(n int) []byte {
@@ -38,7 +59,7 @@ func RandomString(n int) string {
 }
 
 func GenerateSignature(value string) (*rsa.PublicKey, []byte) {
-	privateKey, _ := rsa.GenerateKey(rand.Reader, RSASize)
+	privateKey, _ := rsa.GenerateKey(rand.Reader, rsaSize)
 	publicKey := &privateKey.PublicKey
 	hashed := sha512.Sum512([]byte(value))
 	signature, _ := rsa.SignPKCS1v15(rand.Reader, privateKey, crypto.SHA512, hashed[:])

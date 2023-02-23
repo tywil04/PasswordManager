@@ -30,8 +30,7 @@ func PostSignin(c *gin.Context) {
 		return
 	}
 
-	strengthenedMasterHash := cryptography.StrengthenMasterHash(params["masterHash"].([]byte), foundUser.StrengthenedMasterHashSalt)
-	sameMasterHash := cryptography.ConstantTimeCompare(strengthenedMasterHash, foundUser.StrengthenedMasterHash)
+	sameMasterHash := cryptography.CompareMasterHash(foundUser.StrengthenedMasterHash, params["masterHash"].([]byte), foundUser.StrengthenedMasterHashSalt)
 	if !sameMasterHash {
 		c.JSON(400, exceptions.Builder("", exceptions.IncorrectCredentials))
 		return
