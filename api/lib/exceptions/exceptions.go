@@ -20,6 +20,7 @@ const (
 	NotInUse
 	Owns
 	Authtoken
+	DidntStart2FA
 	TryAgain
 )
 
@@ -45,6 +46,8 @@ func (a Addition) String() string {
 		return "Are you sure you own it?"
 	case Authtoken:
 		return "Are you sure it's both a non-expired and valid authToken?"
+	case DidntStart2FA:
+		return "Are you sure you started the 2FA process? Some endpoints require you to do so."
 	case TryAgain:
 		return "Please try again later."
 	}
