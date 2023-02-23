@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-webauthn/webauthn/protocol"
@@ -18,7 +19,7 @@ import (
 )
 
 const (
-	ChallengeDescription string = ""
+	ChallengeDescription string = "This is the endpoint for completing a challenge via a webauthn device. A user must explicitly register a webauthn device for it to be used as a 2FA device. Both a challengeId and list of available challenges will be issued to the client by some other request (e.g /api/v1/auth/signup). To start the 2FA process webauthn, you need to contact the server via a GET request containing a challengeId. The response will be a valid webauthn credential, this should be used on the client to start the verification process. Once the user has verified there device, the result should be sent to the server alongside the challengeId using a POST request. If the 2FA credential from the device matches a previously registered credential then the user is authenticated. Which means a valid authToken (they expire after an hour) is generated and returned (this allows you to make requests for authenticated endpoints). The users protectedDatabaseKey and protectedDatabaseKeyIv are also returned so they can be decoded and stored within sessionStorage."
 )
 
 type GetChallengeInput struct {
@@ -43,9 +44,15 @@ type PostChallengeInput struct {
 func GetChallenge(c *gin.Context) {
 	params := c.GetStringMap("params")
 
-	challenge, challengeErr := db.GetUnexpiredChallengeViaId(params["challengeId"].(uuid.UUID))
+	challenge, challengeErr := db.GetChallenge(params["challengeId"].(uuid.UUID))
 	if challengeErr != nil {
+		c.JSON(400, exceptions.Builder("challengeId", exceptions.InvalidParam, exceptions.Uuid))
+		return
+	}
+
+	if challenge.Expiry.Before(time.Now()) {
 		c.JSON(400, exceptions.Builder("challenge", exceptions.Invalid, exceptions.Expired))
+		db.DeleteChallenge(challenge)
 		return
 	}
 
@@ -86,9 +93,15 @@ func GetChallenge(c *gin.Context) {
 func PostChallenge(c *gin.Context) {
 	params := c.GetStringMap("params")
 
-	challenge, challengeErr := db.GetUnexpiredChallengeViaId(params["challengeId"].(uuid.UUID))
+	challenge, challengeErr := db.GetChallenge(params["challengeId"].(uuid.UUID))
 	if challengeErr != nil {
+		c.JSON(400, exceptions.Builder("challengeId", exceptions.InvalidParam, exceptions.Uuid))
+		return
+	}
+
+	if challenge.Expiry.Before(time.Now()) {
 		c.JSON(400, exceptions.Builder("challenge", exceptions.Invalid, exceptions.Expired))
+		db.DeleteChallenge(challenge)
 		return
 	}
 

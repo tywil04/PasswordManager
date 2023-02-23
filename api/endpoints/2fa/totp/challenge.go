@@ -1,6 +1,8 @@
 package totp
 
 import (
+	"time"
+
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/pquerna/otp/totp"
@@ -12,7 +14,7 @@ import (
 )
 
 const (
-	ChallengeDescription string = ""
+	ChallengeDescription string = "Both a challengeId and list of available challenges will be issued to the client by some other request (e.g /api/v1/auth/signup). To start the 2FA process via totp, you need to prompt the user for a code which they can get from the authenticator app they setup. Once you have the code use a POST request with both the challengeId and the code from the user. If successful, a valid authToken (they expire after an hour) is generated and returned (this allows you to make requests for authenticated endpoints). The users protectedDatabaseKey and protectedDatabaseKeyIv are also returned so they can be decoded and stored within sessionStorage."
 )
 
 type PostChallengeInput struct {
@@ -23,9 +25,15 @@ type PostChallengeInput struct {
 func PostChallenge(c *gin.Context) {
 	params := c.GetStringMap("params")
 
-	challenge, challengeErr := db.GetUnexpiredChallengeViaId(params["challengeId"].(uuid.UUID))
+	challenge, challengeErr := db.GetChallenge(params["challengeId"].(uuid.UUID))
 	if challengeErr != nil {
+		c.JSON(400, exceptions.Builder("challengeId", exceptions.InvalidParam, exceptions.Uuid))
+		return
+	}
+
+	if challenge.Expiry.Before(time.Now()) {
 		c.JSON(400, exceptions.Builder("challenge", exceptions.Invalid, exceptions.Expired))
+		db.DeleteChallenge(challenge)
 		return
 	}
 
