@@ -35,13 +35,13 @@ go run server.go
 ## Environment Variables
 Environment variables are used to store configuration data. Heres a list of variables that can be modified. This variables can be set with a `.env` file in the same directory as the executable.
 
-if you do not include a required environment variable, things might not work as expected.
+All environment variables are required unless explicitly mentioned otherwise, if you do not include a required environment variable, things might not work as expected.
 
-### General (Required)
+### General
 - `DB_PATH`: This is the path for your db, this project uses sqlite3. Example value: `./ent/dev.db`.
 - `SERVER_ADDRESS`: This how Go binds the server, its expected in a format `HOSTNAME:PORT`. Example value: `0.0.0.0:8001` (Allow connection from any interface on port 8001).
 
-### Email (Required)
+### Email
 - `SMTP_HOST`: This is the host for the SMTP server to use to send email addresses. Example value: `smtp.example.org`.
 
 - `SMTP_PORT`: This is the port for the SMTP server to send email addresses. Example value: `587`.
@@ -52,7 +52,7 @@ if you do not include a required environment variable, things might not work as 
 
 - `SMTP_PASSWORD`: This is the password to access your SMTP server.
 
-### WebAuthn (Required)
+### WebAuthn
 - `RP_DISPLAY_NAME`: This is the display name for a relying party..
 
 - `RP_ID`: This is the relying partys origin domain. Example value: `localhost`.
@@ -61,7 +61,10 @@ if you do not include a required environment variable, things might not work as 
 
 - `RP_ICON`: This is a URL to the icon for a relying party. This is optional, a blank value can be set.
 
-## Todo
+### Crypto
+- `CRYPTO_PEPPER` *(OPTIONAL)*: This is a random string that if set will be added to every `masterHash` for added security. It can technically be any string however a random string will be most beneficial.
+
+## Todo (Out of date)
 Stuff that needs to be done
 
 ### Frontend
