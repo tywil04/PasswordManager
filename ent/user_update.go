@@ -4,11 +4,11 @@ package ent
 
 import (
 	"PasswordManager/ent/challenge"
-	"PasswordManager/ent/password"
 	"PasswordManager/ent/predicate"
 	"PasswordManager/ent/session"
 	"PasswordManager/ent/totpcredential"
 	"PasswordManager/ent/user"
+	"PasswordManager/ent/vault"
 	"PasswordManager/ent/webauthncredential"
 	"PasswordManager/ent/webauthnregisterchallenge"
 	"context"
@@ -155,19 +155,19 @@ func (uu *UserUpdate) AddWebauthnRegisterChallenges(w ...*WebAuthnRegisterChalle
 	return uu.AddWebauthnRegisterChallengeIDs(ids...)
 }
 
-// AddPasswordIDs adds the "passwords" edge to the Password entity by IDs.
-func (uu *UserUpdate) AddPasswordIDs(ids ...uuid.UUID) *UserUpdate {
-	uu.mutation.AddPasswordIDs(ids...)
+// AddVaultIDs adds the "vaults" edge to the Vault entity by IDs.
+func (uu *UserUpdate) AddVaultIDs(ids ...uuid.UUID) *UserUpdate {
+	uu.mutation.AddVaultIDs(ids...)
 	return uu
 }
 
-// AddPasswords adds the "passwords" edges to the Password entity.
-func (uu *UserUpdate) AddPasswords(p ...*Password) *UserUpdate {
-	ids := make([]uuid.UUID, len(p))
-	for i := range p {
-		ids[i] = p[i].ID
+// AddVaults adds the "vaults" edges to the Vault entity.
+func (uu *UserUpdate) AddVaults(v ...*Vault) *UserUpdate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
 	}
-	return uu.AddPasswordIDs(ids...)
+	return uu.AddVaultIDs(ids...)
 }
 
 // AddSessionIDs adds the "sessions" edge to the Session entity by IDs.
@@ -253,25 +253,25 @@ func (uu *UserUpdate) RemoveWebauthnRegisterChallenges(w ...*WebAuthnRegisterCha
 	return uu.RemoveWebauthnRegisterChallengeIDs(ids...)
 }
 
-// ClearPasswords clears all "passwords" edges to the Password entity.
-func (uu *UserUpdate) ClearPasswords() *UserUpdate {
-	uu.mutation.ClearPasswords()
+// ClearVaults clears all "vaults" edges to the Vault entity.
+func (uu *UserUpdate) ClearVaults() *UserUpdate {
+	uu.mutation.ClearVaults()
 	return uu
 }
 
-// RemovePasswordIDs removes the "passwords" edge to Password entities by IDs.
-func (uu *UserUpdate) RemovePasswordIDs(ids ...uuid.UUID) *UserUpdate {
-	uu.mutation.RemovePasswordIDs(ids...)
+// RemoveVaultIDs removes the "vaults" edge to Vault entities by IDs.
+func (uu *UserUpdate) RemoveVaultIDs(ids ...uuid.UUID) *UserUpdate {
+	uu.mutation.RemoveVaultIDs(ids...)
 	return uu
 }
 
-// RemovePasswords removes "passwords" edges to Password entities.
-func (uu *UserUpdate) RemovePasswords(p ...*Password) *UserUpdate {
-	ids := make([]uuid.UUID, len(p))
-	for i := range p {
-		ids[i] = p[i].ID
+// RemoveVaults removes "vaults" edges to Vault entities.
+func (uu *UserUpdate) RemoveVaults(v ...*Vault) *UserUpdate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
 	}
-	return uu.RemovePasswordIDs(ids...)
+	return uu.RemoveVaultIDs(ids...)
 }
 
 // ClearSessions clears all "sessions" edges to the Session entity.
@@ -561,33 +561,33 @@ func (uu *UserUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if uu.mutation.PasswordsCleared() {
+	if uu.mutation.VaultsCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   user.PasswordsTable,
-			Columns: []string{user.PasswordsColumn},
+			Table:   user.VaultsTable,
+			Columns: []string{user.VaultsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeUUID,
-					Column: password.FieldID,
+					Column: vault.FieldID,
 				},
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := uu.mutation.RemovedPasswordsIDs(); len(nodes) > 0 && !uu.mutation.PasswordsCleared() {
+	if nodes := uu.mutation.RemovedVaultsIDs(); len(nodes) > 0 && !uu.mutation.VaultsCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   user.PasswordsTable,
-			Columns: []string{user.PasswordsColumn},
+			Table:   user.VaultsTable,
+			Columns: []string{user.VaultsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeUUID,
-					Column: password.FieldID,
+					Column: vault.FieldID,
 				},
 			},
 		}
@@ -596,17 +596,17 @@ func (uu *UserUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := uu.mutation.PasswordsIDs(); len(nodes) > 0 {
+	if nodes := uu.mutation.VaultsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   user.PasswordsTable,
-			Columns: []string{user.PasswordsColumn},
+			Table:   user.VaultsTable,
+			Columns: []string{user.VaultsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeUUID,
-					Column: password.FieldID,
+					Column: vault.FieldID,
 				},
 			},
 		}
@@ -864,19 +864,19 @@ func (uuo *UserUpdateOne) AddWebauthnRegisterChallenges(w ...*WebAuthnRegisterCh
 	return uuo.AddWebauthnRegisterChallengeIDs(ids...)
 }
 
-// AddPasswordIDs adds the "passwords" edge to the Password entity by IDs.
-func (uuo *UserUpdateOne) AddPasswordIDs(ids ...uuid.UUID) *UserUpdateOne {
-	uuo.mutation.AddPasswordIDs(ids...)
+// AddVaultIDs adds the "vaults" edge to the Vault entity by IDs.
+func (uuo *UserUpdateOne) AddVaultIDs(ids ...uuid.UUID) *UserUpdateOne {
+	uuo.mutation.AddVaultIDs(ids...)
 	return uuo
 }
 
-// AddPasswords adds the "passwords" edges to the Password entity.
-func (uuo *UserUpdateOne) AddPasswords(p ...*Password) *UserUpdateOne {
-	ids := make([]uuid.UUID, len(p))
-	for i := range p {
-		ids[i] = p[i].ID
+// AddVaults adds the "vaults" edges to the Vault entity.
+func (uuo *UserUpdateOne) AddVaults(v ...*Vault) *UserUpdateOne {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
 	}
-	return uuo.AddPasswordIDs(ids...)
+	return uuo.AddVaultIDs(ids...)
 }
 
 // AddSessionIDs adds the "sessions" edge to the Session entity by IDs.
@@ -962,25 +962,25 @@ func (uuo *UserUpdateOne) RemoveWebauthnRegisterChallenges(w ...*WebAuthnRegiste
 	return uuo.RemoveWebauthnRegisterChallengeIDs(ids...)
 }
 
-// ClearPasswords clears all "passwords" edges to the Password entity.
-func (uuo *UserUpdateOne) ClearPasswords() *UserUpdateOne {
-	uuo.mutation.ClearPasswords()
+// ClearVaults clears all "vaults" edges to the Vault entity.
+func (uuo *UserUpdateOne) ClearVaults() *UserUpdateOne {
+	uuo.mutation.ClearVaults()
 	return uuo
 }
 
-// RemovePasswordIDs removes the "passwords" edge to Password entities by IDs.
-func (uuo *UserUpdateOne) RemovePasswordIDs(ids ...uuid.UUID) *UserUpdateOne {
-	uuo.mutation.RemovePasswordIDs(ids...)
+// RemoveVaultIDs removes the "vaults" edge to Vault entities by IDs.
+func (uuo *UserUpdateOne) RemoveVaultIDs(ids ...uuid.UUID) *UserUpdateOne {
+	uuo.mutation.RemoveVaultIDs(ids...)
 	return uuo
 }
 
-// RemovePasswords removes "passwords" edges to Password entities.
-func (uuo *UserUpdateOne) RemovePasswords(p ...*Password) *UserUpdateOne {
-	ids := make([]uuid.UUID, len(p))
-	for i := range p {
-		ids[i] = p[i].ID
+// RemoveVaults removes "vaults" edges to Vault entities.
+func (uuo *UserUpdateOne) RemoveVaults(v ...*Vault) *UserUpdateOne {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
 	}
-	return uuo.RemovePasswordIDs(ids...)
+	return uuo.RemoveVaultIDs(ids...)
 }
 
 // ClearSessions clears all "sessions" edges to the Session entity.
@@ -1294,33 +1294,33 @@ func (uuo *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) 
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if uuo.mutation.PasswordsCleared() {
+	if uuo.mutation.VaultsCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   user.PasswordsTable,
-			Columns: []string{user.PasswordsColumn},
+			Table:   user.VaultsTable,
+			Columns: []string{user.VaultsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeUUID,
-					Column: password.FieldID,
+					Column: vault.FieldID,
 				},
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := uuo.mutation.RemovedPasswordsIDs(); len(nodes) > 0 && !uuo.mutation.PasswordsCleared() {
+	if nodes := uuo.mutation.RemovedVaultsIDs(); len(nodes) > 0 && !uuo.mutation.VaultsCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   user.PasswordsTable,
-			Columns: []string{user.PasswordsColumn},
+			Table:   user.VaultsTable,
+			Columns: []string{user.VaultsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeUUID,
-					Column: password.FieldID,
+					Column: vault.FieldID,
 				},
 			},
 		}
@@ -1329,17 +1329,17 @@ func (uuo *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) 
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := uuo.mutation.PasswordsIDs(); len(nodes) > 0 {
+	if nodes := uuo.mutation.VaultsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   user.PasswordsTable,
-			Columns: []string{user.PasswordsColumn},
+			Table:   user.VaultsTable,
+			Columns: []string{user.VaultsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeUUID,
-					Column: password.FieldID,
+					Column: vault.FieldID,
 				},
 			},
 		}

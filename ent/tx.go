@@ -28,6 +28,8 @@ type Tx struct {
 	Url *URLClient
 	// User is the client for interacting with the User builders.
 	User *UserClient
+	// Vault is the client for interacting with the Vault builders.
+	Vault *VaultClient
 	// WebAuthnChallenge is the client for interacting with the WebAuthnChallenge builders.
 	WebAuthnChallenge *WebAuthnChallengeClient
 	// WebAuthnCredential is the client for interacting with the WebAuthnCredential builders.
@@ -173,6 +175,7 @@ func (tx *Tx) init() {
 	tx.TotpCredential = NewTotpCredentialClient(tx.config)
 	tx.Url = NewURLClient(tx.config)
 	tx.User = NewUserClient(tx.config)
+	tx.Vault = NewVaultClient(tx.config)
 	tx.WebAuthnChallenge = NewWebAuthnChallengeClient(tx.config)
 	tx.WebAuthnCredential = NewWebAuthnCredentialClient(tx.config)
 	tx.WebAuthnRegisterChallenge = NewWebAuthnRegisterChallengeClient(tx.config)

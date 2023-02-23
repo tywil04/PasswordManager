@@ -385,16 +385,6 @@ func ColourHasSuffix(v string) predicate.Password {
 	return predicate.Password(sql.FieldHasSuffix(FieldColour, v))
 }
 
-// ColourIsNil applies the IsNil predicate on the "colour" field.
-func ColourIsNil() predicate.Password {
-	return predicate.Password(sql.FieldIsNull(FieldColour))
-}
-
-// ColourNotNil applies the NotNil predicate on the "colour" field.
-func ColourNotNil() predicate.Password {
-	return predicate.Password(sql.FieldNotNull(FieldColour))
-}
-
 // ColourEqualFold applies the EqualFold predicate on the "colour" field.
 func ColourEqualFold(v string) predicate.Password {
 	return predicate.Password(sql.FieldEqualFold(FieldColour, v))
@@ -459,24 +449,24 @@ func HasUrlsWith(preds ...predicate.Url) predicate.Password {
 	})
 }
 
-// HasUser applies the HasEdge predicate on the "user" edge.
-func HasUser() predicate.Password {
+// HasVault applies the HasEdge predicate on the "vault" edge.
+func HasVault() predicate.Password {
 	return predicate.Password(func(s *sql.Selector) {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, UserTable, UserColumn),
+			sqlgraph.Edge(sqlgraph.M2O, true, VaultTable, VaultColumn),
 		)
 		sqlgraph.HasNeighbors(s, step)
 	})
 }
 
-// HasUserWith applies the HasEdge predicate on the "user" edge with a given conditions (other predicates).
-func HasUserWith(preds ...predicate.User) predicate.Password {
+// HasVaultWith applies the HasEdge predicate on the "vault" edge with a given conditions (other predicates).
+func HasVaultWith(preds ...predicate.Vault) predicate.Password {
 	return predicate.Password(func(s *sql.Selector) {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
-			sqlgraph.To(UserInverseTable, FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, UserTable, UserColumn),
+			sqlgraph.To(VaultInverseTable, FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, VaultTable, VaultColumn),
 		)
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {

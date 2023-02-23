@@ -12,6 +12,7 @@ import (
 	"PasswordManager/ent/totpcredential"
 	"PasswordManager/ent/url"
 	"PasswordManager/ent/user"
+	"PasswordManager/ent/vault"
 	"PasswordManager/ent/webauthnchallenge"
 	"PasswordManager/ent/webauthncredential"
 	"PasswordManager/ent/webauthnregisterchallenge"
@@ -44,6 +45,7 @@ const (
 	TypeTotpCredential            = "TotpCredential"
 	TypeURL                       = "Url"
 	TypeUser                      = "User"
+	TypeVault                     = "Vault"
 	TypeWebAuthnChallenge         = "WebAuthnChallenge"
 	TypeWebAuthnCredential        = "WebAuthnCredential"
 	TypeWebAuthnRegisterChallenge = "WebAuthnRegisterChallenge"
@@ -1627,8 +1629,8 @@ type PasswordMutation struct {
 	urls                    map[uuid.UUID]struct{}
 	removedurls             map[uuid.UUID]struct{}
 	clearedurls             bool
-	user                    *uuid.UUID
-	cleareduser             bool
+	vault                   *uuid.UUID
+	clearedvault            bool
 	done                    bool
 	oldValue                func(context.Context) (*Password, error)
 	predicates              []predicate.Password
@@ -1985,22 +1987,9 @@ func (m *PasswordMutation) OldColour(ctx context.Context) (v string, err error) 
 	return oldValue.Colour, nil
 }
 
-// ClearColour clears the value of the "colour" field.
-func (m *PasswordMutation) ClearColour() {
-	m.colour = nil
-	m.clearedFields[password.FieldColour] = struct{}{}
-}
-
-// ColourCleared returns if the "colour" field was cleared in this mutation.
-func (m *PasswordMutation) ColourCleared() bool {
-	_, ok := m.clearedFields[password.FieldColour]
-	return ok
-}
-
 // ResetColour resets all changes to the "colour" field.
 func (m *PasswordMutation) ResetColour() {
 	m.colour = nil
-	delete(m.clearedFields, password.FieldColour)
 }
 
 // AddAdditionalFieldIDs adds the "additionalFields" edge to the AdditionalField entity by ids.
@@ -2111,43 +2100,43 @@ func (m *PasswordMutation) ResetUrls() {
 	m.removedurls = nil
 }
 
-// SetUserID sets the "user" edge to the User entity by id.
-func (m *PasswordMutation) SetUserID(id uuid.UUID) {
-	m.user = &id
+// SetVaultID sets the "vault" edge to the Vault entity by id.
+func (m *PasswordMutation) SetVaultID(id uuid.UUID) {
+	m.vault = &id
 }
 
-// ClearUser clears the "user" edge to the User entity.
-func (m *PasswordMutation) ClearUser() {
-	m.cleareduser = true
+// ClearVault clears the "vault" edge to the Vault entity.
+func (m *PasswordMutation) ClearVault() {
+	m.clearedvault = true
 }
 
-// UserCleared reports if the "user" edge to the User entity was cleared.
-func (m *PasswordMutation) UserCleared() bool {
-	return m.cleareduser
+// VaultCleared reports if the "vault" edge to the Vault entity was cleared.
+func (m *PasswordMutation) VaultCleared() bool {
+	return m.clearedvault
 }
 
-// UserID returns the "user" edge ID in the mutation.
-func (m *PasswordMutation) UserID() (id uuid.UUID, exists bool) {
-	if m.user != nil {
-		return *m.user, true
+// VaultID returns the "vault" edge ID in the mutation.
+func (m *PasswordMutation) VaultID() (id uuid.UUID, exists bool) {
+	if m.vault != nil {
+		return *m.vault, true
 	}
 	return
 }
 
-// UserIDs returns the "user" edge IDs in the mutation.
+// VaultIDs returns the "vault" edge IDs in the mutation.
 // Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
-// UserID instead. It exists only for internal usage by the builders.
-func (m *PasswordMutation) UserIDs() (ids []uuid.UUID) {
-	if id := m.user; id != nil {
+// VaultID instead. It exists only for internal usage by the builders.
+func (m *PasswordMutation) VaultIDs() (ids []uuid.UUID) {
+	if id := m.vault; id != nil {
 		ids = append(ids, *id)
 	}
 	return
 }
 
-// ResetUser resets all changes to the "user" edge.
-func (m *PasswordMutation) ResetUser() {
-	m.user = nil
-	m.cleareduser = false
+// ResetVault resets all changes to the "vault" edge.
+func (m *PasswordMutation) ResetVault() {
+	m.vault = nil
+	m.clearedvault = false
 }
 
 // Where appends a list predicates to the PasswordMutation builder.
@@ -2338,11 +2327,7 @@ func (m *PasswordMutation) AddField(name string, value ent.Value) error {
 // ClearedFields returns all nullable fields that were cleared during this
 // mutation.
 func (m *PasswordMutation) ClearedFields() []string {
-	var fields []string
-	if m.FieldCleared(password.FieldColour) {
-		fields = append(fields, password.FieldColour)
-	}
-	return fields
+	return nil
 }
 
 // FieldCleared returns a boolean indicating if a field with the given name was
@@ -2355,11 +2340,6 @@ func (m *PasswordMutation) FieldCleared(name string) bool {
 // ClearField clears the value of the field with the given name. It returns an
 // error if the field is not defined in the schema.
 func (m *PasswordMutation) ClearField(name string) error {
-	switch name {
-	case password.FieldColour:
-		m.ClearColour()
-		return nil
-	}
 	return fmt.Errorf("unknown Password nullable field %s", name)
 }
 
@@ -2401,8 +2381,8 @@ func (m *PasswordMutation) AddedEdges() []string {
 	if m.urls != nil {
 		edges = append(edges, password.EdgeUrls)
 	}
-	if m.user != nil {
-		edges = append(edges, password.EdgeUser)
+	if m.vault != nil {
+		edges = append(edges, password.EdgeVault)
 	}
 	return edges
 }
@@ -2423,8 +2403,8 @@ func (m *PasswordMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
-	case password.EdgeUser:
-		if id := m.user; id != nil {
+	case password.EdgeVault:
+		if id := m.vault; id != nil {
 			return []ent.Value{*id}
 		}
 	}
@@ -2472,8 +2452,8 @@ func (m *PasswordMutation) ClearedEdges() []string {
 	if m.clearedurls {
 		edges = append(edges, password.EdgeUrls)
 	}
-	if m.cleareduser {
-		edges = append(edges, password.EdgeUser)
+	if m.clearedvault {
+		edges = append(edges, password.EdgeVault)
 	}
 	return edges
 }
@@ -2486,8 +2466,8 @@ func (m *PasswordMutation) EdgeCleared(name string) bool {
 		return m.clearedadditionalFields
 	case password.EdgeUrls:
 		return m.clearedurls
-	case password.EdgeUser:
-		return m.cleareduser
+	case password.EdgeVault:
+		return m.clearedvault
 	}
 	return false
 }
@@ -2496,8 +2476,8 @@ func (m *PasswordMutation) EdgeCleared(name string) bool {
 // if that edge is not defined in the schema.
 func (m *PasswordMutation) ClearEdge(name string) error {
 	switch name {
-	case password.EdgeUser:
-		m.ClearUser()
+	case password.EdgeVault:
+		m.ClearVault()
 		return nil
 	}
 	return fmt.Errorf("unknown Password unique edge %s", name)
@@ -2513,8 +2493,8 @@ func (m *PasswordMutation) ResetEdge(name string) error {
 	case password.EdgeUrls:
 		m.ResetUrls()
 		return nil
-	case password.EdgeUser:
-		m.ResetUser()
+	case password.EdgeVault:
+		m.ResetVault()
 		return nil
 	}
 	return fmt.Errorf("unknown Password edge %s", name)
@@ -4105,9 +4085,9 @@ type UserMutation struct {
 	webauthnRegisterChallenges        map[uuid.UUID]struct{}
 	removedwebauthnRegisterChallenges map[uuid.UUID]struct{}
 	clearedwebauthnRegisterChallenges bool
-	passwords                         map[uuid.UUID]struct{}
-	removedpasswords                  map[uuid.UUID]struct{}
-	clearedpasswords                  bool
+	vaults                            map[uuid.UUID]struct{}
+	removedvaults                     map[uuid.UUID]struct{}
+	clearedvaults                     bool
 	sessions                          map[uuid.UUID]struct{}
 	removedsessions                   map[uuid.UUID]struct{}
 	clearedsessions                   bool
@@ -4658,58 +4638,58 @@ func (m *UserMutation) ResetWebauthnRegisterChallenges() {
 	m.removedwebauthnRegisterChallenges = nil
 }
 
-// AddPasswordIDs adds the "passwords" edge to the Password entity by ids.
-func (m *UserMutation) AddPasswordIDs(ids ...uuid.UUID) {
-	if m.passwords == nil {
-		m.passwords = make(map[uuid.UUID]struct{})
+// AddVaultIDs adds the "vaults" edge to the Vault entity by ids.
+func (m *UserMutation) AddVaultIDs(ids ...uuid.UUID) {
+	if m.vaults == nil {
+		m.vaults = make(map[uuid.UUID]struct{})
 	}
 	for i := range ids {
-		m.passwords[ids[i]] = struct{}{}
+		m.vaults[ids[i]] = struct{}{}
 	}
 }
 
-// ClearPasswords clears the "passwords" edge to the Password entity.
-func (m *UserMutation) ClearPasswords() {
-	m.clearedpasswords = true
+// ClearVaults clears the "vaults" edge to the Vault entity.
+func (m *UserMutation) ClearVaults() {
+	m.clearedvaults = true
 }
 
-// PasswordsCleared reports if the "passwords" edge to the Password entity was cleared.
-func (m *UserMutation) PasswordsCleared() bool {
-	return m.clearedpasswords
+// VaultsCleared reports if the "vaults" edge to the Vault entity was cleared.
+func (m *UserMutation) VaultsCleared() bool {
+	return m.clearedvaults
 }
 
-// RemovePasswordIDs removes the "passwords" edge to the Password entity by IDs.
-func (m *UserMutation) RemovePasswordIDs(ids ...uuid.UUID) {
-	if m.removedpasswords == nil {
-		m.removedpasswords = make(map[uuid.UUID]struct{})
+// RemoveVaultIDs removes the "vaults" edge to the Vault entity by IDs.
+func (m *UserMutation) RemoveVaultIDs(ids ...uuid.UUID) {
+	if m.removedvaults == nil {
+		m.removedvaults = make(map[uuid.UUID]struct{})
 	}
 	for i := range ids {
-		delete(m.passwords, ids[i])
-		m.removedpasswords[ids[i]] = struct{}{}
+		delete(m.vaults, ids[i])
+		m.removedvaults[ids[i]] = struct{}{}
 	}
 }
 
-// RemovedPasswords returns the removed IDs of the "passwords" edge to the Password entity.
-func (m *UserMutation) RemovedPasswordsIDs() (ids []uuid.UUID) {
-	for id := range m.removedpasswords {
+// RemovedVaults returns the removed IDs of the "vaults" edge to the Vault entity.
+func (m *UserMutation) RemovedVaultsIDs() (ids []uuid.UUID) {
+	for id := range m.removedvaults {
 		ids = append(ids, id)
 	}
 	return
 }
 
-// PasswordsIDs returns the "passwords" edge IDs in the mutation.
-func (m *UserMutation) PasswordsIDs() (ids []uuid.UUID) {
-	for id := range m.passwords {
+// VaultsIDs returns the "vaults" edge IDs in the mutation.
+func (m *UserMutation) VaultsIDs() (ids []uuid.UUID) {
+	for id := range m.vaults {
 		ids = append(ids, id)
 	}
 	return
 }
 
-// ResetPasswords resets all changes to the "passwords" edge.
-func (m *UserMutation) ResetPasswords() {
-	m.passwords = nil
-	m.clearedpasswords = false
-	m.removedpasswords = nil
+// ResetVaults resets all changes to the "vaults" edge.
+func (m *UserMutation) ResetVaults() {
+	m.vaults = nil
+	m.clearedvaults = false
+	m.removedvaults = nil
 }
 
 // AddSessionIDs adds the "sessions" edge to the Session entity by ids.
@@ -5082,8 +5062,8 @@ func (m *UserMutation) AddedEdges() []string {
 	if m.webauthnRegisterChallenges != nil {
 		edges = append(edges, user.EdgeWebauthnRegisterChallenges)
 	}
-	if m.passwords != nil {
-		edges = append(edges, user.EdgePasswords)
+	if m.vaults != nil {
+		edges = append(edges, user.EdgeVaults)
 	}
 	if m.sessions != nil {
 		edges = append(edges, user.EdgeSessions)
@@ -5114,9 +5094,9 @@ func (m *UserMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
-	case user.EdgePasswords:
-		ids := make([]ent.Value, 0, len(m.passwords))
-		for id := range m.passwords {
+	case user.EdgeVaults:
+		ids := make([]ent.Value, 0, len(m.vaults))
+		for id := range m.vaults {
 			ids = append(ids, id)
 		}
 		return ids
@@ -5145,8 +5125,8 @@ func (m *UserMutation) RemovedEdges() []string {
 	if m.removedwebauthnRegisterChallenges != nil {
 		edges = append(edges, user.EdgeWebauthnRegisterChallenges)
 	}
-	if m.removedpasswords != nil {
-		edges = append(edges, user.EdgePasswords)
+	if m.removedvaults != nil {
+		edges = append(edges, user.EdgeVaults)
 	}
 	if m.removedsessions != nil {
 		edges = append(edges, user.EdgeSessions)
@@ -5173,9 +5153,9 @@ func (m *UserMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
-	case user.EdgePasswords:
-		ids := make([]ent.Value, 0, len(m.removedpasswords))
-		for id := range m.removedpasswords {
+	case user.EdgeVaults:
+		ids := make([]ent.Value, 0, len(m.removedvaults))
+		for id := range m.removedvaults {
 			ids = append(ids, id)
 		}
 		return ids
@@ -5207,8 +5187,8 @@ func (m *UserMutation) ClearedEdges() []string {
 	if m.clearedwebauthnRegisterChallenges {
 		edges = append(edges, user.EdgeWebauthnRegisterChallenges)
 	}
-	if m.clearedpasswords {
-		edges = append(edges, user.EdgePasswords)
+	if m.clearedvaults {
+		edges = append(edges, user.EdgeVaults)
 	}
 	if m.clearedsessions {
 		edges = append(edges, user.EdgeSessions)
@@ -5229,8 +5209,8 @@ func (m *UserMutation) EdgeCleared(name string) bool {
 		return m.clearedwebauthnCredentials
 	case user.EdgeWebauthnRegisterChallenges:
 		return m.clearedwebauthnRegisterChallenges
-	case user.EdgePasswords:
-		return m.clearedpasswords
+	case user.EdgeVaults:
+		return m.clearedvaults
 	case user.EdgeSessions:
 		return m.clearedsessions
 	case user.EdgeChallenges:
@@ -5263,8 +5243,8 @@ func (m *UserMutation) ResetEdge(name string) error {
 	case user.EdgeWebauthnRegisterChallenges:
 		m.ResetWebauthnRegisterChallenges()
 		return nil
-	case user.EdgePasswords:
-		m.ResetPasswords()
+	case user.EdgeVaults:
+		m.ResetVaults()
 		return nil
 	case user.EdgeSessions:
 		m.ResetSessions()
@@ -5274,6 +5254,598 @@ func (m *UserMutation) ResetEdge(name string) error {
 		return nil
 	}
 	return fmt.Errorf("unknown User edge %s", name)
+}
+
+// VaultMutation represents an operation that mutates the Vault nodes in the graph.
+type VaultMutation struct {
+	config
+	op               Op
+	typ              string
+	id               *uuid.UUID
+	createdAt        *time.Time
+	name             *string
+	colour           *string
+	clearedFields    map[string]struct{}
+	passwords        map[uuid.UUID]struct{}
+	removedpasswords map[uuid.UUID]struct{}
+	clearedpasswords bool
+	user             *uuid.UUID
+	cleareduser      bool
+	done             bool
+	oldValue         func(context.Context) (*Vault, error)
+	predicates       []predicate.Vault
+}
+
+var _ ent.Mutation = (*VaultMutation)(nil)
+
+// vaultOption allows management of the mutation configuration using functional options.
+type vaultOption func(*VaultMutation)
+
+// newVaultMutation creates new mutation for the Vault entity.
+func newVaultMutation(c config, op Op, opts ...vaultOption) *VaultMutation {
+	m := &VaultMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeVault,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withVaultID sets the ID field of the mutation.
+func withVaultID(id uuid.UUID) vaultOption {
+	return func(m *VaultMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *Vault
+		)
+		m.oldValue = func(ctx context.Context) (*Vault, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().Vault.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withVault sets the old Vault of the mutation.
+func withVault(node *Vault) vaultOption {
+	return func(m *VaultMutation) {
+		m.oldValue = func(context.Context) (*Vault, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m VaultMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m VaultMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of Vault entities.
+func (m *VaultMutation) SetID(id uuid.UUID) {
+	m.id = &id
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *VaultMutation) ID() (id uuid.UUID, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *VaultMutation) IDs(ctx context.Context) ([]uuid.UUID, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []uuid.UUID{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().Vault.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetCreatedAt sets the "createdAt" field.
+func (m *VaultMutation) SetCreatedAt(t time.Time) {
+	m.createdAt = &t
+}
+
+// CreatedAt returns the value of the "createdAt" field in the mutation.
+func (m *VaultMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.createdAt
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "createdAt" field's value of the Vault entity.
+// If the Vault object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *VaultMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "createdAt" field.
+func (m *VaultMutation) ResetCreatedAt() {
+	m.createdAt = nil
+}
+
+// SetName sets the "name" field.
+func (m *VaultMutation) SetName(s string) {
+	m.name = &s
+}
+
+// Name returns the value of the "name" field in the mutation.
+func (m *VaultMutation) Name() (r string, exists bool) {
+	v := m.name
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldName returns the old "name" field's value of the Vault entity.
+// If the Vault object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *VaultMutation) OldName(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldName is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldName requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldName: %w", err)
+	}
+	return oldValue.Name, nil
+}
+
+// ResetName resets all changes to the "name" field.
+func (m *VaultMutation) ResetName() {
+	m.name = nil
+}
+
+// SetColour sets the "colour" field.
+func (m *VaultMutation) SetColour(s string) {
+	m.colour = &s
+}
+
+// Colour returns the value of the "colour" field in the mutation.
+func (m *VaultMutation) Colour() (r string, exists bool) {
+	v := m.colour
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldColour returns the old "colour" field's value of the Vault entity.
+// If the Vault object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *VaultMutation) OldColour(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldColour is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldColour requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldColour: %w", err)
+	}
+	return oldValue.Colour, nil
+}
+
+// ResetColour resets all changes to the "colour" field.
+func (m *VaultMutation) ResetColour() {
+	m.colour = nil
+}
+
+// AddPasswordIDs adds the "passwords" edge to the Password entity by ids.
+func (m *VaultMutation) AddPasswordIDs(ids ...uuid.UUID) {
+	if m.passwords == nil {
+		m.passwords = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		m.passwords[ids[i]] = struct{}{}
+	}
+}
+
+// ClearPasswords clears the "passwords" edge to the Password entity.
+func (m *VaultMutation) ClearPasswords() {
+	m.clearedpasswords = true
+}
+
+// PasswordsCleared reports if the "passwords" edge to the Password entity was cleared.
+func (m *VaultMutation) PasswordsCleared() bool {
+	return m.clearedpasswords
+}
+
+// RemovePasswordIDs removes the "passwords" edge to the Password entity by IDs.
+func (m *VaultMutation) RemovePasswordIDs(ids ...uuid.UUID) {
+	if m.removedpasswords == nil {
+		m.removedpasswords = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		delete(m.passwords, ids[i])
+		m.removedpasswords[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedPasswords returns the removed IDs of the "passwords" edge to the Password entity.
+func (m *VaultMutation) RemovedPasswordsIDs() (ids []uuid.UUID) {
+	for id := range m.removedpasswords {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// PasswordsIDs returns the "passwords" edge IDs in the mutation.
+func (m *VaultMutation) PasswordsIDs() (ids []uuid.UUID) {
+	for id := range m.passwords {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetPasswords resets all changes to the "passwords" edge.
+func (m *VaultMutation) ResetPasswords() {
+	m.passwords = nil
+	m.clearedpasswords = false
+	m.removedpasswords = nil
+}
+
+// SetUserID sets the "user" edge to the User entity by id.
+func (m *VaultMutation) SetUserID(id uuid.UUID) {
+	m.user = &id
+}
+
+// ClearUser clears the "user" edge to the User entity.
+func (m *VaultMutation) ClearUser() {
+	m.cleareduser = true
+}
+
+// UserCleared reports if the "user" edge to the User entity was cleared.
+func (m *VaultMutation) UserCleared() bool {
+	return m.cleareduser
+}
+
+// UserID returns the "user" edge ID in the mutation.
+func (m *VaultMutation) UserID() (id uuid.UUID, exists bool) {
+	if m.user != nil {
+		return *m.user, true
+	}
+	return
+}
+
+// UserIDs returns the "user" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// UserID instead. It exists only for internal usage by the builders.
+func (m *VaultMutation) UserIDs() (ids []uuid.UUID) {
+	if id := m.user; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetUser resets all changes to the "user" edge.
+func (m *VaultMutation) ResetUser() {
+	m.user = nil
+	m.cleareduser = false
+}
+
+// Where appends a list predicates to the VaultMutation builder.
+func (m *VaultMutation) Where(ps ...predicate.Vault) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the VaultMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *VaultMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.Vault, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *VaultMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *VaultMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (Vault).
+func (m *VaultMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *VaultMutation) Fields() []string {
+	fields := make([]string, 0, 3)
+	if m.createdAt != nil {
+		fields = append(fields, vault.FieldCreatedAt)
+	}
+	if m.name != nil {
+		fields = append(fields, vault.FieldName)
+	}
+	if m.colour != nil {
+		fields = append(fields, vault.FieldColour)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *VaultMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case vault.FieldCreatedAt:
+		return m.CreatedAt()
+	case vault.FieldName:
+		return m.Name()
+	case vault.FieldColour:
+		return m.Colour()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *VaultMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case vault.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case vault.FieldName:
+		return m.OldName(ctx)
+	case vault.FieldColour:
+		return m.OldColour(ctx)
+	}
+	return nil, fmt.Errorf("unknown Vault field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *VaultMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case vault.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case vault.FieldName:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetName(v)
+		return nil
+	case vault.FieldColour:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetColour(v)
+		return nil
+	}
+	return fmt.Errorf("unknown Vault field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *VaultMutation) AddedFields() []string {
+	return nil
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *VaultMutation) AddedField(name string) (ent.Value, bool) {
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *VaultMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	}
+	return fmt.Errorf("unknown Vault numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *VaultMutation) ClearedFields() []string {
+	return nil
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *VaultMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *VaultMutation) ClearField(name string) error {
+	return fmt.Errorf("unknown Vault nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *VaultMutation) ResetField(name string) error {
+	switch name {
+	case vault.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case vault.FieldName:
+		m.ResetName()
+		return nil
+	case vault.FieldColour:
+		m.ResetColour()
+		return nil
+	}
+	return fmt.Errorf("unknown Vault field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *VaultMutation) AddedEdges() []string {
+	edges := make([]string, 0, 2)
+	if m.passwords != nil {
+		edges = append(edges, vault.EdgePasswords)
+	}
+	if m.user != nil {
+		edges = append(edges, vault.EdgeUser)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *VaultMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case vault.EdgePasswords:
+		ids := make([]ent.Value, 0, len(m.passwords))
+		for id := range m.passwords {
+			ids = append(ids, id)
+		}
+		return ids
+	case vault.EdgeUser:
+		if id := m.user; id != nil {
+			return []ent.Value{*id}
+		}
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *VaultMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 2)
+	if m.removedpasswords != nil {
+		edges = append(edges, vault.EdgePasswords)
+	}
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *VaultMutation) RemovedIDs(name string) []ent.Value {
+	switch name {
+	case vault.EdgePasswords:
+		ids := make([]ent.Value, 0, len(m.removedpasswords))
+		for id := range m.removedpasswords {
+			ids = append(ids, id)
+		}
+		return ids
+	}
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *VaultMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 2)
+	if m.clearedpasswords {
+		edges = append(edges, vault.EdgePasswords)
+	}
+	if m.cleareduser {
+		edges = append(edges, vault.EdgeUser)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *VaultMutation) EdgeCleared(name string) bool {
+	switch name {
+	case vault.EdgePasswords:
+		return m.clearedpasswords
+	case vault.EdgeUser:
+		return m.cleareduser
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *VaultMutation) ClearEdge(name string) error {
+	switch name {
+	case vault.EdgeUser:
+		m.ClearUser()
+		return nil
+	}
+	return fmt.Errorf("unknown Vault unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *VaultMutation) ResetEdge(name string) error {
+	switch name {
+	case vault.EdgePasswords:
+		m.ResetPasswords()
+		return nil
+	case vault.EdgeUser:
+		m.ResetUser()
+		return nil
+	}
+	return fmt.Errorf("unknown Vault edge %s", name)
 }
 
 // WebAuthnChallengeMutation represents an operation that mutates the WebAuthnChallenge nodes in the graph.

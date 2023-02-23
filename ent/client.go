@@ -18,6 +18,7 @@ import (
 	"PasswordManager/ent/totpcredential"
 	"PasswordManager/ent/url"
 	"PasswordManager/ent/user"
+	"PasswordManager/ent/vault"
 	"PasswordManager/ent/webauthnchallenge"
 	"PasswordManager/ent/webauthncredential"
 	"PasswordManager/ent/webauthnregisterchallenge"
@@ -49,6 +50,8 @@ type Client struct {
 	Url *URLClient
 	// User is the client for interacting with the User builders.
 	User *UserClient
+	// Vault is the client for interacting with the Vault builders.
+	Vault *VaultClient
 	// WebAuthnChallenge is the client for interacting with the WebAuthnChallenge builders.
 	WebAuthnChallenge *WebAuthnChallengeClient
 	// WebAuthnCredential is the client for interacting with the WebAuthnCredential builders.
@@ -76,6 +79,7 @@ func (c *Client) init() {
 	c.TotpCredential = NewTotpCredentialClient(c.config)
 	c.Url = NewURLClient(c.config)
 	c.User = NewUserClient(c.config)
+	c.Vault = NewVaultClient(c.config)
 	c.WebAuthnChallenge = NewWebAuthnChallengeClient(c.config)
 	c.WebAuthnCredential = NewWebAuthnCredentialClient(c.config)
 	c.WebAuthnRegisterChallenge = NewWebAuthnRegisterChallengeClient(c.config)
@@ -120,6 +124,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		TotpCredential:            NewTotpCredentialClient(cfg),
 		Url:                       NewURLClient(cfg),
 		User:                      NewUserClient(cfg),
+		Vault:                     NewVaultClient(cfg),
 		WebAuthnChallenge:         NewWebAuthnChallengeClient(cfg),
 		WebAuthnCredential:        NewWebAuthnCredentialClient(cfg),
 		WebAuthnRegisterChallenge: NewWebAuthnRegisterChallengeClient(cfg),
@@ -150,6 +155,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		TotpCredential:            NewTotpCredentialClient(cfg),
 		Url:                       NewURLClient(cfg),
 		User:                      NewUserClient(cfg),
+		Vault:                     NewVaultClient(cfg),
 		WebAuthnChallenge:         NewWebAuthnChallengeClient(cfg),
 		WebAuthnCredential:        NewWebAuthnCredentialClient(cfg),
 		WebAuthnRegisterChallenge: NewWebAuthnRegisterChallengeClient(cfg),
@@ -190,6 +196,7 @@ func (c *Client) Use(hooks ...Hook) {
 	c.TotpCredential.Use(hooks...)
 	c.Url.Use(hooks...)
 	c.User.Use(hooks...)
+	c.Vault.Use(hooks...)
 	c.WebAuthnChallenge.Use(hooks...)
 	c.WebAuthnCredential.Use(hooks...)
 	c.WebAuthnRegisterChallenge.Use(hooks...)
@@ -206,6 +213,7 @@ func (c *Client) Intercept(interceptors ...Interceptor) {
 	c.TotpCredential.Intercept(interceptors...)
 	c.Url.Intercept(interceptors...)
 	c.User.Intercept(interceptors...)
+	c.Vault.Intercept(interceptors...)
 	c.WebAuthnChallenge.Intercept(interceptors...)
 	c.WebAuthnCredential.Intercept(interceptors...)
 	c.WebAuthnRegisterChallenge.Intercept(interceptors...)
@@ -230,6 +238,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.Url.mutate(ctx, m)
 	case *UserMutation:
 		return c.User.mutate(ctx, m)
+	case *VaultMutation:
+		return c.Vault.mutate(ctx, m)
 	case *WebAuthnChallengeMutation:
 		return c.WebAuthnChallenge.mutate(ctx, m)
 	case *WebAuthnCredentialMutation:
@@ -816,15 +826,15 @@ func (c *PasswordClient) QueryUrls(pa *Password) *URLQuery {
 	return query
 }
 
-// QueryUser queries the user edge of a Password.
-func (c *PasswordClient) QueryUser(pa *Password) *UserQuery {
-	query := (&UserClient{config: c.config}).Query()
+// QueryVault queries the vault edge of a Password.
+func (c *PasswordClient) QueryVault(pa *Password) *VaultQuery {
+	query := (&VaultClient{config: c.config}).Query()
 	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
 		id := pa.ID
 		step := sqlgraph.NewStep(
 			sqlgraph.From(password.Table, password.FieldID, id),
-			sqlgraph.To(user.Table, user.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, password.UserTable, password.UserColumn),
+			sqlgraph.To(vault.Table, vault.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, password.VaultTable, password.VaultColumn),
 		)
 		fromV = sqlgraph.Neighbors(pa.driver.Dialect(), step)
 		return fromV, nil
@@ -1416,15 +1426,15 @@ func (c *UserClient) QueryWebauthnRegisterChallenges(u *User) *WebAuthnRegisterC
 	return query
 }
 
-// QueryPasswords queries the passwords edge of a User.
-func (c *UserClient) QueryPasswords(u *User) *PasswordQuery {
-	query := (&PasswordClient{config: c.config}).Query()
+// QueryVaults queries the vaults edge of a User.
+func (c *UserClient) QueryVaults(u *User) *VaultQuery {
+	query := (&VaultClient{config: c.config}).Query()
 	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
 		id := u.ID
 		step := sqlgraph.NewStep(
 			sqlgraph.From(user.Table, user.FieldID, id),
-			sqlgraph.To(password.Table, password.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, user.PasswordsTable, user.PasswordsColumn),
+			sqlgraph.To(vault.Table, vault.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, user.VaultsTable, user.VaultsColumn),
 		)
 		fromV = sqlgraph.Neighbors(u.driver.Dialect(), step)
 		return fromV, nil
@@ -1486,6 +1496,156 @@ func (c *UserClient) mutate(ctx context.Context, m *UserMutation) (Value, error)
 		return (&UserDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
 		return nil, fmt.Errorf("ent: unknown User mutation op: %q", m.Op())
+	}
+}
+
+// VaultClient is a client for the Vault schema.
+type VaultClient struct {
+	config
+}
+
+// NewVaultClient returns a client for the Vault from the given config.
+func NewVaultClient(c config) *VaultClient {
+	return &VaultClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `vault.Hooks(f(g(h())))`.
+func (c *VaultClient) Use(hooks ...Hook) {
+	c.hooks.Vault = append(c.hooks.Vault, hooks...)
+}
+
+// Use adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `vault.Intercept(f(g(h())))`.
+func (c *VaultClient) Intercept(interceptors ...Interceptor) {
+	c.inters.Vault = append(c.inters.Vault, interceptors...)
+}
+
+// Create returns a builder for creating a Vault entity.
+func (c *VaultClient) Create() *VaultCreate {
+	mutation := newVaultMutation(c.config, OpCreate)
+	return &VaultCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of Vault entities.
+func (c *VaultClient) CreateBulk(builders ...*VaultCreate) *VaultCreateBulk {
+	return &VaultCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for Vault.
+func (c *VaultClient) Update() *VaultUpdate {
+	mutation := newVaultMutation(c.config, OpUpdate)
+	return &VaultUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *VaultClient) UpdateOne(v *Vault) *VaultUpdateOne {
+	mutation := newVaultMutation(c.config, OpUpdateOne, withVault(v))
+	return &VaultUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *VaultClient) UpdateOneID(id uuid.UUID) *VaultUpdateOne {
+	mutation := newVaultMutation(c.config, OpUpdateOne, withVaultID(id))
+	return &VaultUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for Vault.
+func (c *VaultClient) Delete() *VaultDelete {
+	mutation := newVaultMutation(c.config, OpDelete)
+	return &VaultDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *VaultClient) DeleteOne(v *Vault) *VaultDeleteOne {
+	return c.DeleteOneID(v.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *VaultClient) DeleteOneID(id uuid.UUID) *VaultDeleteOne {
+	builder := c.Delete().Where(vault.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &VaultDeleteOne{builder}
+}
+
+// Query returns a query builder for Vault.
+func (c *VaultClient) Query() *VaultQuery {
+	return &VaultQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeVault},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a Vault entity by its id.
+func (c *VaultClient) Get(ctx context.Context, id uuid.UUID) (*Vault, error) {
+	return c.Query().Where(vault.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *VaultClient) GetX(ctx context.Context, id uuid.UUID) *Vault {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryPasswords queries the passwords edge of a Vault.
+func (c *VaultClient) QueryPasswords(v *Vault) *PasswordQuery {
+	query := (&PasswordClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := v.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(vault.Table, vault.FieldID, id),
+			sqlgraph.To(password.Table, password.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, vault.PasswordsTable, vault.PasswordsColumn),
+		)
+		fromV = sqlgraph.Neighbors(v.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryUser queries the user edge of a Vault.
+func (c *VaultClient) QueryUser(v *Vault) *UserQuery {
+	query := (&UserClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := v.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(vault.Table, vault.FieldID, id),
+			sqlgraph.To(user.Table, user.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, vault.UserTable, vault.UserColumn),
+		)
+		fromV = sqlgraph.Neighbors(v.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *VaultClient) Hooks() []Hook {
+	return c.hooks.Vault
+}
+
+// Interceptors returns the client interceptors.
+func (c *VaultClient) Interceptors() []Interceptor {
+	return c.inters.Vault
+}
+
+func (c *VaultClient) mutate(ctx context.Context, m *VaultMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&VaultCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&VaultUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&VaultUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&VaultDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown Vault mutation op: %q", m.Op())
 	}
 }
 

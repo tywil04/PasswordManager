@@ -22,7 +22,7 @@ func (Password) Fields() []ent.Field {
 		field.Bytes("usernameIv").NotEmpty(),
 		field.Bytes("password").NotEmpty(),
 		field.Bytes("passwordIv").NotEmpty(),
-		field.String("colour").Optional(),
+		field.String("colour"),
 	}
 }
 
@@ -31,7 +31,7 @@ func (Password) Edges() []ent.Edge {
 	return []ent.Edge{
 		edge.To("additionalFields", AdditionalField.Type),
 		edge.To("urls", Url.Type),
-		edge.From("user", User.Type).
+		edge.From("vault", Vault.Type).
 			Ref("passwords").
 			Unique(),
 	}

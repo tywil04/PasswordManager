@@ -11,6 +11,7 @@ import (
 	"PasswordManager/ent/totpcredential"
 	"PasswordManager/ent/url"
 	"PasswordManager/ent/user"
+	"PasswordManager/ent/vault"
 	"PasswordManager/ent/webauthnchallenge"
 	"PasswordManager/ent/webauthncredential"
 	"PasswordManager/ent/webauthnregisterchallenge"
@@ -57,6 +58,7 @@ func columnChecker(table string) func(string) error {
 		totpcredential.Table:            totpcredential.ValidColumn,
 		url.Table:                       url.ValidColumn,
 		user.Table:                      user.ValidColumn,
+		vault.Table:                     vault.ValidColumn,
 		webauthnchallenge.Table:         webauthnchallenge.ValidColumn,
 		webauthncredential.Table:        webauthncredential.ValidColumn,
 		webauthnregisterchallenge.Table: webauthnregisterchallenge.ValidColumn,

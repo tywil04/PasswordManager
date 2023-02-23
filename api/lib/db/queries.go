@@ -5,16 +5,35 @@ import (
 	"PasswordManager/ent/password"
 	"PasswordManager/ent/session"
 	"PasswordManager/ent/user"
+	"PasswordManager/ent/vault"
 	"PasswordManager/ent/webauthncredential"
 	"PasswordManager/ent/webauthnregisterchallenge"
-	"errors"
-	"time"
 
 	"github.com/google/uuid"
 )
 
-// Password
+// Vault
+func GetUserVaults(user *ent.User) ([]*ent.Vault, error) {
+	return user.QueryVaults().All(Context)
+}
 
+func GetUserVault(user *ent.User, vaultId uuid.UUID) (*ent.Vault, error) {
+	return user.QueryVaults().Where(vault.IDEQ(vaultId)).Unique(true).First(Context)
+}
+
+func DeleteVault(vault *ent.Vault) error {
+	return Client.Vault.DeleteOne(vault).Exec(Context)
+}
+
+func DeleteUserVaultViaId(user *ent.User, vaultId uuid.UUID) error {
+	vault, vErr := GetUserVault(user, vaultId)
+	if vErr != nil || vault == nil {
+		return vErr
+	}
+	return DeleteVault(vault)
+}
+
+// Password
 func GetPassword(passwordId uuid.UUID) (*ent.Password, error) {
 	return Client.Password.Get(Context, passwordId)
 }
@@ -27,16 +46,16 @@ func DeletePassword(password *ent.Password) error {
 	return Client.Password.DeleteOne(password).Exec(Context)
 }
 
-func GetUserPasswords(user *ent.User) ([]*ent.Password, error) {
-	return user.QueryPasswords().All(Context)
+func GetVaultPasswords(vault *ent.Vault) ([]*ent.Password, error) {
+	return vault.QueryPasswords().All(Context)
 }
 
-func GetUserPassword(user *ent.User, passwordId uuid.UUID) (*ent.Password, error) {
-	return user.QueryPasswords().Where(password.IDEQ(passwordId)).Unique(true).First(Context)
+func GetVaultPassword(vault *ent.Vault, passwordId uuid.UUID) (*ent.Password, error) {
+	return vault.QueryPasswords().Where(password.IDEQ(passwordId)).Unique(true).First(Context)
 }
 
-func DeleteUserPasswordViaId(user *ent.User, passwordId uuid.UUID) error {
-	password, pErr := GetUserPassword(user, passwordId)
+func DeleteVaultPasswordViaId(vault *ent.Vault, passwordId uuid.UUID) error {
+	password, pErr := GetVaultPassword(vault, passwordId)
 	if pErr != nil || password == nil {
 		return pErr
 	}
@@ -86,17 +105,8 @@ func DeleteUserWebauthnCredentialViaId(user *ent.User, webauthnCredentialId uuid
 }
 
 // Challenges
-func GetUnexpiredChallengeViaId(challengeId uuid.UUID) (*ent.Challenge, error) {
-	challenge, challengeErr := Client.Challenge.Get(Context, challengeId)
-	if challengeErr != nil {
-		return nil, challengeErr
-	}
-
-	if challenge.Expiry.Before(time.Now()) {
-		return nil, errors.New("Challenge Expired")
-	}
-
-	return challenge, challengeErr
+func GetChallenge(challengeId uuid.UUID) (*ent.Challenge, error) {
+	return Client.Challenge.Get(Context, challengeId)
 }
 
 func GetChallengeUser(challenge *ent.Challenge) (*ent.User, error) {

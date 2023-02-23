@@ -29,8 +29,8 @@ const (
 	EdgeAdditionalFields = "additionalFields"
 	// EdgeUrls holds the string denoting the urls edge name in mutations.
 	EdgeUrls = "urls"
-	// EdgeUser holds the string denoting the user edge name in mutations.
-	EdgeUser = "user"
+	// EdgeVault holds the string denoting the vault edge name in mutations.
+	EdgeVault = "vault"
 	// Table holds the table name of the password in the database.
 	Table = "passwords"
 	// AdditionalFieldsTable is the table that holds the additionalFields relation/edge.
@@ -47,13 +47,13 @@ const (
 	UrlsInverseTable = "urls"
 	// UrlsColumn is the table column denoting the urls relation/edge.
 	UrlsColumn = "password_urls"
-	// UserTable is the table that holds the user relation/edge.
-	UserTable = "passwords"
-	// UserInverseTable is the table name for the User entity.
-	// It exists in this package in order to avoid circular dependency with the "user" package.
-	UserInverseTable = "users"
-	// UserColumn is the table column denoting the user relation/edge.
-	UserColumn = "user_passwords"
+	// VaultTable is the table that holds the vault relation/edge.
+	VaultTable = "passwords"
+	// VaultInverseTable is the table name for the Vault entity.
+	// It exists in this package in order to avoid circular dependency with the "vault" package.
+	VaultInverseTable = "vaults"
+	// VaultColumn is the table column denoting the vault relation/edge.
+	VaultColumn = "vault_passwords"
 )
 
 // Columns holds all SQL columns for password fields.
@@ -71,7 +71,7 @@ var Columns = []string{
 // ForeignKeys holds the SQL foreign-keys that are owned by the "passwords"
 // table and are not defined as standalone fields in the schema.
 var ForeignKeys = []string{
-	"user_passwords",
+	"vault_passwords",
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).

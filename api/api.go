@@ -7,7 +7,7 @@ import (
 	"PasswordManager/api/endpoints/2fa/totp"
 	"PasswordManager/api/endpoints/2fa/webauthn"
 	"PasswordManager/api/endpoints/auth"
-	"PasswordManager/api/endpoints/password"
+	"PasswordManager/api/endpoints/vault"
 	"PasswordManager/api/lib/db"
 	"PasswordManager/api/lib/middleware"
 	"PasswordManager/api/lib/smtp"
@@ -20,7 +20,7 @@ func Start(router *gin.Engine) {
 	smtp.Connect()
 	webauthnBackend.Register()
 
-	// Endpoints
+	// Endpoint Groups
 	apiV1 := router.Group("/api/v1")
 
 	authGroup := apiV1.Group("/")
@@ -49,10 +49,13 @@ func Start(router *gin.Engine) {
 	authGroup.GET("/2fa/totp/register", middleware.ProcessParams(totp.GetRegisterInput{}), totp.GetRegister)
 	authGroup.POST("/2fa/totp/register", middleware.ProcessParams(totp.PostRegisterInput{}), totp.PostRegister)
 
-	// Other Endpoints
-	authGroup.GET("/password", middleware.ProcessParams(password.GetInput{}), password.Get)
-	authGroup.POST("/password", middleware.ProcessParams(password.PostInput{}), password.Post)
-	authGroup.DELETE("/password", middleware.ProcessParams(password.DeleteInput{}), password.Delete)
+	// Vault Endpoints
+	authGroup.GET("/vault", middleware.ProcessParams(vault.GetInput{}), vault.Get)
+	authGroup.POST("/vault", middleware.ProcessParams(vault.PostInput{}), vault.Post)
+	authGroup.DELETE("/vault", middleware.ProcessParams(vault.DeleteInput{}), vault.Delete)
+	authGroup.GET("/vault/password", middleware.ProcessParams(vault.GetPasswordInput{}), vault.GetPassword)
+	authGroup.POST("/vault/password", middleware.ProcessParams(vault.PostPasswordInput{}), vault.PostPassword)
+	authGroup.DELETE("/vault/password", middleware.ProcessParams(vault.DeletePasswordInput{}), vault.DeletePassword)
 }
 
 func Stop() {
