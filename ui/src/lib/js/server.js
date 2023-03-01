@@ -1,11 +1,17 @@
 import * as storage from "$lib/js/storage.js"
 
 export async function isAuthed() {
+    const authToken = await storage.getAuthToken()
+
+    if (authToken == undefined) {
+        return false
+    }
+
     const status = (await fetch("/api/v1/auth/test", {
         method: "GET",
         headers: {
             "Content-type": "application/json",
-            "Authorization": await storage.getAuthToken()
+            "Authorization": authToken
         }
     })).status
 

@@ -1,6 +1,8 @@
 package api
 
 import (
+	"time"
+
 	"github.com/gin-gonic/gin"
 
 	"PasswordManager/api/endpoints/2fa/email"
@@ -12,13 +14,27 @@ import (
 	"PasswordManager/api/lib/middleware"
 	"PasswordManager/api/lib/smtp"
 	webauthnBackend "PasswordManager/api/lib/webauthn"
+	"PasswordManager/ent/challenge"
+	"PasswordManager/ent/session"
 )
+
+func DBCleanup() {
+	for {
+		db.Client.Session.Delete().Where(session.ExpiryLT(time.Now())).Exec(db.Context)
+		db.Client.Challenge.Delete().Where(challenge.ExpiryLT(time.Now())).Exec(db.Context)
+
+		time.Sleep(time.Hour * 24)
+	}
+}
 
 func Start(router *gin.Engine) {
 	// Config
 	db.Connect()
 	smtp.Connect()
 	webauthnBackend.Register()
+
+	// DB Cleanup
+	go DBCleanup()
 
 	// Endpoint Groups
 	apiV1 := router.Group("/api/v1")

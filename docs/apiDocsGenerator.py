@@ -5,7 +5,8 @@
 import os
 import json
 from docx import Document
-from docx.shared import Pt, Inches
+from docx.shared import Pt
+import re
 
 path = "/home/tyler/Development/PasswordManager5/api/endpoints"
 apiPrefix = "/api/v1"
@@ -103,7 +104,11 @@ def formatDocx(doc, path, entries):
         doc.add_heading(method, level=2)
         
         doc.add_heading("Description", level=3)
-        doc.add_paragraph("// DESCRIPTION HERE //", style=style)
+
+        if "description" in list(data.keys()):
+            doc.add_paragraph(data["description"], style=style)
+        else:
+            doc.add_paragraph("// DESCRIPTION HERE //", style=style)
 
         # doc.add_paragraph("", style="No Spacing")
         doc.add_heading("Request Format", level=3)
@@ -213,6 +218,7 @@ for (dirPath, dirNames, fileNames) in os.walk(path):
             data[endpointPath] = {}
             dataIndex = -1
             dataKey = ""
+            descs = []
 
             finishedStructs = []
             structDataLocation = {}
@@ -226,6 +232,9 @@ for (dirPath, dirNames, fileNames) in os.walk(path):
 
             for line in fileReader.readlines():
                 if line.startswith("func"):
+                    try:
+                        data[endpointPath][dataKey]["description"] = descs[dataIndex][:-1]
+                    except: pass
                     dataIndex += 1
                     dataKey = list(data[endpointPath].keys())[dataIndex]
                     
@@ -239,8 +248,6 @@ for (dirPath, dirNames, fileNames) in os.walk(path):
                         index += 1
 
                     method = method.upper()
-
-                    
 
                     data[endpointPath][method] = {
                         "input": {},
@@ -355,6 +362,9 @@ for (dirPath, dirNames, fileNames) in os.walk(path):
                     data[endpointPath][dataKey]["responses"][200] = returnResponseDict
                     if len(finishedStructs) > dataIndex:
                         data[endpointPath][dataKey]["input"] = finishedStructs[dataIndex]
+
+                if bool(re.search(r".+Description string = \"", line)):
+                    descs.append(re.sub(r".+Description string \"", "", line)[:-1].replace("\t", "").replace('"', ""))
 
                 if thirdEmbededStructContinue:
                     stripped = line.strip()

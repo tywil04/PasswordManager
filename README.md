@@ -32,14 +32,35 @@ go run server.go
 ```
 (this builds the project in a temporary location and runs it).
 
+### Developing
+To develop the application, you must have gotten to a stage where you can run the application. The best way to develop is to start a UI-less instance of the golang server with 
+```
+go run server.go --ui=false
+``` 
+and then in a new terminal run
+```
+cd ui/
+yarn dev
+```
+Connect to the vite server from `yarn dev`, this gives you hot-reloading so when you make the change to part of the ui, the web browsers instantly reflects this change. The backend server is running and is getting the `/api` requests from the vite server because vite has been configured to proxy api requests.
+
 ## Environment Variables
 Environment variables are used to store configuration data. Heres a list of variables that can be modified. This variables can be set with a `.env` file in the same directory as the executable.
 
 All environment variables are required unless explicitly mentioned otherwise, if you do not include a required environment variable, things might not work as expected.
 
 ### General
+- `ENVIRONMENT` *(optional, default is production)*: This is used to determin the environment the application should be running in. Allowed options are `production` and `development`.
+
+- `ALLOWED_ORIGINS` *(optional, default is all origins)*: This is a comma seperated list of allowed origins. e.g `http://localhost:8080,http://localhost:5173`.
+
 - `DB_PATH`: This is the path for your db, this project uses sqlite3. Example value: `./ent/dev.db`.
+
 - `SERVER_ADDRESS`: This how Go binds the server, its expected in a format `HOSTNAME:PORT`. Example value: `0.0.0.0:8001` (Allow connection from any interface on port 8001).
+
+- `DISABLE_API` *(optional, default is false)*: This is used to disable the API section of the webserver.
+
+- `DISABLE_UI` *(optional, default is false)*: This is used to disable the UI section of the webserver.
 
 ### Email
 - `SMTP_HOST`: This is the host for the SMTP server to use to send email addresses. Example value: `smtp.example.org`.
@@ -62,34 +83,4 @@ All environment variables are required unless explicitly mentioned otherwise, if
 - `RP_ICON`: This is a URL to the icon for a relying party. This is optional, a blank value can be set.
 
 ### Crypto
-- `CRYPTO_PEPPER` *(OPTIONAL)*: This is a random string that if set will be added to every `masterHash` for added security. It can technically be any string however a random string will be most beneficial.
-
-## Todo (Out of date)
-Stuff that needs to be done
-
-### Frontend
-- [ ] Signin Page
-    - Need to fix email verification code box
-- [ ] Signup Page
-    - Need to fix email verification code box
-- [ ] Home Page
-    - Needs to decrypt password names and display them in a list
-- [ ] Settings Page
-    - Needs to exist
-        - Needs to allow for the registration and revoking on WebAuthn devices
-        - Needs to allow for the registration and removal of TOTP secrets
-        - Needs to allow the user to select accesibility features like a High-Contrast filter.
-
-### Backend
-- [ ] Document API
-- [X] Auth API (/api/v1/auth/*)
-- [ ] WebAuthn API (/api/v1/webauthn/*)
-    - Need to implement the revoking of credentials
-- [ ] TOTP API (/api/v1/totp/*)
-    - Need to implement register endpoint
-    - Need to implement signinChallenge endpoint
-- [X] Email API (/api/v1/email/*)
-- [ ] Passwords API
-    - Need to implement updating passwords
-- [X] Email
-- [X] Email templating
+- `CRYPTO_PEPPER` *(optional, default is blank)*: This is a random string that if set will be added to every `masterHash` before being strengthened for added security. It can technically be any string however a random string will be most beneficial.
