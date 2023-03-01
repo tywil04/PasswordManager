@@ -18,9 +18,7 @@ var (
 	masterHashMemory    uint32 = 64 * 1024
 	masterHashThreads   uint8  = 4
 	masterHashKeyLength uint32 = 32 // AES-256 needs 32-byte key
-)
 
-var (
 	rsaSize = 4096
 )
 

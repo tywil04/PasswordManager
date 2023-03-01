@@ -18,10 +18,10 @@ var files embed.FS
 
 func SvelteKitHandler(path string) http.Handler {
 	fsys, fsysErr := fs.Sub(files, "build")
-
 	if fsysErr != nil {
 		panic(fsysErr)
 	}
+
 	filesystem := http.FS(fsys)
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
