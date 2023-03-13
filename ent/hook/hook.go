@@ -44,6 +44,18 @@ func (f EmailChallengeFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Val
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.EmailChallengeMutation", m)
 }
 
+// The NoteFunc type is an adapter to allow the use of ordinary
+// function as Note mutator.
+type NoteFunc func(context.Context, *ent.NoteMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f NoteFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.NoteMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.NoteMutation", m)
+}
+
 // The PasswordFunc type is an adapter to allow the use of ordinary
 // function as Password mutator.
 type PasswordFunc func(context.Context, *ent.PasswordMutation) (ent.Value, error)

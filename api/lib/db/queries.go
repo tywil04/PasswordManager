@@ -2,6 +2,7 @@ package db
 
 import (
 	"PasswordManager/ent"
+	"PasswordManager/ent/note"
 	"PasswordManager/ent/password"
 	"PasswordManager/ent/session"
 	"PasswordManager/ent/user"
@@ -33,9 +34,42 @@ func DeleteUserVaultViaId(user *ent.User, vaultId uuid.UUID) error {
 	return DeleteVault(vault)
 }
 
+// note
+func DeleteNote(nodeId uuid.UUID) error {
+	return Client.Note.DeleteOneID(nodeId).Exec(Context)
+}
+
+func GetUserNotes(user *ent.User) ([]*ent.Note, error) {
+	return user.QueryVaults().QueryNotes().All(Context)
+}
+
+func GetVaultNotes(vault *ent.Vault) ([]*ent.Note, error) {
+	return vault.QueryNotes().All(Context)
+}
+
+func GetVaultNote(vault *ent.Vault, noteId uuid.UUID) (*ent.Note, error) {
+	return vault.QueryNotes().Where(note.IDEQ(noteId)).Unique(true).First(Context)
+}
+
+func DeleteVaultNoteViaId(vault *ent.Vault, noteId uuid.UUID) error {
+	password, pErr := GetVaultNote(vault, noteId)
+	if pErr != nil || password == nil {
+		return pErr
+	}
+	return DeleteNote(noteId)
+}
+
+func GetNoteVault(note *ent.Note) (*ent.Vault, error) {
+	return note.QueryVault().Unique(true).First(Context)
+}
+
 // Password
 func GetPassword(passwordId uuid.UUID) (*ent.Password, error) {
 	return Client.Password.Get(Context, passwordId)
+}
+
+func GetUserPasswords(user *ent.User) ([]*ent.Password, error) {
+	return user.QueryVaults().QueryPasswords().All(Context)
 }
 
 func DeletePasswordViaId(passwordId uuid.UUID) error {
@@ -68,6 +102,10 @@ func GetPasswordAdditionalFields(password *ent.Password) ([]*ent.AdditionalField
 
 func GetPasswordUrls(password *ent.Password) ([]*ent.Url, error) {
 	return password.QueryUrls().All(Context)
+}
+
+func GetPasswordVault(password *ent.Password) (*ent.Vault, error) {
+	return password.QueryVault().Unique(true).First(Context)
 }
 
 // Webauthn Credential

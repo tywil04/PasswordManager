@@ -40,15 +40,7 @@ func (wacd *WebAuthnCredentialDelete) ExecX(ctx context.Context) int {
 }
 
 func (wacd *WebAuthnCredentialDelete) sqlExec(ctx context.Context) (int, error) {
-	_spec := &sqlgraph.DeleteSpec{
-		Node: &sqlgraph.NodeSpec{
-			Table: webauthncredential.Table,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeUUID,
-				Column: webauthncredential.FieldID,
-			},
-		},
-	}
+	_spec := sqlgraph.NewDeleteSpec(webauthncredential.Table, sqlgraph.NewFieldSpec(webauthncredential.FieldID, field.TypeUUID))
 	if ps := wacd.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {

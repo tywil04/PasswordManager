@@ -203,10 +203,12 @@ func (wacq *WebAuthnCredentialQuery) AllX(ctx context.Context) []*WebAuthnCreden
 }
 
 // IDs executes the query and returns a list of WebAuthnCredential IDs.
-func (wacq *WebAuthnCredentialQuery) IDs(ctx context.Context) ([]uuid.UUID, error) {
-	var ids []uuid.UUID
+func (wacq *WebAuthnCredentialQuery) IDs(ctx context.Context) (ids []uuid.UUID, err error) {
+	if wacq.ctx.Unique == nil && wacq.path != nil {
+		wacq.Unique(true)
+	}
 	ctx = setContextOp(ctx, wacq.ctx, "IDs")
-	if err := wacq.Select(webauthncredential.FieldID).Scan(ctx, &ids); err != nil {
+	if err = wacq.Select(webauthncredential.FieldID).Scan(ctx, &ids); err != nil {
 		return nil, err
 	}
 	return ids, nil
@@ -452,20 +454,12 @@ func (wacq *WebAuthnCredentialQuery) sqlCount(ctx context.Context) (int, error) 
 }
 
 func (wacq *WebAuthnCredentialQuery) querySpec() *sqlgraph.QuerySpec {
-	_spec := &sqlgraph.QuerySpec{
-		Node: &sqlgraph.NodeSpec{
-			Table:   webauthncredential.Table,
-			Columns: webauthncredential.Columns,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeUUID,
-				Column: webauthncredential.FieldID,
-			},
-		},
-		From:   wacq.sql,
-		Unique: true,
-	}
+	_spec := sqlgraph.NewQuerySpec(webauthncredential.Table, webauthncredential.Columns, sqlgraph.NewFieldSpec(webauthncredential.FieldID, field.TypeUUID))
+	_spec.From = wacq.sql
 	if unique := wacq.ctx.Unique; unique != nil {
 		_spec.Unique = *unique
+	} else if wacq.path != nil {
+		_spec.Unique = true
 	}
 	if fields := wacq.ctx.Fields; len(fields) > 0 {
 		_spec.Node.Columns = make([]string, 0, len(fields))

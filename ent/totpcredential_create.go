@@ -9,7 +9,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"time"
 
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
@@ -21,20 +20,6 @@ type TotpCredentialCreate struct {
 	config
 	mutation *TotpCredentialMutation
 	hooks    []Hook
-}
-
-// SetCreatedAt sets the "createdAt" field.
-func (tcc *TotpCredentialCreate) SetCreatedAt(t time.Time) *TotpCredentialCreate {
-	tcc.mutation.SetCreatedAt(t)
-	return tcc
-}
-
-// SetNillableCreatedAt sets the "createdAt" field if the given value is not nil.
-func (tcc *TotpCredentialCreate) SetNillableCreatedAt(t *time.Time) *TotpCredentialCreate {
-	if t != nil {
-		tcc.SetCreatedAt(*t)
-	}
-	return tcc
 }
 
 // SetSecret sets the "secret" field.
@@ -144,10 +129,6 @@ func (tcc *TotpCredentialCreate) ExecX(ctx context.Context) {
 
 // defaults sets the default values of the builder before save.
 func (tcc *TotpCredentialCreate) defaults() {
-	if _, ok := tcc.mutation.CreatedAt(); !ok {
-		v := totpcredential.DefaultCreatedAt()
-		tcc.mutation.SetCreatedAt(v)
-	}
 	if _, ok := tcc.mutation.Validated(); !ok {
 		v := totpcredential.DefaultValidated
 		tcc.mutation.SetValidated(v)
@@ -160,9 +141,6 @@ func (tcc *TotpCredentialCreate) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (tcc *TotpCredentialCreate) check() error {
-	if _, ok := tcc.mutation.CreatedAt(); !ok {
-		return &ValidationError{Name: "createdAt", err: errors.New(`ent: missing required field "TotpCredential.createdAt"`)}
-	}
 	if _, ok := tcc.mutation.Secret(); !ok {
 		return &ValidationError{Name: "secret", err: errors.New(`ent: missing required field "TotpCredential.secret"`)}
 	}
@@ -203,21 +181,11 @@ func (tcc *TotpCredentialCreate) sqlSave(ctx context.Context) (*TotpCredential, 
 func (tcc *TotpCredentialCreate) createSpec() (*TotpCredential, *sqlgraph.CreateSpec) {
 	var (
 		_node = &TotpCredential{config: tcc.config}
-		_spec = &sqlgraph.CreateSpec{
-			Table: totpcredential.Table,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeUUID,
-				Column: totpcredential.FieldID,
-			},
-		}
+		_spec = sqlgraph.NewCreateSpec(totpcredential.Table, sqlgraph.NewFieldSpec(totpcredential.FieldID, field.TypeUUID))
 	)
 	if id, ok := tcc.mutation.ID(); ok {
 		_node.ID = id
 		_spec.ID.Value = &id
-	}
-	if value, ok := tcc.mutation.CreatedAt(); ok {
-		_spec.SetField(totpcredential.FieldCreatedAt, field.TypeTime, value)
-		_node.CreatedAt = value
 	}
 	if value, ok := tcc.mutation.Secret(); ok {
 		_spec.SetField(totpcredential.FieldSecret, field.TypeString, value)

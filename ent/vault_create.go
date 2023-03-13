@@ -3,6 +3,7 @@
 package ent
 
 import (
+	"PasswordManager/ent/note"
 	"PasswordManager/ent/password"
 	"PasswordManager/ent/user"
 	"PasswordManager/ent/vault"
@@ -38,14 +39,26 @@ func (vc *VaultCreate) SetNillableCreatedAt(t *time.Time) *VaultCreate {
 }
 
 // SetName sets the "name" field.
-func (vc *VaultCreate) SetName(s string) *VaultCreate {
-	vc.mutation.SetName(s)
+func (vc *VaultCreate) SetName(b []byte) *VaultCreate {
+	vc.mutation.SetName(b)
+	return vc
+}
+
+// SetNameIv sets the "nameIv" field.
+func (vc *VaultCreate) SetNameIv(b []byte) *VaultCreate {
+	vc.mutation.SetNameIv(b)
 	return vc
 }
 
 // SetColour sets the "colour" field.
-func (vc *VaultCreate) SetColour(s string) *VaultCreate {
-	vc.mutation.SetColour(s)
+func (vc *VaultCreate) SetColour(b []byte) *VaultCreate {
+	vc.mutation.SetColour(b)
+	return vc
+}
+
+// SetColourIv sets the "colourIv" field.
+func (vc *VaultCreate) SetColourIv(b []byte) *VaultCreate {
+	vc.mutation.SetColourIv(b)
 	return vc
 }
 
@@ -76,6 +89,21 @@ func (vc *VaultCreate) AddPasswords(p ...*Password) *VaultCreate {
 		ids[i] = p[i].ID
 	}
 	return vc.AddPasswordIDs(ids...)
+}
+
+// AddNoteIDs adds the "notes" edge to the Note entity by IDs.
+func (vc *VaultCreate) AddNoteIDs(ids ...uuid.UUID) *VaultCreate {
+	vc.mutation.AddNoteIDs(ids...)
+	return vc
+}
+
+// AddNotes adds the "notes" edges to the Note entity.
+func (vc *VaultCreate) AddNotes(n ...*Note) *VaultCreate {
+	ids := make([]uuid.UUID, len(n))
+	for i := range n {
+		ids[i] = n[i].ID
+	}
+	return vc.AddNoteIDs(ids...)
 }
 
 // SetUserID sets the "user" edge to the User entity by ID.
@@ -155,8 +183,29 @@ func (vc *VaultCreate) check() error {
 			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "Vault.name": %w`, err)}
 		}
 	}
+	if _, ok := vc.mutation.NameIv(); !ok {
+		return &ValidationError{Name: "nameIv", err: errors.New(`ent: missing required field "Vault.nameIv"`)}
+	}
+	if v, ok := vc.mutation.NameIv(); ok {
+		if err := vault.NameIvValidator(v); err != nil {
+			return &ValidationError{Name: "nameIv", err: fmt.Errorf(`ent: validator failed for field "Vault.nameIv": %w`, err)}
+		}
+	}
 	if _, ok := vc.mutation.Colour(); !ok {
 		return &ValidationError{Name: "colour", err: errors.New(`ent: missing required field "Vault.colour"`)}
+	}
+	if v, ok := vc.mutation.Colour(); ok {
+		if err := vault.ColourValidator(v); err != nil {
+			return &ValidationError{Name: "colour", err: fmt.Errorf(`ent: validator failed for field "Vault.colour": %w`, err)}
+		}
+	}
+	if _, ok := vc.mutation.ColourIv(); !ok {
+		return &ValidationError{Name: "colourIv", err: errors.New(`ent: missing required field "Vault.colourIv"`)}
+	}
+	if v, ok := vc.mutation.ColourIv(); ok {
+		if err := vault.ColourIvValidator(v); err != nil {
+			return &ValidationError{Name: "colourIv", err: fmt.Errorf(`ent: validator failed for field "Vault.colourIv": %w`, err)}
+		}
 	}
 	return nil
 }
@@ -187,13 +236,7 @@ func (vc *VaultCreate) sqlSave(ctx context.Context) (*Vault, error) {
 func (vc *VaultCreate) createSpec() (*Vault, *sqlgraph.CreateSpec) {
 	var (
 		_node = &Vault{config: vc.config}
-		_spec = &sqlgraph.CreateSpec{
-			Table: vault.Table,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeUUID,
-				Column: vault.FieldID,
-			},
-		}
+		_spec = sqlgraph.NewCreateSpec(vault.Table, sqlgraph.NewFieldSpec(vault.FieldID, field.TypeUUID))
 	)
 	if id, ok := vc.mutation.ID(); ok {
 		_node.ID = id
@@ -204,12 +247,20 @@ func (vc *VaultCreate) createSpec() (*Vault, *sqlgraph.CreateSpec) {
 		_node.CreatedAt = value
 	}
 	if value, ok := vc.mutation.Name(); ok {
-		_spec.SetField(vault.FieldName, field.TypeString, value)
+		_spec.SetField(vault.FieldName, field.TypeBytes, value)
 		_node.Name = value
 	}
+	if value, ok := vc.mutation.NameIv(); ok {
+		_spec.SetField(vault.FieldNameIv, field.TypeBytes, value)
+		_node.NameIv = value
+	}
 	if value, ok := vc.mutation.Colour(); ok {
-		_spec.SetField(vault.FieldColour, field.TypeString, value)
+		_spec.SetField(vault.FieldColour, field.TypeBytes, value)
 		_node.Colour = value
+	}
+	if value, ok := vc.mutation.ColourIv(); ok {
+		_spec.SetField(vault.FieldColourIv, field.TypeBytes, value)
+		_node.ColourIv = value
 	}
 	if nodes := vc.mutation.PasswordsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
@@ -222,6 +273,25 @@ func (vc *VaultCreate) createSpec() (*Vault, *sqlgraph.CreateSpec) {
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeUUID,
 					Column: password.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := vc.mutation.NotesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   vault.NotesTable,
+			Columns: []string{vault.NotesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeUUID,
+					Column: note.FieldID,
 				},
 			},
 		}

@@ -197,9 +197,3 @@ func (c *Challenge) String() string {
 
 // Challenges is a parsable slice of Challenge.
 type Challenges []*Challenge
-
-func (c Challenges) config(cfg config) {
-	for _i := range c {
-		c[_i].config = cfg
-	}
-}

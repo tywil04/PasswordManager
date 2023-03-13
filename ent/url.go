@@ -144,9 +144,3 @@ func (u *Url) String() string {
 
 // Urls is a parsable slice of Url.
 type Urls []*Url
-
-func (u Urls) config(cfg config) {
-	for _i := range u {
-		u[_i].config = cfg
-	}
-}

@@ -15,6 +15,9 @@ type Challenge func(*sql.Selector)
 // EmailChallenge is the predicate function for emailchallenge builders.
 type EmailChallenge func(*sql.Selector)
 
+// Note is the predicate function for note builders.
+type Note func(*sql.Selector)
+
 // Password is the predicate function for password builders.
 type Password func(*sql.Selector)
 

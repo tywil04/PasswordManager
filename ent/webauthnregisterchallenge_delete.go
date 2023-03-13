@@ -40,15 +40,7 @@ func (warcd *WebAuthnRegisterChallengeDelete) ExecX(ctx context.Context) int {
 }
 
 func (warcd *WebAuthnRegisterChallengeDelete) sqlExec(ctx context.Context) (int, error) {
-	_spec := &sqlgraph.DeleteSpec{
-		Node: &sqlgraph.NodeSpec{
-			Table: webauthnregisterchallenge.Table,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeUUID,
-				Column: webauthnregisterchallenge.FieldID,
-			},
-		},
-	}
+	_spec := sqlgraph.NewDeleteSpec(webauthnregisterchallenge.Table, sqlgraph.NewFieldSpec(webauthnregisterchallenge.FieldID, field.TypeUUID))
 	if ps := warcd.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {

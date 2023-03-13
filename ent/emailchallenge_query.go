@@ -203,10 +203,12 @@ func (ecq *EmailChallengeQuery) AllX(ctx context.Context) []*EmailChallenge {
 }
 
 // IDs executes the query and returns a list of EmailChallenge IDs.
-func (ecq *EmailChallengeQuery) IDs(ctx context.Context) ([]uuid.UUID, error) {
-	var ids []uuid.UUID
+func (ecq *EmailChallengeQuery) IDs(ctx context.Context) (ids []uuid.UUID, err error) {
+	if ecq.ctx.Unique == nil && ecq.path != nil {
+		ecq.Unique(true)
+	}
 	ctx = setContextOp(ctx, ecq.ctx, "IDs")
-	if err := ecq.Select(emailchallenge.FieldID).Scan(ctx, &ids); err != nil {
+	if err = ecq.Select(emailchallenge.FieldID).Scan(ctx, &ids); err != nil {
 		return nil, err
 	}
 	return ids, nil
@@ -297,7 +299,7 @@ func (ecq *EmailChallengeQuery) WithChallenge(opts ...func(*ChallengeQuery)) *Em
 // Example:
 //
 //	var v []struct {
-//		Code string `json:"code,omitempty"`
+//		Code []byte `json:"code,omitempty"`
 //		Count int `json:"count,omitempty"`
 //	}
 //
@@ -321,7 +323,7 @@ func (ecq *EmailChallengeQuery) GroupBy(field string, fields ...string) *EmailCh
 // Example:
 //
 //	var v []struct {
-//		Code string `json:"code,omitempty"`
+//		Code []byte `json:"code,omitempty"`
 //	}
 //
 //	client.EmailChallenge.Query().
@@ -452,20 +454,12 @@ func (ecq *EmailChallengeQuery) sqlCount(ctx context.Context) (int, error) {
 }
 
 func (ecq *EmailChallengeQuery) querySpec() *sqlgraph.QuerySpec {
-	_spec := &sqlgraph.QuerySpec{
-		Node: &sqlgraph.NodeSpec{
-			Table:   emailchallenge.Table,
-			Columns: emailchallenge.Columns,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeUUID,
-				Column: emailchallenge.FieldID,
-			},
-		},
-		From:   ecq.sql,
-		Unique: true,
-	}
+	_spec := sqlgraph.NewQuerySpec(emailchallenge.Table, emailchallenge.Columns, sqlgraph.NewFieldSpec(emailchallenge.FieldID, field.TypeUUID))
+	_spec.From = ecq.sql
 	if unique := ecq.ctx.Unique; unique != nil {
 		_spec.Unique = *unique
+	} else if ecq.path != nil {
+		_spec.Unique = true
 	}
 	if fields := ecq.ctx.Fields; len(fields) > 0 {
 		_spec.Node.Columns = make([]string, 0, len(fields))

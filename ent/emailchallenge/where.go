@@ -56,63 +56,48 @@ func IDLTE(id uuid.UUID) predicate.EmailChallenge {
 }
 
 // Code applies equality check predicate on the "code" field. It's identical to CodeEQ.
-func Code(v string) predicate.EmailChallenge {
+func Code(v []byte) predicate.EmailChallenge {
 	return predicate.EmailChallenge(sql.FieldEQ(FieldCode, v))
 }
 
 // CodeEQ applies the EQ predicate on the "code" field.
-func CodeEQ(v string) predicate.EmailChallenge {
+func CodeEQ(v []byte) predicate.EmailChallenge {
 	return predicate.EmailChallenge(sql.FieldEQ(FieldCode, v))
 }
 
 // CodeNEQ applies the NEQ predicate on the "code" field.
-func CodeNEQ(v string) predicate.EmailChallenge {
+func CodeNEQ(v []byte) predicate.EmailChallenge {
 	return predicate.EmailChallenge(sql.FieldNEQ(FieldCode, v))
 }
 
 // CodeIn applies the In predicate on the "code" field.
-func CodeIn(vs ...string) predicate.EmailChallenge {
+func CodeIn(vs ...[]byte) predicate.EmailChallenge {
 	return predicate.EmailChallenge(sql.FieldIn(FieldCode, vs...))
 }
 
 // CodeNotIn applies the NotIn predicate on the "code" field.
-func CodeNotIn(vs ...string) predicate.EmailChallenge {
+func CodeNotIn(vs ...[]byte) predicate.EmailChallenge {
 	return predicate.EmailChallenge(sql.FieldNotIn(FieldCode, vs...))
 }
 
 // CodeGT applies the GT predicate on the "code" field.
-func CodeGT(v string) predicate.EmailChallenge {
+func CodeGT(v []byte) predicate.EmailChallenge {
 	return predicate.EmailChallenge(sql.FieldGT(FieldCode, v))
 }
 
 // CodeGTE applies the GTE predicate on the "code" field.
-func CodeGTE(v string) predicate.EmailChallenge {
+func CodeGTE(v []byte) predicate.EmailChallenge {
 	return predicate.EmailChallenge(sql.FieldGTE(FieldCode, v))
 }
 
 // CodeLT applies the LT predicate on the "code" field.
-func CodeLT(v string) predicate.EmailChallenge {
+func CodeLT(v []byte) predicate.EmailChallenge {
 	return predicate.EmailChallenge(sql.FieldLT(FieldCode, v))
 }
 
 // CodeLTE applies the LTE predicate on the "code" field.
-func CodeLTE(v string) predicate.EmailChallenge {
+func CodeLTE(v []byte) predicate.EmailChallenge {
 	return predicate.EmailChallenge(sql.FieldLTE(FieldCode, v))
-}
-
-// CodeContains applies the Contains predicate on the "code" field.
-func CodeContains(v string) predicate.EmailChallenge {
-	return predicate.EmailChallenge(sql.FieldContains(FieldCode, v))
-}
-
-// CodeHasPrefix applies the HasPrefix predicate on the "code" field.
-func CodeHasPrefix(v string) predicate.EmailChallenge {
-	return predicate.EmailChallenge(sql.FieldHasPrefix(FieldCode, v))
-}
-
-// CodeHasSuffix applies the HasSuffix predicate on the "code" field.
-func CodeHasSuffix(v string) predicate.EmailChallenge {
-	return predicate.EmailChallenge(sql.FieldHasSuffix(FieldCode, v))
 }
 
 // CodeIsNil applies the IsNil predicate on the "code" field.
@@ -123,16 +108,6 @@ func CodeIsNil() predicate.EmailChallenge {
 // CodeNotNil applies the NotNil predicate on the "code" field.
 func CodeNotNil() predicate.EmailChallenge {
 	return predicate.EmailChallenge(sql.FieldNotNull(FieldCode))
-}
-
-// CodeEqualFold applies the EqualFold predicate on the "code" field.
-func CodeEqualFold(v string) predicate.EmailChallenge {
-	return predicate.EmailChallenge(sql.FieldEqualFold(FieldCode, v))
-}
-
-// CodeContainsFold applies the ContainsFold predicate on the "code" field.
-func CodeContainsFold(v string) predicate.EmailChallenge {
-	return predicate.EmailChallenge(sql.FieldContainsFold(FieldCode, v))
 }
 
 // HasChallenge applies the HasEdge predicate on the "challenge" edge.

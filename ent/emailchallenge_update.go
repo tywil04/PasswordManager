@@ -30,16 +30,8 @@ func (ecu *EmailChallengeUpdate) Where(ps ...predicate.EmailChallenge) *EmailCha
 }
 
 // SetCode sets the "code" field.
-func (ecu *EmailChallengeUpdate) SetCode(s string) *EmailChallengeUpdate {
-	ecu.mutation.SetCode(s)
-	return ecu
-}
-
-// SetNillableCode sets the "code" field if the given value is not nil.
-func (ecu *EmailChallengeUpdate) SetNillableCode(s *string) *EmailChallengeUpdate {
-	if s != nil {
-		ecu.SetCode(*s)
-	}
+func (ecu *EmailChallengeUpdate) SetCode(b []byte) *EmailChallengeUpdate {
+	ecu.mutation.SetCode(b)
 	return ecu
 }
 
@@ -107,16 +99,7 @@ func (ecu *EmailChallengeUpdate) ExecX(ctx context.Context) {
 }
 
 func (ecu *EmailChallengeUpdate) sqlSave(ctx context.Context) (n int, err error) {
-	_spec := &sqlgraph.UpdateSpec{
-		Node: &sqlgraph.NodeSpec{
-			Table:   emailchallenge.Table,
-			Columns: emailchallenge.Columns,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeUUID,
-				Column: emailchallenge.FieldID,
-			},
-		},
-	}
+	_spec := sqlgraph.NewUpdateSpec(emailchallenge.Table, emailchallenge.Columns, sqlgraph.NewFieldSpec(emailchallenge.FieldID, field.TypeUUID))
 	if ps := ecu.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
@@ -125,10 +108,10 @@ func (ecu *EmailChallengeUpdate) sqlSave(ctx context.Context) (n int, err error)
 		}
 	}
 	if value, ok := ecu.mutation.Code(); ok {
-		_spec.SetField(emailchallenge.FieldCode, field.TypeString, value)
+		_spec.SetField(emailchallenge.FieldCode, field.TypeBytes, value)
 	}
 	if ecu.mutation.CodeCleared() {
-		_spec.ClearField(emailchallenge.FieldCode, field.TypeString)
+		_spec.ClearField(emailchallenge.FieldCode, field.TypeBytes)
 	}
 	if ecu.mutation.ChallengeCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -186,16 +169,8 @@ type EmailChallengeUpdateOne struct {
 }
 
 // SetCode sets the "code" field.
-func (ecuo *EmailChallengeUpdateOne) SetCode(s string) *EmailChallengeUpdateOne {
-	ecuo.mutation.SetCode(s)
-	return ecuo
-}
-
-// SetNillableCode sets the "code" field if the given value is not nil.
-func (ecuo *EmailChallengeUpdateOne) SetNillableCode(s *string) *EmailChallengeUpdateOne {
-	if s != nil {
-		ecuo.SetCode(*s)
-	}
+func (ecuo *EmailChallengeUpdateOne) SetCode(b []byte) *EmailChallengeUpdateOne {
+	ecuo.mutation.SetCode(b)
 	return ecuo
 }
 
@@ -235,6 +210,12 @@ func (ecuo *EmailChallengeUpdateOne) ClearChallenge() *EmailChallengeUpdateOne {
 	return ecuo
 }
 
+// Where appends a list predicates to the EmailChallengeUpdate builder.
+func (ecuo *EmailChallengeUpdateOne) Where(ps ...predicate.EmailChallenge) *EmailChallengeUpdateOne {
+	ecuo.mutation.Where(ps...)
+	return ecuo
+}
+
 // Select allows selecting one or more fields (columns) of the returned entity.
 // The default is selecting all fields defined in the entity schema.
 func (ecuo *EmailChallengeUpdateOne) Select(field string, fields ...string) *EmailChallengeUpdateOne {
@@ -270,16 +251,7 @@ func (ecuo *EmailChallengeUpdateOne) ExecX(ctx context.Context) {
 }
 
 func (ecuo *EmailChallengeUpdateOne) sqlSave(ctx context.Context) (_node *EmailChallenge, err error) {
-	_spec := &sqlgraph.UpdateSpec{
-		Node: &sqlgraph.NodeSpec{
-			Table:   emailchallenge.Table,
-			Columns: emailchallenge.Columns,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeUUID,
-				Column: emailchallenge.FieldID,
-			},
-		},
-	}
+	_spec := sqlgraph.NewUpdateSpec(emailchallenge.Table, emailchallenge.Columns, sqlgraph.NewFieldSpec(emailchallenge.FieldID, field.TypeUUID))
 	id, ok := ecuo.mutation.ID()
 	if !ok {
 		return nil, &ValidationError{Name: "id", err: errors.New(`ent: missing "EmailChallenge.id" for update`)}
@@ -305,10 +277,10 @@ func (ecuo *EmailChallengeUpdateOne) sqlSave(ctx context.Context) (_node *EmailC
 		}
 	}
 	if value, ok := ecuo.mutation.Code(); ok {
-		_spec.SetField(emailchallenge.FieldCode, field.TypeString, value)
+		_spec.SetField(emailchallenge.FieldCode, field.TypeBytes, value)
 	}
 	if ecuo.mutation.CodeCleared() {
-		_spec.ClearField(emailchallenge.FieldCode, field.TypeString)
+		_spec.ClearField(emailchallenge.FieldCode, field.TypeBytes)
 	}
 	if ecuo.mutation.ChallengeCleared() {
 		edge := &sqlgraph.EdgeSpec{

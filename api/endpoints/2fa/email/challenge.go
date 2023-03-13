@@ -53,9 +53,9 @@ func GetChallenge(c *gin.Context) {
 		return
 	}
 
-	randomCode := cryptography.RandomString(8)
+	randomCode := cryptography.RandomString(4) + "-" + cryptography.RandomString(4)
 
-	_, err := foundChallenge.Update().SetCode(randomCode).Save(db.Context)
+	_, err := foundChallenge.Update().SetCode(cryptography.HashString(randomCode)).Save(db.Context)
 	if err != nil {
 		c.JSON(500, exceptions.Builder("challenge", exceptions.Updating, exceptions.TryAgain))
 		return
@@ -87,7 +87,7 @@ func PostChallenge(c *gin.Context) {
 		return
 	}
 
-	if foundChallenge.Code == "" {
+	if foundChallenge.Code == nil {
 		c.JSON(400, exceptions.Builder("challenge", exceptions.Invalid, exceptions.DidntStart2FA))
 		return
 	}
@@ -98,7 +98,7 @@ func PostChallenge(c *gin.Context) {
 		return
 	}
 
-	sameCode := cryptography.ConstantTimeCompare([]byte(foundChallenge.Code), []byte(params["code"].(string)))
+	sameCode := cryptography.ConstantTimeCompare(foundChallenge.Code, cryptography.HashString(params["code"].(string)))
 	if !sameCode {
 		c.JSON(400, exceptions.Builder("code", exceptions.IncorrectChallenge))
 		go smtp.SendTemplate(foundUser.Email, "PasswordManager5 Unsuccessful Sign In Notification", smtp.SigninNotificationTemplate, smtp.SigninNotificationTemplateData{Successful: false})

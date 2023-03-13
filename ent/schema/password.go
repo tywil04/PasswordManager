@@ -22,7 +22,8 @@ func (Password) Fields() []ent.Field {
 		field.Bytes("usernameIv").NotEmpty(),
 		field.Bytes("password").NotEmpty(),
 		field.Bytes("passwordIv").NotEmpty(),
-		field.String("colour"),
+		field.Bytes("colour").NotEmpty(),
+		field.Bytes("colourIv").NotEmpty(),
 	}
 }
 

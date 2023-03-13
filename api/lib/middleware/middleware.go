@@ -110,6 +110,7 @@ func processParamsRecursive(c *gin.Context, inputValue reflect.Value) map[string
 				fmt.Println(indexValue.String())
 				c.JSON(400, exceptions.Builder(jsonTagName, exceptions.MissingParam))
 				c.Abort()
+				return map[string]any{}
 			} else if indexType.Tag.Get("pmOptional") == "true" && indexValue.IsZero() {
 				continue
 			}
@@ -158,6 +159,7 @@ func processParamsRecursive(c *gin.Context, inputValue reflect.Value) map[string
 			if dE != nil {
 				c.JSON(400, exceptions.Builder(jsonTagName, exceptions.ParsingParam, dA))
 				c.Abort()
+				return map[string]any{}
 			}
 
 			data[jsonTagName] = d

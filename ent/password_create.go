@@ -60,8 +60,14 @@ func (pc *PasswordCreate) SetPasswordIv(b []byte) *PasswordCreate {
 }
 
 // SetColour sets the "colour" field.
-func (pc *PasswordCreate) SetColour(s string) *PasswordCreate {
-	pc.mutation.SetColour(s)
+func (pc *PasswordCreate) SetColour(b []byte) *PasswordCreate {
+	pc.mutation.SetColour(b)
+	return pc
+}
+
+// SetColourIv sets the "colourIv" field.
+func (pc *PasswordCreate) SetColourIv(b []byte) *PasswordCreate {
+	pc.mutation.SetColourIv(b)
 	return pc
 }
 
@@ -222,6 +228,19 @@ func (pc *PasswordCreate) check() error {
 	if _, ok := pc.mutation.Colour(); !ok {
 		return &ValidationError{Name: "colour", err: errors.New(`ent: missing required field "Password.colour"`)}
 	}
+	if v, ok := pc.mutation.Colour(); ok {
+		if err := password.ColourValidator(v); err != nil {
+			return &ValidationError{Name: "colour", err: fmt.Errorf(`ent: validator failed for field "Password.colour": %w`, err)}
+		}
+	}
+	if _, ok := pc.mutation.ColourIv(); !ok {
+		return &ValidationError{Name: "colourIv", err: errors.New(`ent: missing required field "Password.colourIv"`)}
+	}
+	if v, ok := pc.mutation.ColourIv(); ok {
+		if err := password.ColourIvValidator(v); err != nil {
+			return &ValidationError{Name: "colourIv", err: fmt.Errorf(`ent: validator failed for field "Password.colourIv": %w`, err)}
+		}
+	}
 	return nil
 }
 
@@ -251,13 +270,7 @@ func (pc *PasswordCreate) sqlSave(ctx context.Context) (*Password, error) {
 func (pc *PasswordCreate) createSpec() (*Password, *sqlgraph.CreateSpec) {
 	var (
 		_node = &Password{config: pc.config}
-		_spec = &sqlgraph.CreateSpec{
-			Table: password.Table,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeUUID,
-				Column: password.FieldID,
-			},
-		}
+		_spec = sqlgraph.NewCreateSpec(password.Table, sqlgraph.NewFieldSpec(password.FieldID, field.TypeUUID))
 	)
 	if id, ok := pc.mutation.ID(); ok {
 		_node.ID = id
@@ -288,8 +301,12 @@ func (pc *PasswordCreate) createSpec() (*Password, *sqlgraph.CreateSpec) {
 		_node.PasswordIv = value
 	}
 	if value, ok := pc.mutation.Colour(); ok {
-		_spec.SetField(password.FieldColour, field.TypeString, value)
+		_spec.SetField(password.FieldColour, field.TypeBytes, value)
 		_node.Colour = value
+	}
+	if value, ok := pc.mutation.ColourIv(); ok {
+		_spec.SetField(password.FieldColourIv, field.TypeBytes, value)
+		_node.ColourIv = value
 	}
 	if nodes := pc.mutation.AdditionalFieldsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{

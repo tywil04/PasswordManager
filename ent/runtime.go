@@ -6,6 +6,7 @@ import (
 	"PasswordManager/ent/additionalfield"
 	"PasswordManager/ent/challenge"
 	"PasswordManager/ent/emailchallenge"
+	"PasswordManager/ent/note"
 	"PasswordManager/ent/password"
 	"PasswordManager/ent/schema"
 	"PasswordManager/ent/session"
@@ -63,6 +64,44 @@ func init() {
 	emailchallengeDescID := emailchallengeFields[0].Descriptor()
 	// emailchallenge.DefaultID holds the default value on creation for the id field.
 	emailchallenge.DefaultID = emailchallengeDescID.Default.(func() uuid.UUID)
+	noteFields := schema.Note{}.Fields()
+	_ = noteFields
+	// noteDescName is the schema descriptor for name field.
+	noteDescName := noteFields[1].Descriptor()
+	// note.NameValidator is a validator for the "name" field. It is called by the builders before save.
+	note.NameValidator = noteDescName.Validators[0].(func([]byte) error)
+	// noteDescNameIv is the schema descriptor for nameIv field.
+	noteDescNameIv := noteFields[2].Descriptor()
+	// note.NameIvValidator is a validator for the "nameIv" field. It is called by the builders before save.
+	note.NameIvValidator = noteDescNameIv.Validators[0].(func([]byte) error)
+	// noteDescTitle is the schema descriptor for title field.
+	noteDescTitle := noteFields[3].Descriptor()
+	// note.TitleValidator is a validator for the "title" field. It is called by the builders before save.
+	note.TitleValidator = noteDescTitle.Validators[0].(func([]byte) error)
+	// noteDescTitleIv is the schema descriptor for titleIv field.
+	noteDescTitleIv := noteFields[4].Descriptor()
+	// note.TitleIvValidator is a validator for the "titleIv" field. It is called by the builders before save.
+	note.TitleIvValidator = noteDescTitleIv.Validators[0].(func([]byte) error)
+	// noteDescContent is the schema descriptor for content field.
+	noteDescContent := noteFields[5].Descriptor()
+	// note.ContentValidator is a validator for the "content" field. It is called by the builders before save.
+	note.ContentValidator = noteDescContent.Validators[0].(func([]byte) error)
+	// noteDescContentIv is the schema descriptor for contentIv field.
+	noteDescContentIv := noteFields[6].Descriptor()
+	// note.ContentIvValidator is a validator for the "contentIv" field. It is called by the builders before save.
+	note.ContentIvValidator = noteDescContentIv.Validators[0].(func([]byte) error)
+	// noteDescColour is the schema descriptor for colour field.
+	noteDescColour := noteFields[7].Descriptor()
+	// note.ColourValidator is a validator for the "colour" field. It is called by the builders before save.
+	note.ColourValidator = noteDescColour.Validators[0].(func([]byte) error)
+	// noteDescColourIv is the schema descriptor for colourIv field.
+	noteDescColourIv := noteFields[8].Descriptor()
+	// note.ColourIvValidator is a validator for the "colourIv" field. It is called by the builders before save.
+	note.ColourIvValidator = noteDescColourIv.Validators[0].(func([]byte) error)
+	// noteDescID is the schema descriptor for id field.
+	noteDescID := noteFields[0].Descriptor()
+	// note.DefaultID holds the default value on creation for the id field.
+	note.DefaultID = noteDescID.Default.(func() uuid.UUID)
 	passwordFields := schema.Password{}.Fields()
 	_ = passwordFields
 	// passwordDescName is the schema descriptor for name field.
@@ -89,6 +128,14 @@ func init() {
 	passwordDescPasswordIv := passwordFields[6].Descriptor()
 	// password.PasswordIvValidator is a validator for the "passwordIv" field. It is called by the builders before save.
 	password.PasswordIvValidator = passwordDescPasswordIv.Validators[0].(func([]byte) error)
+	// passwordDescColour is the schema descriptor for colour field.
+	passwordDescColour := passwordFields[7].Descriptor()
+	// password.ColourValidator is a validator for the "colour" field. It is called by the builders before save.
+	password.ColourValidator = passwordDescColour.Validators[0].(func([]byte) error)
+	// passwordDescColourIv is the schema descriptor for colourIv field.
+	passwordDescColourIv := passwordFields[8].Descriptor()
+	// password.ColourIvValidator is a validator for the "colourIv" field. It is called by the builders before save.
+	password.ColourIvValidator = passwordDescColourIv.Validators[0].(func([]byte) error)
 	// passwordDescID is the schema descriptor for id field.
 	passwordDescID := passwordFields[0].Descriptor()
 	// password.DefaultID holds the default value on creation for the id field.
@@ -105,16 +152,12 @@ func init() {
 	session.DefaultID = sessionDescID.Default.(func() uuid.UUID)
 	totpcredentialFields := schema.TotpCredential{}.Fields()
 	_ = totpcredentialFields
-	// totpcredentialDescCreatedAt is the schema descriptor for createdAt field.
-	totpcredentialDescCreatedAt := totpcredentialFields[1].Descriptor()
-	// totpcredential.DefaultCreatedAt holds the default value on creation for the createdAt field.
-	totpcredential.DefaultCreatedAt = totpcredentialDescCreatedAt.Default.(func() time.Time)
 	// totpcredentialDescSecret is the schema descriptor for secret field.
-	totpcredentialDescSecret := totpcredentialFields[2].Descriptor()
+	totpcredentialDescSecret := totpcredentialFields[1].Descriptor()
 	// totpcredential.SecretValidator is a validator for the "secret" field. It is called by the builders before save.
 	totpcredential.SecretValidator = totpcredentialDescSecret.Validators[0].(func(string) error)
 	// totpcredentialDescValidated is the schema descriptor for validated field.
-	totpcredentialDescValidated := totpcredentialFields[3].Descriptor()
+	totpcredentialDescValidated := totpcredentialFields[2].Descriptor()
 	// totpcredential.DefaultValidated holds the default value on creation for the validated field.
 	totpcredential.DefaultValidated = totpcredentialDescValidated.Default.(bool)
 	// totpcredentialDescID is the schema descriptor for id field.
@@ -137,10 +180,6 @@ func init() {
 	url.DefaultID = urlDescID.Default.(func() uuid.UUID)
 	userFields := schema.User{}.Fields()
 	_ = userFields
-	// userDescEmail is the schema descriptor for email field.
-	userDescEmail := userFields[1].Descriptor()
-	// user.EmailValidator is a validator for the "email" field. It is called by the builders before save.
-	user.EmailValidator = userDescEmail.Validators[0].(func(string) error)
 	// userDescStrengthenedMasterHash is the schema descriptor for strengthenedMasterHash field.
 	userDescStrengthenedMasterHash := userFields[2].Descriptor()
 	// user.StrengthenedMasterHashValidator is a validator for the "strengthenedMasterHash" field. It is called by the builders before save.
@@ -182,7 +221,19 @@ func init() {
 	// vaultDescName is the schema descriptor for name field.
 	vaultDescName := vaultFields[2].Descriptor()
 	// vault.NameValidator is a validator for the "name" field. It is called by the builders before save.
-	vault.NameValidator = vaultDescName.Validators[0].(func(string) error)
+	vault.NameValidator = vaultDescName.Validators[0].(func([]byte) error)
+	// vaultDescNameIv is the schema descriptor for nameIv field.
+	vaultDescNameIv := vaultFields[3].Descriptor()
+	// vault.NameIvValidator is a validator for the "nameIv" field. It is called by the builders before save.
+	vault.NameIvValidator = vaultDescNameIv.Validators[0].(func([]byte) error)
+	// vaultDescColour is the schema descriptor for colour field.
+	vaultDescColour := vaultFields[4].Descriptor()
+	// vault.ColourValidator is a validator for the "colour" field. It is called by the builders before save.
+	vault.ColourValidator = vaultDescColour.Validators[0].(func([]byte) error)
+	// vaultDescColourIv is the schema descriptor for colourIv field.
+	vaultDescColourIv := vaultFields[5].Descriptor()
+	// vault.ColourIvValidator is a validator for the "colourIv" field. It is called by the builders before save.
+	vault.ColourIvValidator = vaultDescColourIv.Validators[0].(func([]byte) error)
 	// vaultDescID is the schema descriptor for id field.
 	vaultDescID := vaultFields[0].Descriptor()
 	// vault.DefaultID holds the default value on creation for the id field.

@@ -9,7 +9,7 @@ import (
 	"PasswordManager/api/endpoints/2fa/totp"
 	"PasswordManager/api/endpoints/2fa/webauthn"
 	"PasswordManager/api/endpoints/auth"
-	"PasswordManager/api/endpoints/vault"
+	vaults "PasswordManager/api/endpoints/vault"
 	"PasswordManager/api/lib/db"
 	"PasswordManager/api/lib/middleware"
 	"PasswordManager/api/lib/smtp"
@@ -66,12 +66,15 @@ func Start(router *gin.Engine) {
 	authGroup.POST("/2fa/totp/register", middleware.ProcessParams(totp.PostRegisterInput{}), totp.PostRegister)
 
 	// Vault Endpoints
-	authGroup.GET("/vault", middleware.ProcessParams(vault.GetInput{}), vault.Get)
-	authGroup.POST("/vault", middleware.ProcessParams(vault.PostInput{}), vault.Post)
-	authGroup.DELETE("/vault", middleware.ProcessParams(vault.DeleteInput{}), vault.Delete)
-	authGroup.GET("/vault/password", middleware.ProcessParams(vault.GetPasswordInput{}), vault.GetPassword)
-	authGroup.POST("/vault/password", middleware.ProcessParams(vault.PostPasswordInput{}), vault.PostPassword)
-	authGroup.DELETE("/vault/password", middleware.ProcessParams(vault.DeletePasswordInput{}), vault.DeletePassword)
+	authGroup.GET("/vaults", middleware.ProcessParams(vaults.GetInput{}), vaults.Get)
+	authGroup.POST("/vaults", middleware.ProcessParams(vaults.PostInput{}), vaults.Post)
+	authGroup.DELETE("/vaults", middleware.ProcessParams(vaults.DeleteInput{}), vaults.Delete)
+	authGroup.GET("/vaults/passwords", middleware.ProcessParams(vaults.GetPasswordInput{}), vaults.GetPassword)
+	authGroup.POST("/vaults/passwords", middleware.ProcessParams(vaults.PostPasswordInput{}), vaults.PostPassword)
+	authGroup.DELETE("/vaults/passwords", middleware.ProcessParams(vaults.DeletePasswordInput{}), vaults.DeletePassword)
+	authGroup.GET("/vaults/notes", middleware.ProcessParams(vaults.GetNoteInput{}), vaults.GetNote)
+	authGroup.POST("/vaults/notes", middleware.ProcessParams(vaults.PostNoteInput{}), vaults.PostNote)
+	authGroup.DELETE("/vaults/notes", middleware.ProcessParams(vaults.DeleteNoteInput{}), vaults.DeleteNote)
 }
 
 func Stop() {

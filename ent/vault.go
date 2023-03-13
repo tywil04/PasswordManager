@@ -21,9 +21,13 @@ type Vault struct {
 	// CreatedAt holds the value of the "createdAt" field.
 	CreatedAt time.Time `json:"createdAt,omitempty"`
 	// Name holds the value of the "name" field.
-	Name string `json:"name,omitempty"`
+	Name []byte `json:"name,omitempty"`
+	// NameIv holds the value of the "nameIv" field.
+	NameIv []byte `json:"nameIv,omitempty"`
 	// Colour holds the value of the "colour" field.
-	Colour string `json:"colour,omitempty"`
+	Colour []byte `json:"colour,omitempty"`
+	// ColourIv holds the value of the "colourIv" field.
+	ColourIv []byte `json:"colourIv,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the VaultQuery when eager-loading is set.
 	Edges       VaultEdges `json:"edges"`
@@ -34,11 +38,13 @@ type Vault struct {
 type VaultEdges struct {
 	// Passwords holds the value of the passwords edge.
 	Passwords []*Password `json:"passwords,omitempty"`
+	// Notes holds the value of the notes edge.
+	Notes []*Note `json:"notes,omitempty"`
 	// User holds the value of the user edge.
 	User *User `json:"user,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [2]bool
+	loadedTypes [3]bool
 }
 
 // PasswordsOrErr returns the Passwords value or an error if the edge
@@ -50,10 +56,19 @@ func (e VaultEdges) PasswordsOrErr() ([]*Password, error) {
 	return nil, &NotLoadedError{edge: "passwords"}
 }
 
+// NotesOrErr returns the Notes value or an error if the edge
+// was not loaded in eager-loading.
+func (e VaultEdges) NotesOrErr() ([]*Note, error) {
+	if e.loadedTypes[1] {
+		return e.Notes, nil
+	}
+	return nil, &NotLoadedError{edge: "notes"}
+}
+
 // UserOrErr returns the User value or an error if the edge
 // was not loaded in eager-loading, or loaded but was not found.
 func (e VaultEdges) UserOrErr() (*User, error) {
-	if e.loadedTypes[1] {
+	if e.loadedTypes[2] {
 		if e.User == nil {
 			// Edge was loaded but was not found.
 			return nil, &NotFoundError{label: user.Label}
@@ -68,8 +83,8 @@ func (*Vault) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case vault.FieldName, vault.FieldColour:
-			values[i] = new(sql.NullString)
+		case vault.FieldName, vault.FieldNameIv, vault.FieldColour, vault.FieldColourIv:
+			values[i] = new([]byte)
 		case vault.FieldCreatedAt:
 			values[i] = new(sql.NullTime)
 		case vault.FieldID:
@@ -104,16 +119,28 @@ func (v *Vault) assignValues(columns []string, values []any) error {
 				v.CreatedAt = value.Time
 			}
 		case vault.FieldName:
-			if value, ok := values[i].(*sql.NullString); !ok {
+			if value, ok := values[i].(*[]byte); !ok {
 				return fmt.Errorf("unexpected type %T for field name", values[i])
-			} else if value.Valid {
-				v.Name = value.String
+			} else if value != nil {
+				v.Name = *value
+			}
+		case vault.FieldNameIv:
+			if value, ok := values[i].(*[]byte); !ok {
+				return fmt.Errorf("unexpected type %T for field nameIv", values[i])
+			} else if value != nil {
+				v.NameIv = *value
 			}
 		case vault.FieldColour:
-			if value, ok := values[i].(*sql.NullString); !ok {
+			if value, ok := values[i].(*[]byte); !ok {
 				return fmt.Errorf("unexpected type %T for field colour", values[i])
-			} else if value.Valid {
-				v.Colour = value.String
+			} else if value != nil {
+				v.Colour = *value
+			}
+		case vault.FieldColourIv:
+			if value, ok := values[i].(*[]byte); !ok {
+				return fmt.Errorf("unexpected type %T for field colourIv", values[i])
+			} else if value != nil {
+				v.ColourIv = *value
 			}
 		case vault.ForeignKeys[0]:
 			if value, ok := values[i].(*sql.NullScanner); !ok {
@@ -130,6 +157,11 @@ func (v *Vault) assignValues(columns []string, values []any) error {
 // QueryPasswords queries the "passwords" edge of the Vault entity.
 func (v *Vault) QueryPasswords() *PasswordQuery {
 	return NewVaultClient(v.config).QueryPasswords(v)
+}
+
+// QueryNotes queries the "notes" edge of the Vault entity.
+func (v *Vault) QueryNotes() *NoteQuery {
+	return NewVaultClient(v.config).QueryNotes(v)
 }
 
 // QueryUser queries the "user" edge of the Vault entity.
@@ -164,19 +196,19 @@ func (v *Vault) String() string {
 	builder.WriteString(v.CreatedAt.Format(time.ANSIC))
 	builder.WriteString(", ")
 	builder.WriteString("name=")
-	builder.WriteString(v.Name)
+	builder.WriteString(fmt.Sprintf("%v", v.Name))
+	builder.WriteString(", ")
+	builder.WriteString("nameIv=")
+	builder.WriteString(fmt.Sprintf("%v", v.NameIv))
 	builder.WriteString(", ")
 	builder.WriteString("colour=")
-	builder.WriteString(v.Colour)
+	builder.WriteString(fmt.Sprintf("%v", v.Colour))
+	builder.WriteString(", ")
+	builder.WriteString("colourIv=")
+	builder.WriteString(fmt.Sprintf("%v", v.ColourIv))
 	builder.WriteByte(')')
 	return builder.String()
 }
 
 // Vaults is a parsable slice of Vault.
 type Vaults []*Vault
-
-func (v Vaults) config(cfg config) {
-	for _i := range v {
-		v[_i].config = cfg
-	}
-}

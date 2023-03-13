@@ -171,13 +171,7 @@ func (warcc *WebAuthnRegisterChallengeCreate) sqlSave(ctx context.Context) (*Web
 func (warcc *WebAuthnRegisterChallengeCreate) createSpec() (*WebAuthnRegisterChallenge, *sqlgraph.CreateSpec) {
 	var (
 		_node = &WebAuthnRegisterChallenge{config: warcc.config}
-		_spec = &sqlgraph.CreateSpec{
-			Table: webauthnregisterchallenge.Table,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeUUID,
-				Column: webauthnregisterchallenge.FieldID,
-			},
-		}
+		_spec = sqlgraph.NewCreateSpec(webauthnregisterchallenge.Table, sqlgraph.NewFieldSpec(webauthnregisterchallenge.FieldID, field.TypeUUID))
 	)
 	if id, ok := warcc.mutation.ID(); ok {
 		_node.ID = id

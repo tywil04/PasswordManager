@@ -18,6 +18,8 @@ type Tx struct {
 	Challenge *ChallengeClient
 	// EmailChallenge is the client for interacting with the EmailChallenge builders.
 	EmailChallenge *EmailChallengeClient
+	// Note is the client for interacting with the Note builders.
+	Note *NoteClient
 	// Password is the client for interacting with the Password builders.
 	Password *PasswordClient
 	// Session is the client for interacting with the Session builders.
@@ -170,6 +172,7 @@ func (tx *Tx) init() {
 	tx.AdditionalField = NewAdditionalFieldClient(tx.config)
 	tx.Challenge = NewChallengeClient(tx.config)
 	tx.EmailChallenge = NewEmailChallengeClient(tx.config)
+	tx.Note = NewNoteClient(tx.config)
 	tx.Password = NewPasswordClient(tx.config)
 	tx.Session = NewSessionClient(tx.config)
 	tx.TotpCredential = NewTotpCredentialClient(tx.config)

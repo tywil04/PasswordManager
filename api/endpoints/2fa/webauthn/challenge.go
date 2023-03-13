@@ -3,7 +3,6 @@ package webauthn
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -129,7 +128,6 @@ func PostChallenge(c *gin.Context) {
 	dataReader := bytes.NewReader(data)
 
 	credentialData, cdErr := protocol.ParseCredentialRequestResponseBody(dataReader)
-	fmt.Println(cdErr)
 	if cdErr != nil {
 		c.JSON(500, exceptions.Builder("", exceptions.Unknown, exceptions.TryAgain))
 		return

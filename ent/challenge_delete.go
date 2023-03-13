@@ -40,15 +40,7 @@ func (cd *ChallengeDelete) ExecX(ctx context.Context) int {
 }
 
 func (cd *ChallengeDelete) sqlExec(ctx context.Context) (int, error) {
-	_spec := &sqlgraph.DeleteSpec{
-		Node: &sqlgraph.NodeSpec{
-			Table: challenge.Table,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeUUID,
-				Column: challenge.FieldID,
-			},
-		},
-	}
+	_spec := sqlgraph.NewDeleteSpec(challenge.Table, sqlgraph.NewFieldSpec(challenge.FieldID, field.TypeUUID))
 	if ps := cd.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {

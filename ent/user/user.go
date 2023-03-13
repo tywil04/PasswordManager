@@ -109,8 +109,6 @@ func ValidColumn(column string) bool {
 }
 
 var (
-	// EmailValidator is a validator for the "email" field. It is called by the builders before save.
-	EmailValidator func(string) error
 	// StrengthenedMasterHashValidator is a validator for the "strengthenedMasterHash" field. It is called by the builders before save.
 	StrengthenedMasterHashValidator func([]byte) error
 	// StrengthenedMasterHashSaltValidator is a validator for the "strengthenedMasterHashSalt" field. It is called by the builders before save.

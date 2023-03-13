@@ -25,6 +25,8 @@ const (
 	FieldPasswordIv = "password_iv"
 	// FieldColour holds the string denoting the colour field in the database.
 	FieldColour = "colour"
+	// FieldColourIv holds the string denoting the colouriv field in the database.
+	FieldColourIv = "colour_iv"
 	// EdgeAdditionalFields holds the string denoting the additionalfields edge name in mutations.
 	EdgeAdditionalFields = "additionalFields"
 	// EdgeUrls holds the string denoting the urls edge name in mutations.
@@ -66,6 +68,7 @@ var Columns = []string{
 	FieldPassword,
 	FieldPasswordIv,
 	FieldColour,
+	FieldColourIv,
 }
 
 // ForeignKeys holds the SQL foreign-keys that are owned by the "passwords"
@@ -102,6 +105,10 @@ var (
 	PasswordValidator func([]byte) error
 	// PasswordIvValidator is a validator for the "passwordIv" field. It is called by the builders before save.
 	PasswordIvValidator func([]byte) error
+	// ColourValidator is a validator for the "colour" field. It is called by the builders before save.
+	ColourValidator func([]byte) error
+	// ColourIvValidator is a validator for the "colourIv" field. It is called by the builders before save.
+	ColourIvValidator func([]byte) error
 	// DefaultID holds the default value on creation for the "id" field.
 	DefaultID func() uuid.UUID
 )

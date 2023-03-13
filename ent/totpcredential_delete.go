@@ -40,15 +40,7 @@ func (tcd *TotpCredentialDelete) ExecX(ctx context.Context) int {
 }
 
 func (tcd *TotpCredentialDelete) sqlExec(ctx context.Context) (int, error) {
-	_spec := &sqlgraph.DeleteSpec{
-		Node: &sqlgraph.NodeSpec{
-			Table: totpcredential.Table,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeUUID,
-				Column: totpcredential.FieldID,
-			},
-		},
-	}
+	_spec := sqlgraph.NewDeleteSpec(totpcredential.Table, sqlgraph.NewFieldSpec(totpcredential.FieldID, field.TypeUUID))
 	if ps := tcd.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {

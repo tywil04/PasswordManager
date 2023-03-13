@@ -40,15 +40,7 @@ func (ecd *EmailChallengeDelete) ExecX(ctx context.Context) int {
 }
 
 func (ecd *EmailChallengeDelete) sqlExec(ctx context.Context) (int, error) {
-	_spec := &sqlgraph.DeleteSpec{
-		Node: &sqlgraph.NodeSpec{
-			Table: emailchallenge.Table,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeUUID,
-				Column: emailchallenge.FieldID,
-			},
-		},
-	}
+	_spec := sqlgraph.NewDeleteSpec(emailchallenge.Table, sqlgraph.NewFieldSpec(emailchallenge.FieldID, field.TypeUUID))
 	if ps := ecd.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {

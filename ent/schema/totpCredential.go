@@ -1,8 +1,6 @@
 package schema
 
 import (
-	"time"
-
 	"entgo.io/ent"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
@@ -16,7 +14,6 @@ type TotpCredential struct {
 func (TotpCredential) Fields() []ent.Field {
 	return []ent.Field{
 		field.UUID("id", uuid.UUID{}).Default(uuid.New),
-		field.Time("createdAt").Default(time.Now),
 		field.String("secret").NotEmpty(),
 		field.Bool("validated").Default(false),
 	}

@@ -167,16 +167,7 @@ func (wacu *WebAuthnCredentialUpdate) sqlSave(ctx context.Context) (n int, err e
 	if err := wacu.check(); err != nil {
 		return n, err
 	}
-	_spec := &sqlgraph.UpdateSpec{
-		Node: &sqlgraph.NodeSpec{
-			Table:   webauthncredential.Table,
-			Columns: webauthncredential.Columns,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeUUID,
-				Column: webauthncredential.FieldID,
-			},
-		},
-	}
+	_spec := sqlgraph.NewUpdateSpec(webauthncredential.Table, webauthncredential.Columns, sqlgraph.NewFieldSpec(webauthncredential.FieldID, field.TypeUUID))
 	if ps := wacu.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
@@ -371,6 +362,12 @@ func (wacuo *WebAuthnCredentialUpdateOne) ClearUser() *WebAuthnCredentialUpdateO
 	return wacuo
 }
 
+// Where appends a list predicates to the WebAuthnCredentialUpdate builder.
+func (wacuo *WebAuthnCredentialUpdateOne) Where(ps ...predicate.WebAuthnCredential) *WebAuthnCredentialUpdateOne {
+	wacuo.mutation.Where(ps...)
+	return wacuo
+}
+
 // Select allows selecting one or more fields (columns) of the returned entity.
 // The default is selecting all fields defined in the entity schema.
 func (wacuo *WebAuthnCredentialUpdateOne) Select(field string, fields ...string) *WebAuthnCredentialUpdateOne {
@@ -417,16 +414,7 @@ func (wacuo *WebAuthnCredentialUpdateOne) sqlSave(ctx context.Context) (_node *W
 	if err := wacuo.check(); err != nil {
 		return _node, err
 	}
-	_spec := &sqlgraph.UpdateSpec{
-		Node: &sqlgraph.NodeSpec{
-			Table:   webauthncredential.Table,
-			Columns: webauthncredential.Columns,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeUUID,
-				Column: webauthncredential.FieldID,
-			},
-		},
-	}
+	_spec := sqlgraph.NewUpdateSpec(webauthncredential.Table, webauthncredential.Columns, sqlgraph.NewFieldSpec(webauthncredential.FieldID, field.TypeUUID))
 	id, ok := wacuo.mutation.ID()
 	if !ok {
 		return nil, &ValidationError{Name: "id", err: errors.New(`ent: missing "WebAuthnCredential.id" for update`)}

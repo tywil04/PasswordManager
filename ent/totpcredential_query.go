@@ -227,10 +227,12 @@ func (tcq *TotpCredentialQuery) AllX(ctx context.Context) []*TotpCredential {
 }
 
 // IDs executes the query and returns a list of TotpCredential IDs.
-func (tcq *TotpCredentialQuery) IDs(ctx context.Context) ([]uuid.UUID, error) {
-	var ids []uuid.UUID
+func (tcq *TotpCredentialQuery) IDs(ctx context.Context) (ids []uuid.UUID, err error) {
+	if tcq.ctx.Unique == nil && tcq.path != nil {
+		tcq.Unique(true)
+	}
 	ctx = setContextOp(ctx, tcq.ctx, "IDs")
-	if err := tcq.Select(totpcredential.FieldID).Scan(ctx, &ids); err != nil {
+	if err = tcq.Select(totpcredential.FieldID).Scan(ctx, &ids); err != nil {
 		return nil, err
 	}
 	return ids, nil
@@ -333,12 +335,12 @@ func (tcq *TotpCredentialQuery) WithChallenge(opts ...func(*ChallengeQuery)) *To
 // Example:
 //
 //	var v []struct {
-//		CreatedAt time.Time `json:"createdAt,omitempty"`
+//		Secret string `json:"secret,omitempty"`
 //		Count int `json:"count,omitempty"`
 //	}
 //
 //	client.TotpCredential.Query().
-//		GroupBy(totpcredential.FieldCreatedAt).
+//		GroupBy(totpcredential.FieldSecret).
 //		Aggregate(ent.Count()).
 //		Scan(ctx, &v)
 //
@@ -357,11 +359,11 @@ func (tcq *TotpCredentialQuery) GroupBy(field string, fields ...string) *TotpCre
 // Example:
 //
 //	var v []struct {
-//		CreatedAt time.Time `json:"createdAt,omitempty"`
+//		Secret string `json:"secret,omitempty"`
 //	}
 //
 //	client.TotpCredential.Query().
-//		Select(totpcredential.FieldCreatedAt).
+//		Select(totpcredential.FieldSecret).
 //		Scan(ctx, &v)
 //
 func (tcq *TotpCredentialQuery) Select(fields ...string) *TotpCredentialSelect {
@@ -527,20 +529,12 @@ func (tcq *TotpCredentialQuery) sqlCount(ctx context.Context) (int, error) {
 }
 
 func (tcq *TotpCredentialQuery) querySpec() *sqlgraph.QuerySpec {
-	_spec := &sqlgraph.QuerySpec{
-		Node: &sqlgraph.NodeSpec{
-			Table:   totpcredential.Table,
-			Columns: totpcredential.Columns,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeUUID,
-				Column: totpcredential.FieldID,
-			},
-		},
-		From:   tcq.sql,
-		Unique: true,
-	}
+	_spec := sqlgraph.NewQuerySpec(totpcredential.Table, totpcredential.Columns, sqlgraph.NewFieldSpec(totpcredential.FieldID, field.TypeUUID))
+	_spec.From = tcq.sql
 	if unique := tcq.ctx.Unique; unique != nil {
 		_spec.Unique = *unique
+	} else if tcq.path != nil {
+		_spec.Unique = true
 	}
 	if fields := tcq.ctx.Fields; len(fields) > 0 {
 		_spec.Node.Columns = make([]string, 0, len(fields))

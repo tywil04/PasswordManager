@@ -17,7 +17,7 @@ type User struct {
 func (User) Fields() []ent.Field {
 	return []ent.Field{
 		field.UUID("id", uuid.UUID{}).Default(uuid.New),
-		field.String("email").Match(EmailPattern).Unique(),
+		field.String("email").Unique(),
 		field.Bytes("strengthenedMasterHash").NotEmpty().Sensitive(),
 		field.Bytes("strengthenedMasterHashSalt").NotEmpty().Sensitive(),
 		field.Bytes("protectedDatabaseKey").NotEmpty().Sensitive(),

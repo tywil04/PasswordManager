@@ -30,22 +30,31 @@ export function base64UrlToBase64(text) {
     return text.replace(/\-/g, "\+").replace(/\_/g, "\/")
 }
 
-export async function getJson(url, body, headers={}) {
-    return await fetch(url, {
-        method: "GET",
-        headers: Object.assign({}, {
-            "Content-type": "application/json",
-        }, headers),
-        body: JSON.stringify(body)
-    })
+export async function getJson(url, data) {
+    return fetchJson("GET", url, data)
 }
 
-export async function postJson(url, body={}, headers={}) {
-    return await fetch(url, {
-        method: "POST",
-        headers: Object.assign({}, {
-            "Content-type": "application/json",
-        }, headers),
-        body: JSON.stringify(body)
+export async function postJson(url, data) {
+    return fetchJson("POST", url, data)
+}
+
+export async function deleteJson(url, data) {
+    return fetchJson("DELETE", url, data)
+}
+
+export async function fetchJson(method, url, data) {
+    data = data || {}
+    
+    if (data.headers === undefined) {
+        data.headers = {}
+    }
+
+    data.headers["Content-Type"] = "application/json"
+
+    const response = await fetch(url, {
+        method: method, 
+        headers: data.headers, 
+        body: JSON.stringify(data.body), 
     })
+    return { status: response.status, json: await response.json() }
 }

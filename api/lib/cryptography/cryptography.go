@@ -82,3 +82,8 @@ func ImportPublicKey(n []byte, e int) *rsa.PublicKey {
 func ConstantTimeCompare(x []byte, y []byte) bool {
 	return subtle.ConstantTimeCompare(x, y) == 1
 }
+
+func HashString(input string) []byte {
+	hasher := sha512.New()
+	return hasher.Sum([]byte(input))
+}

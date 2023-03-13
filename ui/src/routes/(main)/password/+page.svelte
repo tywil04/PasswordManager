@@ -6,6 +6,7 @@
     import * as cryptography from "$lib/js/cryptography.js"
     import * as utils from "$lib/js/utils.js"
     import * as storage from "$lib/js/storage.js"
+    import * as validations from "$lib/js/validations.js"
 
     import Button from "$lib/components/buttons/Button.svelte"
     import PasswordInput from "$lib/components/inputs/PasswordInput.svelte"
@@ -17,15 +18,50 @@
 
     let submitError
 
-    const submit = async ({ data, cancel }) => {
+    const newVault = async ({data, cancel}) => {
+        submitError = undefined
+
+        const name = data.get("name")
+        const colour = data.get("colour").replaceAll("#", "")
+
+        if (!validations.validateHexColour("#" + colour)) 
+            cancel()
+
+        const databaseKey = await storage.getDatabaseKey()
+        const authToken = await storage.getAuthToken()
+
+        const encryptedName = await cryptography.encrypt(databaseKey, utils.stringToArrayBuffer(name))
+        const encryptedColour = await cryptography.encrypt(databaseKey, utils.stringToArrayBuffer(colour))
+
+        const { status, json } = await utils.postJson("/api/v1/vaults", {
+            body: {
+                name: base64.encode(encryptedName.encrypted),
+                nameIv: base64.encode(encryptedName.iv),
+                colour: base64.encode(encryptedColour.encrypted),
+                colourIv: base64.encode(encryptedColour.iv),
+            },
+            headers: {
+                "Authorization": authToken,
+            }
+        })
+
+        console.log(status)
+        console.log(json)
+
+        cancel()
+    }
+
+    const newPassword = async ({ data, cancel }) => {
         submitError = undefined
 
         const name = data.get("name")
         const username = data.get("username")
         const password = data.get("password")
-        const colour = data.get("colour")
+        const colour = data.get("colour").replaceAll("#", "")
+
+        const vaultId = data.get("vaultId")  // temp
         
-        if (!username || !password)
+        if (!username || !password || !validations.validateHexColour("#" + colour))
             cancel()
 
         const databaseKey = await storage.getDatabaseKey()
@@ -34,6 +70,7 @@
         const encryptedName = await cryptography.encrypt(databaseKey, utils.stringToArrayBuffer(name))
         const encryptedUsername = await cryptography.encrypt(databaseKey, utils.stringToArrayBuffer(username))
         const encryptedPassword = await cryptography.encrypt(databaseKey, utils.stringToArrayBuffer(password))
+        const encryptedColour = await cryptography.encrypt(databaseKey, utils.stringToArrayBuffer(colour))
 
         const processedAdditionalFields = []
         const processedUrls = []
@@ -74,29 +111,28 @@
             }
         }
 
-        const response = await fetch("/api/v1/password", {
-            method: "POST",
-            headers: {
-                "Content-type": "application/json",
-                "Authorization": authToken,
-            },
-            body: JSON.stringify({
+        const { status, json } = await utils.postJson("/api/v1/vaults/password", {  
+            body: {
+                vaultId: vaultId,
                 name: base64.encode(encryptedName.encrypted),
                 nameIv: base64.encode(encryptedName.iv),
                 username: base64.encode(encryptedUsername.encrypted),
                 usernameIv: base64.encode(encryptedUsername.iv),
                 password: base64.encode(encryptedPassword.encrypted),
                 passwordIv: base64.encode(encryptedPassword.iv),
-                colour: colour.replaceAll("#", ""),
+                colour: base64.encode(encryptedColour.encrypted),
+                colourIv: base64.encode(encryptedColour.iv),
                 additionalFields: processedAdditionalFields,
                 urls: processedUrls,
-            })
+            },
+            headers: {
+                "Authorization": authToken,
+            }
         })
-        const json = await response.json()
 
-        if (response.status !== 200) {
+        if (status !== 200) {
             submitError = json.error.code
-        } else if (response.status === 200) {
+        } else if (status === 200) {
             console.log(json)
         }
         
@@ -107,7 +143,14 @@
 <main>
     <div class="outer">
         <div class="inner">
-            <form method="POST" class="inner space-y-5" use:enhance={submit}>
+            <form method="POST" class="inner space-y-5" use:enhance={newVault}>
+                <TextInput class="flex-grow" label="Name" name="name" description="Enter a name."/>
+                <ColourInput class="flex-grow" label="Colour" name="colour" description="Find a colour." invalidMsg="Find a valid colour."/>
+                <Button type="submit">Submit</Button>
+            </form> 
+
+            <form method="POST" class="inner space-y-5" use:enhance={newPassword}>
+                <TextInput class="flex-grow" label="Vault Id" name="vaultId" description="Enter a vault id."/>
                 <TextInput class="flex-grow" label="Name" name="name" description="Enter a name."/>
                 <TextInput class="flex-grow" label="Username" name="username" description="Enter a username."/>
                 <PasswordInput checkValid={false} class="flex-grow" label="Password" name="password" description="Enter a password."/>
@@ -116,8 +159,8 @@
                 <div class="flex flex-col">
                     {#each additionalFields as additionalField}
                         <div class="flex flex-row">
-                            <TextInput required={false} class="flex-grow" name="key" label="Key" bind:value={additionalField.Key}/>
-                            <TextInput required={false} class="flex-grow" name="value" label="Value" bind:value={additionalField.Value}/>
+                            <TextInput required={false} class="flex-grow" name="key" label="Key" bind:value={additionalField.key}/>
+                            <TextInput required={false} class="flex-grow" name="value" label="Value" bind:value={additionalField.value}/>
                         </div>
                     {/each}
                 </div>
@@ -134,13 +177,13 @@
                     {/each}
                 </div>
             
-                <RegularButton onClick={() => {
-                    additionalFields = [...additionalFields, { Key: "", Value: "" }]
-                }}>additionalField</RegularButton>
+                <Button on:click={() => {
+                    additionalFields = [...additionalFields, { key: "", value: "" }]
+                }}>additionalField</Button>
 
-                <RegularButton onClick={() => {
+                <Button on:click={() => {
                     urls = [...urls, ""]
-                }}>url</RegularButton>
+                }}>url</Button>
             
                 <Button type="submit">Submit</Button>
             </form>            

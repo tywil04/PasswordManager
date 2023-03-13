@@ -1,4 +1,4 @@
-package vault
+package vaults
 
 import (
 	"PasswordManager/api/lib/db"
@@ -9,11 +9,17 @@ import (
 	"github.com/google/uuid"
 )
 
+const (
+	Description string = ""
+)
+
 type GetInput struct{}
 
 type PostInput struct {
-	Name   string `form:"name" json:"name" xml:"name"`
-	Colour string `form:"colour" json:"colour" xml:"colour" pmParseType:"hexcolour"`
+	Name     string `form:"name" json:"name" xml:"name" pmParseType:"base64"`
+	NameIv   string `form:"nameIv" json:"nameIv" xml:"nameIv" pmParseType:"base64"`
+	Colour   string `form:"colour" json:"colour" xml:"colour" pmParseType:"base64"`
+	ColourIv string `form:"colourIv" json:"colourIv" xml:"colourIv" pmParseType:"base64"`
 }
 
 type DeleteInput struct {
@@ -32,9 +38,11 @@ func Get(c *gin.Context) {
 	processedVaults := make([]gin.H, len(vaults))
 	for index, vault := range vaults {
 		processedVaults[index] = gin.H{
-			"id":     vault.ID.String(),
-			"name":   vault.Name,
-			"colour": vault.Colour,
+			"id":       vault.ID.String(),
+			"name":     vault.Name,
+			"nameIv":   vault.NameIv,
+			"colour":   vault.Colour,
+			"colourIv": vault.ColourIv,
 		}
 	}
 
@@ -47,8 +55,10 @@ func Post(c *gin.Context) {
 
 	newVault, newVaultErr := db.Client.Vault.Create().
 		SetUser(authedUser).
-		SetName(params["name"].(string)).
-		SetColour(params["colour"].(string)).
+		SetName(params["name"].([]byte)).
+		SetNameIv(params["nameIv"].([]byte)).
+		SetColour(params["colour"].([]byte)).
+		SetColourIv(params["colourIv"].([]byte)).
 		Save(db.Context)
 
 	if newVaultErr != nil {

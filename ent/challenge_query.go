@@ -276,10 +276,12 @@ func (cq *ChallengeQuery) AllX(ctx context.Context) []*Challenge {
 }
 
 // IDs executes the query and returns a list of Challenge IDs.
-func (cq *ChallengeQuery) IDs(ctx context.Context) ([]uuid.UUID, error) {
-	var ids []uuid.UUID
+func (cq *ChallengeQuery) IDs(ctx context.Context) (ids []uuid.UUID, err error) {
+	if cq.ctx.Unique == nil && cq.path != nil {
+		cq.Unique(true)
+	}
 	ctx = setContextOp(ctx, cq.ctx, "IDs")
-	if err := cq.Select(challenge.FieldID).Scan(ctx, &ids); err != nil {
+	if err = cq.Select(challenge.FieldID).Scan(ctx, &ids); err != nil {
 		return nil, err
 	}
 	return ids, nil
@@ -666,20 +668,12 @@ func (cq *ChallengeQuery) sqlCount(ctx context.Context) (int, error) {
 }
 
 func (cq *ChallengeQuery) querySpec() *sqlgraph.QuerySpec {
-	_spec := &sqlgraph.QuerySpec{
-		Node: &sqlgraph.NodeSpec{
-			Table:   challenge.Table,
-			Columns: challenge.Columns,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeUUID,
-				Column: challenge.FieldID,
-			},
-		},
-		From:   cq.sql,
-		Unique: true,
-	}
+	_spec := sqlgraph.NewQuerySpec(challenge.Table, challenge.Columns, sqlgraph.NewFieldSpec(challenge.FieldID, field.TypeUUID))
+	_spec.From = cq.sql
 	if unique := cq.ctx.Unique; unique != nil {
 		_spec.Unique = *unique
+	} else if cq.path != nil {
+		_spec.Unique = true
 	}
 	if fields := cq.ctx.Fields; len(fields) > 0 {
 		_spec.Node.Columns = make([]string, 0, len(fields))
