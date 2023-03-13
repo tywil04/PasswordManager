@@ -3,8 +3,6 @@
 package totpcredential
 
 import (
-	"time"
-
 	"github.com/google/uuid"
 )
 
@@ -13,8 +11,6 @@ const (
 	Label = "totp_credential"
 	// FieldID holds the string denoting the id field in the database.
 	FieldID = "id"
-	// FieldCreatedAt holds the string denoting the createdat field in the database.
-	FieldCreatedAt = "created_at"
 	// FieldSecret holds the string denoting the secret field in the database.
 	FieldSecret = "secret"
 	// FieldValidated holds the string denoting the validated field in the database.
@@ -44,7 +40,6 @@ const (
 // Columns holds all SQL columns for totpcredential fields.
 var Columns = []string{
 	FieldID,
-	FieldCreatedAt,
 	FieldSecret,
 	FieldValidated,
 }
@@ -72,8 +67,6 @@ func ValidColumn(column string) bool {
 }
 
 var (
-	// DefaultCreatedAt holds the default value on creation for the "createdAt" field.
-	DefaultCreatedAt func() time.Time
 	// SecretValidator is a validator for the "secret" field. It is called by the builders before save.
 	SecretValidator func(string) error
 	// DefaultValidated holds the default value on creation for the "validated" field.

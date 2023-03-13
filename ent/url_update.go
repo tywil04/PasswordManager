@@ -117,16 +117,7 @@ func (uu *URLUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if err := uu.check(); err != nil {
 		return n, err
 	}
-	_spec := &sqlgraph.UpdateSpec{
-		Node: &sqlgraph.NodeSpec{
-			Table:   url.Table,
-			Columns: url.Columns,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeUUID,
-				Column: url.FieldID,
-			},
-		},
-	}
+	_spec := sqlgraph.NewUpdateSpec(url.Table, url.Columns, sqlgraph.NewFieldSpec(url.FieldID, field.TypeUUID))
 	if ps := uu.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
@@ -237,6 +228,12 @@ func (uuo *URLUpdateOne) ClearPassword() *URLUpdateOne {
 	return uuo
 }
 
+// Where appends a list predicates to the URLUpdate builder.
+func (uuo *URLUpdateOne) Where(ps ...predicate.Url) *URLUpdateOne {
+	uuo.mutation.Where(ps...)
+	return uuo
+}
+
 // Select allows selecting one or more fields (columns) of the returned entity.
 // The default is selecting all fields defined in the entity schema.
 func (uuo *URLUpdateOne) Select(field string, fields ...string) *URLUpdateOne {
@@ -290,16 +287,7 @@ func (uuo *URLUpdateOne) sqlSave(ctx context.Context) (_node *Url, err error) {
 	if err := uuo.check(); err != nil {
 		return _node, err
 	}
-	_spec := &sqlgraph.UpdateSpec{
-		Node: &sqlgraph.NodeSpec{
-			Table:   url.Table,
-			Columns: url.Columns,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeUUID,
-				Column: url.FieldID,
-			},
-		},
-	}
+	_spec := sqlgraph.NewUpdateSpec(url.Table, url.Columns, sqlgraph.NewFieldSpec(url.FieldID, field.TypeUUID))
 	id, ok := uuo.mutation.ID()
 	if !ok {
 		return nil, &ValidationError{Name: "id", err: errors.New(`ent: missing "Url.id" for update`)}

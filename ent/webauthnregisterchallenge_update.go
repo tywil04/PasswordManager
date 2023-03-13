@@ -170,16 +170,7 @@ func (warcu *WebAuthnRegisterChallengeUpdate) ExecX(ctx context.Context) {
 }
 
 func (warcu *WebAuthnRegisterChallengeUpdate) sqlSave(ctx context.Context) (n int, err error) {
-	_spec := &sqlgraph.UpdateSpec{
-		Node: &sqlgraph.NodeSpec{
-			Table:   webauthnregisterchallenge.Table,
-			Columns: webauthnregisterchallenge.Columns,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeUUID,
-				Column: webauthnregisterchallenge.FieldID,
-			},
-		},
-	}
+	_spec := sqlgraph.NewUpdateSpec(webauthnregisterchallenge.Table, webauthnregisterchallenge.Columns, sqlgraph.NewFieldSpec(webauthnregisterchallenge.FieldID, field.TypeUUID))
 	if ps := warcu.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
@@ -389,6 +380,12 @@ func (warcuo *WebAuthnRegisterChallengeUpdateOne) ClearUser() *WebAuthnRegisterC
 	return warcuo
 }
 
+// Where appends a list predicates to the WebAuthnRegisterChallengeUpdate builder.
+func (warcuo *WebAuthnRegisterChallengeUpdateOne) Where(ps ...predicate.WebAuthnRegisterChallenge) *WebAuthnRegisterChallengeUpdateOne {
+	warcuo.mutation.Where(ps...)
+	return warcuo
+}
+
 // Select allows selecting one or more fields (columns) of the returned entity.
 // The default is selecting all fields defined in the entity schema.
 func (warcuo *WebAuthnRegisterChallengeUpdateOne) Select(field string, fields ...string) *WebAuthnRegisterChallengeUpdateOne {
@@ -424,16 +421,7 @@ func (warcuo *WebAuthnRegisterChallengeUpdateOne) ExecX(ctx context.Context) {
 }
 
 func (warcuo *WebAuthnRegisterChallengeUpdateOne) sqlSave(ctx context.Context) (_node *WebAuthnRegisterChallenge, err error) {
-	_spec := &sqlgraph.UpdateSpec{
-		Node: &sqlgraph.NodeSpec{
-			Table:   webauthnregisterchallenge.Table,
-			Columns: webauthnregisterchallenge.Columns,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeUUID,
-				Column: webauthnregisterchallenge.FieldID,
-			},
-		},
-	}
+	_spec := sqlgraph.NewUpdateSpec(webauthnregisterchallenge.Table, webauthnregisterchallenge.Columns, sqlgraph.NewFieldSpec(webauthnregisterchallenge.FieldID, field.TypeUUID))
 	id, ok := warcuo.mutation.ID()
 	if !ok {
 		return nil, &ValidationError{Name: "id", err: errors.New(`ent: missing "WebAuthnRegisterChallenge.id" for update`)}

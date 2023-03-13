@@ -184,9 +184,3 @@ func (warc *WebAuthnRegisterChallenge) String() string {
 
 // WebAuthnRegisterChallenges is a parsable slice of WebAuthnRegisterChallenge.
 type WebAuthnRegisterChallenges []*WebAuthnRegisterChallenge
-
-func (warc WebAuthnRegisterChallenges) config(cfg config) {
-	for _i := range warc {
-		warc[_i].config = cfg
-	}
-}

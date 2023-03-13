@@ -3,6 +3,7 @@
 package ent
 
 import (
+	"PasswordManager/ent/note"
 	"PasswordManager/ent/password"
 	"PasswordManager/ent/predicate"
 	"PasswordManager/ent/user"
@@ -46,14 +47,26 @@ func (vu *VaultUpdate) SetNillableCreatedAt(t *time.Time) *VaultUpdate {
 }
 
 // SetName sets the "name" field.
-func (vu *VaultUpdate) SetName(s string) *VaultUpdate {
-	vu.mutation.SetName(s)
+func (vu *VaultUpdate) SetName(b []byte) *VaultUpdate {
+	vu.mutation.SetName(b)
+	return vu
+}
+
+// SetNameIv sets the "nameIv" field.
+func (vu *VaultUpdate) SetNameIv(b []byte) *VaultUpdate {
+	vu.mutation.SetNameIv(b)
 	return vu
 }
 
 // SetColour sets the "colour" field.
-func (vu *VaultUpdate) SetColour(s string) *VaultUpdate {
-	vu.mutation.SetColour(s)
+func (vu *VaultUpdate) SetColour(b []byte) *VaultUpdate {
+	vu.mutation.SetColour(b)
+	return vu
+}
+
+// SetColourIv sets the "colourIv" field.
+func (vu *VaultUpdate) SetColourIv(b []byte) *VaultUpdate {
+	vu.mutation.SetColourIv(b)
 	return vu
 }
 
@@ -70,6 +83,21 @@ func (vu *VaultUpdate) AddPasswords(p ...*Password) *VaultUpdate {
 		ids[i] = p[i].ID
 	}
 	return vu.AddPasswordIDs(ids...)
+}
+
+// AddNoteIDs adds the "notes" edge to the Note entity by IDs.
+func (vu *VaultUpdate) AddNoteIDs(ids ...uuid.UUID) *VaultUpdate {
+	vu.mutation.AddNoteIDs(ids...)
+	return vu
+}
+
+// AddNotes adds the "notes" edges to the Note entity.
+func (vu *VaultUpdate) AddNotes(n ...*Note) *VaultUpdate {
+	ids := make([]uuid.UUID, len(n))
+	for i := range n {
+		ids[i] = n[i].ID
+	}
+	return vu.AddNoteIDs(ids...)
 }
 
 // SetUserID sets the "user" edge to the User entity by ID.
@@ -117,6 +145,27 @@ func (vu *VaultUpdate) RemovePasswords(p ...*Password) *VaultUpdate {
 	return vu.RemovePasswordIDs(ids...)
 }
 
+// ClearNotes clears all "notes" edges to the Note entity.
+func (vu *VaultUpdate) ClearNotes() *VaultUpdate {
+	vu.mutation.ClearNotes()
+	return vu
+}
+
+// RemoveNoteIDs removes the "notes" edge to Note entities by IDs.
+func (vu *VaultUpdate) RemoveNoteIDs(ids ...uuid.UUID) *VaultUpdate {
+	vu.mutation.RemoveNoteIDs(ids...)
+	return vu
+}
+
+// RemoveNotes removes "notes" edges to Note entities.
+func (vu *VaultUpdate) RemoveNotes(n ...*Note) *VaultUpdate {
+	ids := make([]uuid.UUID, len(n))
+	for i := range n {
+		ids[i] = n[i].ID
+	}
+	return vu.RemoveNoteIDs(ids...)
+}
+
 // ClearUser clears the "user" edge to the User entity.
 func (vu *VaultUpdate) ClearUser() *VaultUpdate {
 	vu.mutation.ClearUser()
@@ -157,6 +206,21 @@ func (vu *VaultUpdate) check() error {
 			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "Vault.name": %w`, err)}
 		}
 	}
+	if v, ok := vu.mutation.NameIv(); ok {
+		if err := vault.NameIvValidator(v); err != nil {
+			return &ValidationError{Name: "nameIv", err: fmt.Errorf(`ent: validator failed for field "Vault.nameIv": %w`, err)}
+		}
+	}
+	if v, ok := vu.mutation.Colour(); ok {
+		if err := vault.ColourValidator(v); err != nil {
+			return &ValidationError{Name: "colour", err: fmt.Errorf(`ent: validator failed for field "Vault.colour": %w`, err)}
+		}
+	}
+	if v, ok := vu.mutation.ColourIv(); ok {
+		if err := vault.ColourIvValidator(v); err != nil {
+			return &ValidationError{Name: "colourIv", err: fmt.Errorf(`ent: validator failed for field "Vault.colourIv": %w`, err)}
+		}
+	}
 	return nil
 }
 
@@ -164,16 +228,7 @@ func (vu *VaultUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if err := vu.check(); err != nil {
 		return n, err
 	}
-	_spec := &sqlgraph.UpdateSpec{
-		Node: &sqlgraph.NodeSpec{
-			Table:   vault.Table,
-			Columns: vault.Columns,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeUUID,
-				Column: vault.FieldID,
-			},
-		},
-	}
+	_spec := sqlgraph.NewUpdateSpec(vault.Table, vault.Columns, sqlgraph.NewFieldSpec(vault.FieldID, field.TypeUUID))
 	if ps := vu.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
@@ -185,10 +240,16 @@ func (vu *VaultUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		_spec.SetField(vault.FieldCreatedAt, field.TypeTime, value)
 	}
 	if value, ok := vu.mutation.Name(); ok {
-		_spec.SetField(vault.FieldName, field.TypeString, value)
+		_spec.SetField(vault.FieldName, field.TypeBytes, value)
+	}
+	if value, ok := vu.mutation.NameIv(); ok {
+		_spec.SetField(vault.FieldNameIv, field.TypeBytes, value)
 	}
 	if value, ok := vu.mutation.Colour(); ok {
-		_spec.SetField(vault.FieldColour, field.TypeString, value)
+		_spec.SetField(vault.FieldColour, field.TypeBytes, value)
+	}
+	if value, ok := vu.mutation.ColourIv(); ok {
+		_spec.SetField(vault.FieldColourIv, field.TypeBytes, value)
 	}
 	if vu.mutation.PasswordsCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -236,6 +297,60 @@ func (vu *VaultUpdate) sqlSave(ctx context.Context) (n int, err error) {
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeUUID,
 					Column: password.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if vu.mutation.NotesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   vault.NotesTable,
+			Columns: []string{vault.NotesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeUUID,
+					Column: note.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := vu.mutation.RemovedNotesIDs(); len(nodes) > 0 && !vu.mutation.NotesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   vault.NotesTable,
+			Columns: []string{vault.NotesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeUUID,
+					Column: note.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := vu.mutation.NotesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   vault.NotesTable,
+			Columns: []string{vault.NotesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeUUID,
+					Column: note.FieldID,
 				},
 			},
 		}
@@ -314,14 +429,26 @@ func (vuo *VaultUpdateOne) SetNillableCreatedAt(t *time.Time) *VaultUpdateOne {
 }
 
 // SetName sets the "name" field.
-func (vuo *VaultUpdateOne) SetName(s string) *VaultUpdateOne {
-	vuo.mutation.SetName(s)
+func (vuo *VaultUpdateOne) SetName(b []byte) *VaultUpdateOne {
+	vuo.mutation.SetName(b)
+	return vuo
+}
+
+// SetNameIv sets the "nameIv" field.
+func (vuo *VaultUpdateOne) SetNameIv(b []byte) *VaultUpdateOne {
+	vuo.mutation.SetNameIv(b)
 	return vuo
 }
 
 // SetColour sets the "colour" field.
-func (vuo *VaultUpdateOne) SetColour(s string) *VaultUpdateOne {
-	vuo.mutation.SetColour(s)
+func (vuo *VaultUpdateOne) SetColour(b []byte) *VaultUpdateOne {
+	vuo.mutation.SetColour(b)
+	return vuo
+}
+
+// SetColourIv sets the "colourIv" field.
+func (vuo *VaultUpdateOne) SetColourIv(b []byte) *VaultUpdateOne {
+	vuo.mutation.SetColourIv(b)
 	return vuo
 }
 
@@ -338,6 +465,21 @@ func (vuo *VaultUpdateOne) AddPasswords(p ...*Password) *VaultUpdateOne {
 		ids[i] = p[i].ID
 	}
 	return vuo.AddPasswordIDs(ids...)
+}
+
+// AddNoteIDs adds the "notes" edge to the Note entity by IDs.
+func (vuo *VaultUpdateOne) AddNoteIDs(ids ...uuid.UUID) *VaultUpdateOne {
+	vuo.mutation.AddNoteIDs(ids...)
+	return vuo
+}
+
+// AddNotes adds the "notes" edges to the Note entity.
+func (vuo *VaultUpdateOne) AddNotes(n ...*Note) *VaultUpdateOne {
+	ids := make([]uuid.UUID, len(n))
+	for i := range n {
+		ids[i] = n[i].ID
+	}
+	return vuo.AddNoteIDs(ids...)
 }
 
 // SetUserID sets the "user" edge to the User entity by ID.
@@ -385,9 +527,36 @@ func (vuo *VaultUpdateOne) RemovePasswords(p ...*Password) *VaultUpdateOne {
 	return vuo.RemovePasswordIDs(ids...)
 }
 
+// ClearNotes clears all "notes" edges to the Note entity.
+func (vuo *VaultUpdateOne) ClearNotes() *VaultUpdateOne {
+	vuo.mutation.ClearNotes()
+	return vuo
+}
+
+// RemoveNoteIDs removes the "notes" edge to Note entities by IDs.
+func (vuo *VaultUpdateOne) RemoveNoteIDs(ids ...uuid.UUID) *VaultUpdateOne {
+	vuo.mutation.RemoveNoteIDs(ids...)
+	return vuo
+}
+
+// RemoveNotes removes "notes" edges to Note entities.
+func (vuo *VaultUpdateOne) RemoveNotes(n ...*Note) *VaultUpdateOne {
+	ids := make([]uuid.UUID, len(n))
+	for i := range n {
+		ids[i] = n[i].ID
+	}
+	return vuo.RemoveNoteIDs(ids...)
+}
+
 // ClearUser clears the "user" edge to the User entity.
 func (vuo *VaultUpdateOne) ClearUser() *VaultUpdateOne {
 	vuo.mutation.ClearUser()
+	return vuo
+}
+
+// Where appends a list predicates to the VaultUpdate builder.
+func (vuo *VaultUpdateOne) Where(ps ...predicate.Vault) *VaultUpdateOne {
+	vuo.mutation.Where(ps...)
 	return vuo
 }
 
@@ -432,6 +601,21 @@ func (vuo *VaultUpdateOne) check() error {
 			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "Vault.name": %w`, err)}
 		}
 	}
+	if v, ok := vuo.mutation.NameIv(); ok {
+		if err := vault.NameIvValidator(v); err != nil {
+			return &ValidationError{Name: "nameIv", err: fmt.Errorf(`ent: validator failed for field "Vault.nameIv": %w`, err)}
+		}
+	}
+	if v, ok := vuo.mutation.Colour(); ok {
+		if err := vault.ColourValidator(v); err != nil {
+			return &ValidationError{Name: "colour", err: fmt.Errorf(`ent: validator failed for field "Vault.colour": %w`, err)}
+		}
+	}
+	if v, ok := vuo.mutation.ColourIv(); ok {
+		if err := vault.ColourIvValidator(v); err != nil {
+			return &ValidationError{Name: "colourIv", err: fmt.Errorf(`ent: validator failed for field "Vault.colourIv": %w`, err)}
+		}
+	}
 	return nil
 }
 
@@ -439,16 +623,7 @@ func (vuo *VaultUpdateOne) sqlSave(ctx context.Context) (_node *Vault, err error
 	if err := vuo.check(); err != nil {
 		return _node, err
 	}
-	_spec := &sqlgraph.UpdateSpec{
-		Node: &sqlgraph.NodeSpec{
-			Table:   vault.Table,
-			Columns: vault.Columns,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeUUID,
-				Column: vault.FieldID,
-			},
-		},
-	}
+	_spec := sqlgraph.NewUpdateSpec(vault.Table, vault.Columns, sqlgraph.NewFieldSpec(vault.FieldID, field.TypeUUID))
 	id, ok := vuo.mutation.ID()
 	if !ok {
 		return nil, &ValidationError{Name: "id", err: errors.New(`ent: missing "Vault.id" for update`)}
@@ -477,10 +652,16 @@ func (vuo *VaultUpdateOne) sqlSave(ctx context.Context) (_node *Vault, err error
 		_spec.SetField(vault.FieldCreatedAt, field.TypeTime, value)
 	}
 	if value, ok := vuo.mutation.Name(); ok {
-		_spec.SetField(vault.FieldName, field.TypeString, value)
+		_spec.SetField(vault.FieldName, field.TypeBytes, value)
+	}
+	if value, ok := vuo.mutation.NameIv(); ok {
+		_spec.SetField(vault.FieldNameIv, field.TypeBytes, value)
 	}
 	if value, ok := vuo.mutation.Colour(); ok {
-		_spec.SetField(vault.FieldColour, field.TypeString, value)
+		_spec.SetField(vault.FieldColour, field.TypeBytes, value)
+	}
+	if value, ok := vuo.mutation.ColourIv(); ok {
+		_spec.SetField(vault.FieldColourIv, field.TypeBytes, value)
 	}
 	if vuo.mutation.PasswordsCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -528,6 +709,60 @@ func (vuo *VaultUpdateOne) sqlSave(ctx context.Context) (_node *Vault, err error
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeUUID,
 					Column: password.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if vuo.mutation.NotesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   vault.NotesTable,
+			Columns: []string{vault.NotesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeUUID,
+					Column: note.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := vuo.mutation.RemovedNotesIDs(); len(nodes) > 0 && !vuo.mutation.NotesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   vault.NotesTable,
+			Columns: []string{vault.NotesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeUUID,
+					Column: note.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := vuo.mutation.NotesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   vault.NotesTable,
+			Columns: []string{vault.NotesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeUUID,
+					Column: note.FieldID,
 				},
 			},
 		}

@@ -6,6 +6,7 @@ import (
 	"PasswordManager/ent/additionalfield"
 	"PasswordManager/ent/challenge"
 	"PasswordManager/ent/emailchallenge"
+	"PasswordManager/ent/note"
 	"PasswordManager/ent/password"
 	"PasswordManager/ent/predicate"
 	"PasswordManager/ent/session"
@@ -22,10 +23,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/google/uuid"
-
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
+	"github.com/google/uuid"
 )
 
 const (
@@ -40,6 +40,7 @@ const (
 	TypeAdditionalField           = "AdditionalField"
 	TypeChallenge                 = "Challenge"
 	TypeEmailChallenge            = "EmailChallenge"
+	TypeNote                      = "Note"
 	TypePassword                  = "Password"
 	TypeSession                   = "Session"
 	TypeTotpCredential            = "TotpCredential"
@@ -1194,7 +1195,7 @@ type EmailChallengeMutation struct {
 	op               Op
 	typ              string
 	id               *uuid.UUID
-	code             *string
+	code             *[]byte
 	clearedFields    map[string]struct{}
 	challenge        *uuid.UUID
 	clearedchallenge bool
@@ -1308,12 +1309,12 @@ func (m *EmailChallengeMutation) IDs(ctx context.Context) ([]uuid.UUID, error) {
 }
 
 // SetCode sets the "code" field.
-func (m *EmailChallengeMutation) SetCode(s string) {
-	m.code = &s
+func (m *EmailChallengeMutation) SetCode(b []byte) {
+	m.code = &b
 }
 
 // Code returns the value of the "code" field in the mutation.
-func (m *EmailChallengeMutation) Code() (r string, exists bool) {
+func (m *EmailChallengeMutation) Code() (r []byte, exists bool) {
 	v := m.code
 	if v == nil {
 		return
@@ -1324,7 +1325,7 @@ func (m *EmailChallengeMutation) Code() (r string, exists bool) {
 // OldCode returns the old "code" field's value of the EmailChallenge entity.
 // If the EmailChallenge object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *EmailChallengeMutation) OldCode(ctx context.Context) (v string, err error) {
+func (m *EmailChallengeMutation) OldCode(ctx context.Context) (v []byte, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldCode is only allowed on UpdateOne operations")
 	}
@@ -1464,7 +1465,7 @@ func (m *EmailChallengeMutation) OldField(ctx context.Context, name string) (ent
 func (m *EmailChallengeMutation) SetField(name string, value ent.Value) error {
 	switch name {
 	case emailchallenge.FieldCode:
-		v, ok := value.(string)
+		v, ok := value.([]byte)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
@@ -1609,6 +1610,783 @@ func (m *EmailChallengeMutation) ResetEdge(name string) error {
 	return fmt.Errorf("unknown EmailChallenge edge %s", name)
 }
 
+// NoteMutation represents an operation that mutates the Note nodes in the graph.
+type NoteMutation struct {
+	config
+	op            Op
+	typ           string
+	id            *uuid.UUID
+	name          *[]byte
+	nameIv        *[]byte
+	title         *[]byte
+	titleIv       *[]byte
+	content       *[]byte
+	contentIv     *[]byte
+	colour        *[]byte
+	colourIv      *[]byte
+	clearedFields map[string]struct{}
+	vault         *uuid.UUID
+	clearedvault  bool
+	done          bool
+	oldValue      func(context.Context) (*Note, error)
+	predicates    []predicate.Note
+}
+
+var _ ent.Mutation = (*NoteMutation)(nil)
+
+// noteOption allows management of the mutation configuration using functional options.
+type noteOption func(*NoteMutation)
+
+// newNoteMutation creates new mutation for the Note entity.
+func newNoteMutation(c config, op Op, opts ...noteOption) *NoteMutation {
+	m := &NoteMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeNote,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withNoteID sets the ID field of the mutation.
+func withNoteID(id uuid.UUID) noteOption {
+	return func(m *NoteMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *Note
+		)
+		m.oldValue = func(ctx context.Context) (*Note, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().Note.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withNote sets the old Note of the mutation.
+func withNote(node *Note) noteOption {
+	return func(m *NoteMutation) {
+		m.oldValue = func(context.Context) (*Note, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m NoteMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m NoteMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of Note entities.
+func (m *NoteMutation) SetID(id uuid.UUID) {
+	m.id = &id
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *NoteMutation) ID() (id uuid.UUID, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *NoteMutation) IDs(ctx context.Context) ([]uuid.UUID, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []uuid.UUID{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().Note.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetName sets the "name" field.
+func (m *NoteMutation) SetName(b []byte) {
+	m.name = &b
+}
+
+// Name returns the value of the "name" field in the mutation.
+func (m *NoteMutation) Name() (r []byte, exists bool) {
+	v := m.name
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldName returns the old "name" field's value of the Note entity.
+// If the Note object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *NoteMutation) OldName(ctx context.Context) (v []byte, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldName is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldName requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldName: %w", err)
+	}
+	return oldValue.Name, nil
+}
+
+// ResetName resets all changes to the "name" field.
+func (m *NoteMutation) ResetName() {
+	m.name = nil
+}
+
+// SetNameIv sets the "nameIv" field.
+func (m *NoteMutation) SetNameIv(b []byte) {
+	m.nameIv = &b
+}
+
+// NameIv returns the value of the "nameIv" field in the mutation.
+func (m *NoteMutation) NameIv() (r []byte, exists bool) {
+	v := m.nameIv
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldNameIv returns the old "nameIv" field's value of the Note entity.
+// If the Note object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *NoteMutation) OldNameIv(ctx context.Context) (v []byte, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldNameIv is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldNameIv requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldNameIv: %w", err)
+	}
+	return oldValue.NameIv, nil
+}
+
+// ResetNameIv resets all changes to the "nameIv" field.
+func (m *NoteMutation) ResetNameIv() {
+	m.nameIv = nil
+}
+
+// SetTitle sets the "title" field.
+func (m *NoteMutation) SetTitle(b []byte) {
+	m.title = &b
+}
+
+// Title returns the value of the "title" field in the mutation.
+func (m *NoteMutation) Title() (r []byte, exists bool) {
+	v := m.title
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTitle returns the old "title" field's value of the Note entity.
+// If the Note object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *NoteMutation) OldTitle(ctx context.Context) (v []byte, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTitle is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTitle requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTitle: %w", err)
+	}
+	return oldValue.Title, nil
+}
+
+// ResetTitle resets all changes to the "title" field.
+func (m *NoteMutation) ResetTitle() {
+	m.title = nil
+}
+
+// SetTitleIv sets the "titleIv" field.
+func (m *NoteMutation) SetTitleIv(b []byte) {
+	m.titleIv = &b
+}
+
+// TitleIv returns the value of the "titleIv" field in the mutation.
+func (m *NoteMutation) TitleIv() (r []byte, exists bool) {
+	v := m.titleIv
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTitleIv returns the old "titleIv" field's value of the Note entity.
+// If the Note object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *NoteMutation) OldTitleIv(ctx context.Context) (v []byte, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTitleIv is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTitleIv requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTitleIv: %w", err)
+	}
+	return oldValue.TitleIv, nil
+}
+
+// ResetTitleIv resets all changes to the "titleIv" field.
+func (m *NoteMutation) ResetTitleIv() {
+	m.titleIv = nil
+}
+
+// SetContent sets the "content" field.
+func (m *NoteMutation) SetContent(b []byte) {
+	m.content = &b
+}
+
+// Content returns the value of the "content" field in the mutation.
+func (m *NoteMutation) Content() (r []byte, exists bool) {
+	v := m.content
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldContent returns the old "content" field's value of the Note entity.
+// If the Note object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *NoteMutation) OldContent(ctx context.Context) (v []byte, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldContent is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldContent requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldContent: %w", err)
+	}
+	return oldValue.Content, nil
+}
+
+// ResetContent resets all changes to the "content" field.
+func (m *NoteMutation) ResetContent() {
+	m.content = nil
+}
+
+// SetContentIv sets the "contentIv" field.
+func (m *NoteMutation) SetContentIv(b []byte) {
+	m.contentIv = &b
+}
+
+// ContentIv returns the value of the "contentIv" field in the mutation.
+func (m *NoteMutation) ContentIv() (r []byte, exists bool) {
+	v := m.contentIv
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldContentIv returns the old "contentIv" field's value of the Note entity.
+// If the Note object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *NoteMutation) OldContentIv(ctx context.Context) (v []byte, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldContentIv is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldContentIv requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldContentIv: %w", err)
+	}
+	return oldValue.ContentIv, nil
+}
+
+// ResetContentIv resets all changes to the "contentIv" field.
+func (m *NoteMutation) ResetContentIv() {
+	m.contentIv = nil
+}
+
+// SetColour sets the "colour" field.
+func (m *NoteMutation) SetColour(b []byte) {
+	m.colour = &b
+}
+
+// Colour returns the value of the "colour" field in the mutation.
+func (m *NoteMutation) Colour() (r []byte, exists bool) {
+	v := m.colour
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldColour returns the old "colour" field's value of the Note entity.
+// If the Note object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *NoteMutation) OldColour(ctx context.Context) (v []byte, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldColour is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldColour requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldColour: %w", err)
+	}
+	return oldValue.Colour, nil
+}
+
+// ResetColour resets all changes to the "colour" field.
+func (m *NoteMutation) ResetColour() {
+	m.colour = nil
+}
+
+// SetColourIv sets the "colourIv" field.
+func (m *NoteMutation) SetColourIv(b []byte) {
+	m.colourIv = &b
+}
+
+// ColourIv returns the value of the "colourIv" field in the mutation.
+func (m *NoteMutation) ColourIv() (r []byte, exists bool) {
+	v := m.colourIv
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldColourIv returns the old "colourIv" field's value of the Note entity.
+// If the Note object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *NoteMutation) OldColourIv(ctx context.Context) (v []byte, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldColourIv is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldColourIv requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldColourIv: %w", err)
+	}
+	return oldValue.ColourIv, nil
+}
+
+// ResetColourIv resets all changes to the "colourIv" field.
+func (m *NoteMutation) ResetColourIv() {
+	m.colourIv = nil
+}
+
+// SetVaultID sets the "vault" edge to the Vault entity by id.
+func (m *NoteMutation) SetVaultID(id uuid.UUID) {
+	m.vault = &id
+}
+
+// ClearVault clears the "vault" edge to the Vault entity.
+func (m *NoteMutation) ClearVault() {
+	m.clearedvault = true
+}
+
+// VaultCleared reports if the "vault" edge to the Vault entity was cleared.
+func (m *NoteMutation) VaultCleared() bool {
+	return m.clearedvault
+}
+
+// VaultID returns the "vault" edge ID in the mutation.
+func (m *NoteMutation) VaultID() (id uuid.UUID, exists bool) {
+	if m.vault != nil {
+		return *m.vault, true
+	}
+	return
+}
+
+// VaultIDs returns the "vault" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// VaultID instead. It exists only for internal usage by the builders.
+func (m *NoteMutation) VaultIDs() (ids []uuid.UUID) {
+	if id := m.vault; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetVault resets all changes to the "vault" edge.
+func (m *NoteMutation) ResetVault() {
+	m.vault = nil
+	m.clearedvault = false
+}
+
+// Where appends a list predicates to the NoteMutation builder.
+func (m *NoteMutation) Where(ps ...predicate.Note) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the NoteMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *NoteMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.Note, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *NoteMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *NoteMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (Note).
+func (m *NoteMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *NoteMutation) Fields() []string {
+	fields := make([]string, 0, 8)
+	if m.name != nil {
+		fields = append(fields, note.FieldName)
+	}
+	if m.nameIv != nil {
+		fields = append(fields, note.FieldNameIv)
+	}
+	if m.title != nil {
+		fields = append(fields, note.FieldTitle)
+	}
+	if m.titleIv != nil {
+		fields = append(fields, note.FieldTitleIv)
+	}
+	if m.content != nil {
+		fields = append(fields, note.FieldContent)
+	}
+	if m.contentIv != nil {
+		fields = append(fields, note.FieldContentIv)
+	}
+	if m.colour != nil {
+		fields = append(fields, note.FieldColour)
+	}
+	if m.colourIv != nil {
+		fields = append(fields, note.FieldColourIv)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *NoteMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case note.FieldName:
+		return m.Name()
+	case note.FieldNameIv:
+		return m.NameIv()
+	case note.FieldTitle:
+		return m.Title()
+	case note.FieldTitleIv:
+		return m.TitleIv()
+	case note.FieldContent:
+		return m.Content()
+	case note.FieldContentIv:
+		return m.ContentIv()
+	case note.FieldColour:
+		return m.Colour()
+	case note.FieldColourIv:
+		return m.ColourIv()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *NoteMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case note.FieldName:
+		return m.OldName(ctx)
+	case note.FieldNameIv:
+		return m.OldNameIv(ctx)
+	case note.FieldTitle:
+		return m.OldTitle(ctx)
+	case note.FieldTitleIv:
+		return m.OldTitleIv(ctx)
+	case note.FieldContent:
+		return m.OldContent(ctx)
+	case note.FieldContentIv:
+		return m.OldContentIv(ctx)
+	case note.FieldColour:
+		return m.OldColour(ctx)
+	case note.FieldColourIv:
+		return m.OldColourIv(ctx)
+	}
+	return nil, fmt.Errorf("unknown Note field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *NoteMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case note.FieldName:
+		v, ok := value.([]byte)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetName(v)
+		return nil
+	case note.FieldNameIv:
+		v, ok := value.([]byte)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetNameIv(v)
+		return nil
+	case note.FieldTitle:
+		v, ok := value.([]byte)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTitle(v)
+		return nil
+	case note.FieldTitleIv:
+		v, ok := value.([]byte)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTitleIv(v)
+		return nil
+	case note.FieldContent:
+		v, ok := value.([]byte)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetContent(v)
+		return nil
+	case note.FieldContentIv:
+		v, ok := value.([]byte)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetContentIv(v)
+		return nil
+	case note.FieldColour:
+		v, ok := value.([]byte)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetColour(v)
+		return nil
+	case note.FieldColourIv:
+		v, ok := value.([]byte)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetColourIv(v)
+		return nil
+	}
+	return fmt.Errorf("unknown Note field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *NoteMutation) AddedFields() []string {
+	return nil
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *NoteMutation) AddedField(name string) (ent.Value, bool) {
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *NoteMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	}
+	return fmt.Errorf("unknown Note numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *NoteMutation) ClearedFields() []string {
+	return nil
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *NoteMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *NoteMutation) ClearField(name string) error {
+	return fmt.Errorf("unknown Note nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *NoteMutation) ResetField(name string) error {
+	switch name {
+	case note.FieldName:
+		m.ResetName()
+		return nil
+	case note.FieldNameIv:
+		m.ResetNameIv()
+		return nil
+	case note.FieldTitle:
+		m.ResetTitle()
+		return nil
+	case note.FieldTitleIv:
+		m.ResetTitleIv()
+		return nil
+	case note.FieldContent:
+		m.ResetContent()
+		return nil
+	case note.FieldContentIv:
+		m.ResetContentIv()
+		return nil
+	case note.FieldColour:
+		m.ResetColour()
+		return nil
+	case note.FieldColourIv:
+		m.ResetColourIv()
+		return nil
+	}
+	return fmt.Errorf("unknown Note field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *NoteMutation) AddedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.vault != nil {
+		edges = append(edges, note.EdgeVault)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *NoteMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case note.EdgeVault:
+		if id := m.vault; id != nil {
+			return []ent.Value{*id}
+		}
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *NoteMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 1)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *NoteMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *NoteMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.clearedvault {
+		edges = append(edges, note.EdgeVault)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *NoteMutation) EdgeCleared(name string) bool {
+	switch name {
+	case note.EdgeVault:
+		return m.clearedvault
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *NoteMutation) ClearEdge(name string) error {
+	switch name {
+	case note.EdgeVault:
+		m.ClearVault()
+		return nil
+	}
+	return fmt.Errorf("unknown Note unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *NoteMutation) ResetEdge(name string) error {
+	switch name {
+	case note.EdgeVault:
+		m.ResetVault()
+		return nil
+	}
+	return fmt.Errorf("unknown Note edge %s", name)
+}
+
 // PasswordMutation represents an operation that mutates the Password nodes in the graph.
 type PasswordMutation struct {
 	config
@@ -1621,7 +2399,8 @@ type PasswordMutation struct {
 	usernameIv              *[]byte
 	password                *[]byte
 	passwordIv              *[]byte
-	colour                  *string
+	colour                  *[]byte
+	colourIv                *[]byte
 	clearedFields           map[string]struct{}
 	additionalFields        map[uuid.UUID]struct{}
 	removedadditionalFields map[uuid.UUID]struct{}
@@ -1957,12 +2736,12 @@ func (m *PasswordMutation) ResetPasswordIv() {
 }
 
 // SetColour sets the "colour" field.
-func (m *PasswordMutation) SetColour(s string) {
-	m.colour = &s
+func (m *PasswordMutation) SetColour(b []byte) {
+	m.colour = &b
 }
 
 // Colour returns the value of the "colour" field in the mutation.
-func (m *PasswordMutation) Colour() (r string, exists bool) {
+func (m *PasswordMutation) Colour() (r []byte, exists bool) {
 	v := m.colour
 	if v == nil {
 		return
@@ -1973,7 +2752,7 @@ func (m *PasswordMutation) Colour() (r string, exists bool) {
 // OldColour returns the old "colour" field's value of the Password entity.
 // If the Password object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *PasswordMutation) OldColour(ctx context.Context) (v string, err error) {
+func (m *PasswordMutation) OldColour(ctx context.Context) (v []byte, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldColour is only allowed on UpdateOne operations")
 	}
@@ -1990,6 +2769,42 @@ func (m *PasswordMutation) OldColour(ctx context.Context) (v string, err error) 
 // ResetColour resets all changes to the "colour" field.
 func (m *PasswordMutation) ResetColour() {
 	m.colour = nil
+}
+
+// SetColourIv sets the "colourIv" field.
+func (m *PasswordMutation) SetColourIv(b []byte) {
+	m.colourIv = &b
+}
+
+// ColourIv returns the value of the "colourIv" field in the mutation.
+func (m *PasswordMutation) ColourIv() (r []byte, exists bool) {
+	v := m.colourIv
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldColourIv returns the old "colourIv" field's value of the Password entity.
+// If the Password object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PasswordMutation) OldColourIv(ctx context.Context) (v []byte, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldColourIv is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldColourIv requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldColourIv: %w", err)
+	}
+	return oldValue.ColourIv, nil
+}
+
+// ResetColourIv resets all changes to the "colourIv" field.
+func (m *PasswordMutation) ResetColourIv() {
+	m.colourIv = nil
 }
 
 // AddAdditionalFieldIDs adds the "additionalFields" edge to the AdditionalField entity by ids.
@@ -2173,7 +2988,7 @@ func (m *PasswordMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *PasswordMutation) Fields() []string {
-	fields := make([]string, 0, 7)
+	fields := make([]string, 0, 8)
 	if m.name != nil {
 		fields = append(fields, password.FieldName)
 	}
@@ -2194,6 +3009,9 @@ func (m *PasswordMutation) Fields() []string {
 	}
 	if m.colour != nil {
 		fields = append(fields, password.FieldColour)
+	}
+	if m.colourIv != nil {
+		fields = append(fields, password.FieldColourIv)
 	}
 	return fields
 }
@@ -2217,6 +3035,8 @@ func (m *PasswordMutation) Field(name string) (ent.Value, bool) {
 		return m.PasswordIv()
 	case password.FieldColour:
 		return m.Colour()
+	case password.FieldColourIv:
+		return m.ColourIv()
 	}
 	return nil, false
 }
@@ -2240,6 +3060,8 @@ func (m *PasswordMutation) OldField(ctx context.Context, name string) (ent.Value
 		return m.OldPasswordIv(ctx)
 	case password.FieldColour:
 		return m.OldColour(ctx)
+	case password.FieldColourIv:
+		return m.OldColourIv(ctx)
 	}
 	return nil, fmt.Errorf("unknown Password field %s", name)
 }
@@ -2292,11 +3114,18 @@ func (m *PasswordMutation) SetField(name string, value ent.Value) error {
 		m.SetPasswordIv(v)
 		return nil
 	case password.FieldColour:
-		v, ok := value.(string)
+		v, ok := value.([]byte)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetColour(v)
+		return nil
+	case password.FieldColourIv:
+		v, ok := value.([]byte)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetColourIv(v)
 		return nil
 	}
 	return fmt.Errorf("unknown Password field %s", name)
@@ -2367,6 +3196,9 @@ func (m *PasswordMutation) ResetField(name string) error {
 		return nil
 	case password.FieldColour:
 		m.ResetColour()
+		return nil
+	case password.FieldColourIv:
+		m.ResetColourIv()
 		return nil
 	}
 	return fmt.Errorf("unknown Password field %s", name)
@@ -3049,7 +3881,6 @@ type TotpCredentialMutation struct {
 	op               Op
 	typ              string
 	id               *uuid.UUID
-	createdAt        *time.Time
 	secret           *string
 	validated        *bool
 	clearedFields    map[string]struct{}
@@ -3164,42 +3995,6 @@ func (m *TotpCredentialMutation) IDs(ctx context.Context) ([]uuid.UUID, error) {
 	default:
 		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
 	}
-}
-
-// SetCreatedAt sets the "createdAt" field.
-func (m *TotpCredentialMutation) SetCreatedAt(t time.Time) {
-	m.createdAt = &t
-}
-
-// CreatedAt returns the value of the "createdAt" field in the mutation.
-func (m *TotpCredentialMutation) CreatedAt() (r time.Time, exists bool) {
-	v := m.createdAt
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldCreatedAt returns the old "createdAt" field's value of the TotpCredential entity.
-// If the TotpCredential object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *TotpCredentialMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
-	}
-	return oldValue.CreatedAt, nil
-}
-
-// ResetCreatedAt resets all changes to the "createdAt" field.
-func (m *TotpCredentialMutation) ResetCreatedAt() {
-	m.createdAt = nil
 }
 
 // SetSecret sets the "secret" field.
@@ -3386,10 +4181,7 @@ func (m *TotpCredentialMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *TotpCredentialMutation) Fields() []string {
-	fields := make([]string, 0, 3)
-	if m.createdAt != nil {
-		fields = append(fields, totpcredential.FieldCreatedAt)
-	}
+	fields := make([]string, 0, 2)
 	if m.secret != nil {
 		fields = append(fields, totpcredential.FieldSecret)
 	}
@@ -3404,8 +4196,6 @@ func (m *TotpCredentialMutation) Fields() []string {
 // schema.
 func (m *TotpCredentialMutation) Field(name string) (ent.Value, bool) {
 	switch name {
-	case totpcredential.FieldCreatedAt:
-		return m.CreatedAt()
 	case totpcredential.FieldSecret:
 		return m.Secret()
 	case totpcredential.FieldValidated:
@@ -3419,8 +4209,6 @@ func (m *TotpCredentialMutation) Field(name string) (ent.Value, bool) {
 // database failed.
 func (m *TotpCredentialMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
 	switch name {
-	case totpcredential.FieldCreatedAt:
-		return m.OldCreatedAt(ctx)
 	case totpcredential.FieldSecret:
 		return m.OldSecret(ctx)
 	case totpcredential.FieldValidated:
@@ -3434,13 +4222,6 @@ func (m *TotpCredentialMutation) OldField(ctx context.Context, name string) (ent
 // type.
 func (m *TotpCredentialMutation) SetField(name string, value ent.Value) error {
 	switch name {
-	case totpcredential.FieldCreatedAt:
-		v, ok := value.(time.Time)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetCreatedAt(v)
-		return nil
 	case totpcredential.FieldSecret:
 		v, ok := value.(string)
 		if !ok {
@@ -3504,9 +4285,6 @@ func (m *TotpCredentialMutation) ClearField(name string) error {
 // It returns an error if the field is not defined in the schema.
 func (m *TotpCredentialMutation) ResetField(name string) error {
 	switch name {
-	case totpcredential.FieldCreatedAt:
-		m.ResetCreatedAt()
-		return nil
 	case totpcredential.FieldSecret:
 		m.ResetSecret()
 		return nil
@@ -5263,12 +6041,17 @@ type VaultMutation struct {
 	typ              string
 	id               *uuid.UUID
 	createdAt        *time.Time
-	name             *string
-	colour           *string
+	name             *[]byte
+	nameIv           *[]byte
+	colour           *[]byte
+	colourIv         *[]byte
 	clearedFields    map[string]struct{}
 	passwords        map[uuid.UUID]struct{}
 	removedpasswords map[uuid.UUID]struct{}
 	clearedpasswords bool
+	notes            map[uuid.UUID]struct{}
+	removednotes     map[uuid.UUID]struct{}
+	clearednotes     bool
 	user             *uuid.UUID
 	cleareduser      bool
 	done             bool
@@ -5417,12 +6200,12 @@ func (m *VaultMutation) ResetCreatedAt() {
 }
 
 // SetName sets the "name" field.
-func (m *VaultMutation) SetName(s string) {
-	m.name = &s
+func (m *VaultMutation) SetName(b []byte) {
+	m.name = &b
 }
 
 // Name returns the value of the "name" field in the mutation.
-func (m *VaultMutation) Name() (r string, exists bool) {
+func (m *VaultMutation) Name() (r []byte, exists bool) {
 	v := m.name
 	if v == nil {
 		return
@@ -5433,7 +6216,7 @@ func (m *VaultMutation) Name() (r string, exists bool) {
 // OldName returns the old "name" field's value of the Vault entity.
 // If the Vault object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *VaultMutation) OldName(ctx context.Context) (v string, err error) {
+func (m *VaultMutation) OldName(ctx context.Context) (v []byte, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldName is only allowed on UpdateOne operations")
 	}
@@ -5452,13 +6235,49 @@ func (m *VaultMutation) ResetName() {
 	m.name = nil
 }
 
+// SetNameIv sets the "nameIv" field.
+func (m *VaultMutation) SetNameIv(b []byte) {
+	m.nameIv = &b
+}
+
+// NameIv returns the value of the "nameIv" field in the mutation.
+func (m *VaultMutation) NameIv() (r []byte, exists bool) {
+	v := m.nameIv
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldNameIv returns the old "nameIv" field's value of the Vault entity.
+// If the Vault object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *VaultMutation) OldNameIv(ctx context.Context) (v []byte, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldNameIv is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldNameIv requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldNameIv: %w", err)
+	}
+	return oldValue.NameIv, nil
+}
+
+// ResetNameIv resets all changes to the "nameIv" field.
+func (m *VaultMutation) ResetNameIv() {
+	m.nameIv = nil
+}
+
 // SetColour sets the "colour" field.
-func (m *VaultMutation) SetColour(s string) {
-	m.colour = &s
+func (m *VaultMutation) SetColour(b []byte) {
+	m.colour = &b
 }
 
 // Colour returns the value of the "colour" field in the mutation.
-func (m *VaultMutation) Colour() (r string, exists bool) {
+func (m *VaultMutation) Colour() (r []byte, exists bool) {
 	v := m.colour
 	if v == nil {
 		return
@@ -5469,7 +6288,7 @@ func (m *VaultMutation) Colour() (r string, exists bool) {
 // OldColour returns the old "colour" field's value of the Vault entity.
 // If the Vault object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *VaultMutation) OldColour(ctx context.Context) (v string, err error) {
+func (m *VaultMutation) OldColour(ctx context.Context) (v []byte, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldColour is only allowed on UpdateOne operations")
 	}
@@ -5486,6 +6305,42 @@ func (m *VaultMutation) OldColour(ctx context.Context) (v string, err error) {
 // ResetColour resets all changes to the "colour" field.
 func (m *VaultMutation) ResetColour() {
 	m.colour = nil
+}
+
+// SetColourIv sets the "colourIv" field.
+func (m *VaultMutation) SetColourIv(b []byte) {
+	m.colourIv = &b
+}
+
+// ColourIv returns the value of the "colourIv" field in the mutation.
+func (m *VaultMutation) ColourIv() (r []byte, exists bool) {
+	v := m.colourIv
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldColourIv returns the old "colourIv" field's value of the Vault entity.
+// If the Vault object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *VaultMutation) OldColourIv(ctx context.Context) (v []byte, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldColourIv is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldColourIv requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldColourIv: %w", err)
+	}
+	return oldValue.ColourIv, nil
+}
+
+// ResetColourIv resets all changes to the "colourIv" field.
+func (m *VaultMutation) ResetColourIv() {
+	m.colourIv = nil
 }
 
 // AddPasswordIDs adds the "passwords" edge to the Password entity by ids.
@@ -5540,6 +6395,60 @@ func (m *VaultMutation) ResetPasswords() {
 	m.passwords = nil
 	m.clearedpasswords = false
 	m.removedpasswords = nil
+}
+
+// AddNoteIDs adds the "notes" edge to the Note entity by ids.
+func (m *VaultMutation) AddNoteIDs(ids ...uuid.UUID) {
+	if m.notes == nil {
+		m.notes = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		m.notes[ids[i]] = struct{}{}
+	}
+}
+
+// ClearNotes clears the "notes" edge to the Note entity.
+func (m *VaultMutation) ClearNotes() {
+	m.clearednotes = true
+}
+
+// NotesCleared reports if the "notes" edge to the Note entity was cleared.
+func (m *VaultMutation) NotesCleared() bool {
+	return m.clearednotes
+}
+
+// RemoveNoteIDs removes the "notes" edge to the Note entity by IDs.
+func (m *VaultMutation) RemoveNoteIDs(ids ...uuid.UUID) {
+	if m.removednotes == nil {
+		m.removednotes = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		delete(m.notes, ids[i])
+		m.removednotes[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedNotes returns the removed IDs of the "notes" edge to the Note entity.
+func (m *VaultMutation) RemovedNotesIDs() (ids []uuid.UUID) {
+	for id := range m.removednotes {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// NotesIDs returns the "notes" edge IDs in the mutation.
+func (m *VaultMutation) NotesIDs() (ids []uuid.UUID) {
+	for id := range m.notes {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetNotes resets all changes to the "notes" edge.
+func (m *VaultMutation) ResetNotes() {
+	m.notes = nil
+	m.clearednotes = false
+	m.removednotes = nil
 }
 
 // SetUserID sets the "user" edge to the User entity by id.
@@ -5615,15 +6524,21 @@ func (m *VaultMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *VaultMutation) Fields() []string {
-	fields := make([]string, 0, 3)
+	fields := make([]string, 0, 5)
 	if m.createdAt != nil {
 		fields = append(fields, vault.FieldCreatedAt)
 	}
 	if m.name != nil {
 		fields = append(fields, vault.FieldName)
 	}
+	if m.nameIv != nil {
+		fields = append(fields, vault.FieldNameIv)
+	}
 	if m.colour != nil {
 		fields = append(fields, vault.FieldColour)
+	}
+	if m.colourIv != nil {
+		fields = append(fields, vault.FieldColourIv)
 	}
 	return fields
 }
@@ -5637,8 +6552,12 @@ func (m *VaultMutation) Field(name string) (ent.Value, bool) {
 		return m.CreatedAt()
 	case vault.FieldName:
 		return m.Name()
+	case vault.FieldNameIv:
+		return m.NameIv()
 	case vault.FieldColour:
 		return m.Colour()
+	case vault.FieldColourIv:
+		return m.ColourIv()
 	}
 	return nil, false
 }
@@ -5652,8 +6571,12 @@ func (m *VaultMutation) OldField(ctx context.Context, name string) (ent.Value, e
 		return m.OldCreatedAt(ctx)
 	case vault.FieldName:
 		return m.OldName(ctx)
+	case vault.FieldNameIv:
+		return m.OldNameIv(ctx)
 	case vault.FieldColour:
 		return m.OldColour(ctx)
+	case vault.FieldColourIv:
+		return m.OldColourIv(ctx)
 	}
 	return nil, fmt.Errorf("unknown Vault field %s", name)
 }
@@ -5671,18 +6594,32 @@ func (m *VaultMutation) SetField(name string, value ent.Value) error {
 		m.SetCreatedAt(v)
 		return nil
 	case vault.FieldName:
-		v, ok := value.(string)
+		v, ok := value.([]byte)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetName(v)
 		return nil
+	case vault.FieldNameIv:
+		v, ok := value.([]byte)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetNameIv(v)
+		return nil
 	case vault.FieldColour:
-		v, ok := value.(string)
+		v, ok := value.([]byte)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetColour(v)
+		return nil
+	case vault.FieldColourIv:
+		v, ok := value.([]byte)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetColourIv(v)
 		return nil
 	}
 	return fmt.Errorf("unknown Vault field %s", name)
@@ -5739,8 +6676,14 @@ func (m *VaultMutation) ResetField(name string) error {
 	case vault.FieldName:
 		m.ResetName()
 		return nil
+	case vault.FieldNameIv:
+		m.ResetNameIv()
+		return nil
 	case vault.FieldColour:
 		m.ResetColour()
+		return nil
+	case vault.FieldColourIv:
+		m.ResetColourIv()
 		return nil
 	}
 	return fmt.Errorf("unknown Vault field %s", name)
@@ -5748,9 +6691,12 @@ func (m *VaultMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *VaultMutation) AddedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 3)
 	if m.passwords != nil {
 		edges = append(edges, vault.EdgePasswords)
+	}
+	if m.notes != nil {
+		edges = append(edges, vault.EdgeNotes)
 	}
 	if m.user != nil {
 		edges = append(edges, vault.EdgeUser)
@@ -5768,6 +6714,12 @@ func (m *VaultMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case vault.EdgeNotes:
+		ids := make([]ent.Value, 0, len(m.notes))
+		for id := range m.notes {
+			ids = append(ids, id)
+		}
+		return ids
 	case vault.EdgeUser:
 		if id := m.user; id != nil {
 			return []ent.Value{*id}
@@ -5778,9 +6730,12 @@ func (m *VaultMutation) AddedIDs(name string) []ent.Value {
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *VaultMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 3)
 	if m.removedpasswords != nil {
 		edges = append(edges, vault.EdgePasswords)
+	}
+	if m.removednotes != nil {
+		edges = append(edges, vault.EdgeNotes)
 	}
 	return edges
 }
@@ -5795,15 +6750,24 @@ func (m *VaultMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case vault.EdgeNotes:
+		ids := make([]ent.Value, 0, len(m.removednotes))
+		for id := range m.removednotes {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *VaultMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 3)
 	if m.clearedpasswords {
 		edges = append(edges, vault.EdgePasswords)
+	}
+	if m.clearednotes {
+		edges = append(edges, vault.EdgeNotes)
 	}
 	if m.cleareduser {
 		edges = append(edges, vault.EdgeUser)
@@ -5817,6 +6781,8 @@ func (m *VaultMutation) EdgeCleared(name string) bool {
 	switch name {
 	case vault.EdgePasswords:
 		return m.clearedpasswords
+	case vault.EdgeNotes:
+		return m.clearednotes
 	case vault.EdgeUser:
 		return m.cleareduser
 	}
@@ -5840,6 +6806,9 @@ func (m *VaultMutation) ResetEdge(name string) error {
 	switch name {
 	case vault.EdgePasswords:
 		m.ResetPasswords()
+		return nil
+	case vault.EdgeNotes:
+		m.ResetNotes()
 		return nil
 	case vault.EdgeUser:
 		m.ResetUser()

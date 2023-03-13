@@ -183,16 +183,7 @@ func (cu *ChallengeUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if err := cu.check(); err != nil {
 		return n, err
 	}
-	_spec := &sqlgraph.UpdateSpec{
-		Node: &sqlgraph.NodeSpec{
-			Table:   challenge.Table,
-			Columns: challenge.Columns,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeUUID,
-				Column: challenge.FieldID,
-			},
-		},
-	}
+	_spec := sqlgraph.NewUpdateSpec(challenge.Table, challenge.Columns, sqlgraph.NewFieldSpec(challenge.FieldID, field.TypeUUID))
 	if ps := cu.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
@@ -474,6 +465,12 @@ func (cuo *ChallengeUpdateOne) ClearTotpCredential() *ChallengeUpdateOne {
 	return cuo
 }
 
+// Where appends a list predicates to the ChallengeUpdate builder.
+func (cuo *ChallengeUpdateOne) Where(ps ...predicate.Challenge) *ChallengeUpdateOne {
+	cuo.mutation.Where(ps...)
+	return cuo
+}
+
 // Select allows selecting one or more fields (columns) of the returned entity.
 // The default is selecting all fields defined in the entity schema.
 func (cuo *ChallengeUpdateOne) Select(field string, fields ...string) *ChallengeUpdateOne {
@@ -520,16 +517,7 @@ func (cuo *ChallengeUpdateOne) sqlSave(ctx context.Context) (_node *Challenge, e
 	if err := cuo.check(); err != nil {
 		return _node, err
 	}
-	_spec := &sqlgraph.UpdateSpec{
-		Node: &sqlgraph.NodeSpec{
-			Table:   challenge.Table,
-			Columns: challenge.Columns,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeUUID,
-				Column: challenge.FieldID,
-			},
-		},
-	}
+	_spec := sqlgraph.NewUpdateSpec(challenge.Table, challenge.Columns, sqlgraph.NewFieldSpec(challenge.FieldID, field.TypeUUID))
 	id, ok := cuo.mutation.ID()
 	if !ok {
 		return nil, &ValidationError{Name: "id", err: errors.New(`ent: missing "Challenge.id" for update`)}

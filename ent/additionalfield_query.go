@@ -203,10 +203,12 @@ func (afq *AdditionalFieldQuery) AllX(ctx context.Context) []*AdditionalField {
 }
 
 // IDs executes the query and returns a list of AdditionalField IDs.
-func (afq *AdditionalFieldQuery) IDs(ctx context.Context) ([]uuid.UUID, error) {
-	var ids []uuid.UUID
+func (afq *AdditionalFieldQuery) IDs(ctx context.Context) (ids []uuid.UUID, err error) {
+	if afq.ctx.Unique == nil && afq.path != nil {
+		afq.Unique(true)
+	}
 	ctx = setContextOp(ctx, afq.ctx, "IDs")
-	if err := afq.Select(additionalfield.FieldID).Scan(ctx, &ids); err != nil {
+	if err = afq.Select(additionalfield.FieldID).Scan(ctx, &ids); err != nil {
 		return nil, err
 	}
 	return ids, nil
@@ -452,20 +454,12 @@ func (afq *AdditionalFieldQuery) sqlCount(ctx context.Context) (int, error) {
 }
 
 func (afq *AdditionalFieldQuery) querySpec() *sqlgraph.QuerySpec {
-	_spec := &sqlgraph.QuerySpec{
-		Node: &sqlgraph.NodeSpec{
-			Table:   additionalfield.Table,
-			Columns: additionalfield.Columns,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeUUID,
-				Column: additionalfield.FieldID,
-			},
-		},
-		From:   afq.sql,
-		Unique: true,
-	}
+	_spec := sqlgraph.NewQuerySpec(additionalfield.Table, additionalfield.Columns, sqlgraph.NewFieldSpec(additionalfield.FieldID, field.TypeUUID))
+	_spec.From = afq.sql
 	if unique := afq.ctx.Unique; unique != nil {
 		_spec.Unique = *unique
+	} else if afq.path != nil {
+		_spec.Unique = true
 	}
 	if fields := afq.ctx.Fields; len(fields) > 0 {
 		_spec.Node.Columns = make([]string, 0, len(fields))

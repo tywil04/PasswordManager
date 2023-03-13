@@ -21,16 +21,8 @@ type EmailChallengeCreate struct {
 }
 
 // SetCode sets the "code" field.
-func (ecc *EmailChallengeCreate) SetCode(s string) *EmailChallengeCreate {
-	ecc.mutation.SetCode(s)
-	return ecc
-}
-
-// SetNillableCode sets the "code" field if the given value is not nil.
-func (ecc *EmailChallengeCreate) SetNillableCode(s *string) *EmailChallengeCreate {
-	if s != nil {
-		ecc.SetCode(*s)
-	}
+func (ecc *EmailChallengeCreate) SetCode(b []byte) *EmailChallengeCreate {
+	ecc.mutation.SetCode(b)
 	return ecc
 }
 
@@ -139,20 +131,14 @@ func (ecc *EmailChallengeCreate) sqlSave(ctx context.Context) (*EmailChallenge, 
 func (ecc *EmailChallengeCreate) createSpec() (*EmailChallenge, *sqlgraph.CreateSpec) {
 	var (
 		_node = &EmailChallenge{config: ecc.config}
-		_spec = &sqlgraph.CreateSpec{
-			Table: emailchallenge.Table,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeUUID,
-				Column: emailchallenge.FieldID,
-			},
-		}
+		_spec = sqlgraph.NewCreateSpec(emailchallenge.Table, sqlgraph.NewFieldSpec(emailchallenge.FieldID, field.TypeUUID))
 	)
 	if id, ok := ecc.mutation.ID(); ok {
 		_node.ID = id
 		_spec.ID.Value = &id
 	}
 	if value, ok := ecc.mutation.Code(); ok {
-		_spec.SetField(emailchallenge.FieldCode, field.TypeString, value)
+		_spec.SetField(emailchallenge.FieldCode, field.TypeBytes, value)
 		_node.Code = value
 	}
 	if nodes := ecc.mutation.ChallengeIDs(); len(nodes) > 0 {

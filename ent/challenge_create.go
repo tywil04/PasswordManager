@@ -203,13 +203,7 @@ func (cc *ChallengeCreate) sqlSave(ctx context.Context) (*Challenge, error) {
 func (cc *ChallengeCreate) createSpec() (*Challenge, *sqlgraph.CreateSpec) {
 	var (
 		_node = &Challenge{config: cc.config}
-		_spec = &sqlgraph.CreateSpec{
-			Table: challenge.Table,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeUUID,
-				Column: challenge.FieldID,
-			},
-		}
+		_spec = sqlgraph.NewCreateSpec(challenge.Table, sqlgraph.NewFieldSpec(challenge.FieldID, field.TypeUUID))
 	)
 	if id, ok := cc.mutation.ID(); ok {
 		_node.ID = id

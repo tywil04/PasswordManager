@@ -1,4 +1,4 @@
-package vault
+package vaults
 
 import (
 	"fmt"
@@ -12,12 +12,10 @@ import (
 )
 
 const (
-	Description string = ""
+	PasswordDescription string = ""
 )
 
-type GetPasswordInput struct {
-	VaultId string `form:"vaultId" json:"vaultId" xml:"vaultId" pmParseType:"uuid"`
-}
+type GetPasswordInput struct{}
 
 type PostPasswordInput struct {
 	VaultId          string `form:"vaultId" json:"vaultId" xml:"vaultId" pmParseType:"uuid"`
@@ -27,7 +25,8 @@ type PostPasswordInput struct {
 	UsernameIv       string `form:"usernameIv" json:"usernameIv" xml:"usernameIv" pmParseType:"base64"`
 	Password         string `form:"password" json:"password" xml:"password" pmParseType:"base64"`
 	PasswordIv       string `form:"passwordIv" json:"passwordIv" xml:"passwordIv" pmParseType:"base64"`
-	Colour           string `form:"colour" json:"colour" xml:"colour" pmParseType:"hexcolour"`
+	Colour           string `form:"colour" json:"colour" xml:"colour" pmParseType:"base64"`
+	ColourIv         string `form:"colourIv" json:"colourIv" xml:"colourIv" pmParseType:"base64"`
 	AdditionalFields []struct {
 		Key     string `form:"key" json:"key" xml:"key" pmParseType:"base64"`
 		KeyIv   string `form:"keyIv" json:"keyIv" xml:"keyIv" pmParseType:"base64"`
@@ -42,20 +41,13 @@ type PostPasswordInput struct {
 
 type DeletePasswordInput struct {
 	VaultId    string `form:"vaultId" json:"vaultId" xml:"vaultId" pmParseType:"uuid"`
-	PasswordId string `form:"passwordId" json:"passwordId" xml:"passwordId"`
+	PasswordId string `form:"passwordId" json:"passwordId" xml:"passwordId" pmParseType:"uuid"`
 }
 
 func GetPassword(c *gin.Context) {
 	authedUser := c.MustGet("authedUser").(*ent.User)
-	params := c.GetStringMap("params")
 
-	vault, vaultErr := db.GetUserVault(authedUser, params["vaultId"].(uuid.UUID))
-	if vaultErr != nil {
-		c.JSON(400, exceptions.Builder("vaultId", exceptions.InvalidParam, exceptions.Uuid, exceptions.Owns))
-		return
-	}
-
-	passwords, passwordsErr := db.GetVaultPasswords(vault)
+	passwords, passwordsErr := db.GetUserPasswords(authedUser)
 	if passwordsErr != nil {
 		c.JSON(500, exceptions.Builder("", exceptions.Unknown, exceptions.TryAgain))
 		return
@@ -63,6 +55,12 @@ func GetPassword(c *gin.Context) {
 
 	jsonPasswords := make([]gin.H, len(passwords))
 	for index, password := range passwords {
+		vault, vaultErr := db.GetPasswordVault(password)
+		if vaultErr != nil {
+			c.JSON(500, exceptions.Builder("", exceptions.Unknown, exceptions.TryAgain))
+			return
+		}
+
 		additionalFields, afErr := db.GetPasswordAdditionalFields(password)
 		if afErr != nil {
 			c.JSON(500, exceptions.Builder("", exceptions.Unknown, exceptions.TryAgain))
@@ -95,6 +93,7 @@ func GetPassword(c *gin.Context) {
 
 		jsonPasswords[index] = gin.H{
 			"id":               password.ID.String(),
+			"vaultId":          vault.ID.String(),
 			"name":             password.Name,
 			"nameIv":           password.NameIv,
 			"username":         password.Username,
@@ -102,6 +101,7 @@ func GetPassword(c *gin.Context) {
 			"password":         password.Password,
 			"passwordIv":       password.PasswordIv,
 			"colour":           password.Colour,
+			"colourIv":         password.ColourIv,
 			"additionalFields": jsonAdditionalFields,
 			"urls":             jsonUrls,
 		}
@@ -162,7 +162,8 @@ func PostPassword(c *gin.Context) {
 		SetUsernameIv(params["usernameIv"].([]byte)).
 		SetPassword(params["password"].([]byte)).
 		SetPasswordIv(params["passwordIv"].([]byte)).
-		SetColour(params["colour"].(string)).
+		SetColour(params["colour"].([]byte)).
+		SetColourIv(params["colourIv"].([]byte)).
 		AddAdditionalFields(entAdditionalFields...).
 		AddUrls(entUrls...).
 		Save(db.Context)

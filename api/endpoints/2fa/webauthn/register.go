@@ -25,14 +25,14 @@ type PostRegisterInput struct {
 	WebauthnRegisterChallengeId string `form:"webauthnRegisterChallengeId" json:"webauthnRegisterChallengeId" xml:"webauthnRegisterChallengeId" pmParseType:"uuid"`
 	Name                        string `form:"name" json:"name" xml:"json"`
 	Credential                  struct {
-		AuthenticatorAttachment string `form:"authenticatorAttachment" json:"authenticatorAttachment" xml:"authenticatorAttachment"`
-		Id                      string `form:"id" json:"id" xml:"id"`
-		RawId                   string `form:"rawId" json:"rawId" xml:"rawId"`
+		AuthenticatorAttachment string `form:"authenticatorAttachment" json:"authenticatorAttachment" xml:"authenticatorAttachment" pmOptional:"true"`
+		Id                      string `form:"id" json:"id" xml:"id" pmOptional:"true"`
+		RawId                   string `form:"rawId" json:"rawId" xml:"rawId" pmOptional:"true"`
 		Response                struct {
-			AttestationObject string `form:"attestationObject" json:"attestationObject" xml:"attestationObject"`
-			ClientDataJSON    string `form:"clientDataJSON" json:"clientDataJSON" xml:"clientDataJSON"`
-		} `form:"response" json:"response" xml:"response"`
-		Type string `form:"type" json:"type" xml:"type"`
+			AttestationObject string `form:"attestationObject" json:"attestationObject" xml:"attestationObject" pmOptional:"true"`
+			ClientDataJSON    string `form:"clientDataJSON" json:"clientDataJSON" xml:"clientDataJSON" pmOptional:"true"`
+		} `form:"response" json:"response" xml:"response" pmOptional:"true"`
+		Type string `form:"type" json:"type" xml:"type" pmOptional:"true"`
 	} `form:"credential" json:"credential" xml:"credential"`
 }
 

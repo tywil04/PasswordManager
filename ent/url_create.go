@@ -154,13 +154,7 @@ func (uc *URLCreate) sqlSave(ctx context.Context) (*Url, error) {
 func (uc *URLCreate) createSpec() (*Url, *sqlgraph.CreateSpec) {
 	var (
 		_node = &Url{config: uc.config}
-		_spec = &sqlgraph.CreateSpec{
-			Table: url.Table,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeUUID,
-				Column: url.FieldID,
-			},
-		}
+		_spec = sqlgraph.NewCreateSpec(url.Table, sqlgraph.NewFieldSpec(url.FieldID, field.TypeUUID))
 	)
 	if id, ok := uc.mutation.ID(); ok {
 		_node.ID = id

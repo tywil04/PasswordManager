@@ -62,13 +62,23 @@ func CreatedAt(v time.Time) predicate.Vault {
 }
 
 // Name applies equality check predicate on the "name" field. It's identical to NameEQ.
-func Name(v string) predicate.Vault {
+func Name(v []byte) predicate.Vault {
 	return predicate.Vault(sql.FieldEQ(FieldName, v))
 }
 
+// NameIv applies equality check predicate on the "nameIv" field. It's identical to NameIvEQ.
+func NameIv(v []byte) predicate.Vault {
+	return predicate.Vault(sql.FieldEQ(FieldNameIv, v))
+}
+
 // Colour applies equality check predicate on the "colour" field. It's identical to ColourEQ.
-func Colour(v string) predicate.Vault {
+func Colour(v []byte) predicate.Vault {
 	return predicate.Vault(sql.FieldEQ(FieldColour, v))
+}
+
+// ColourIv applies equality check predicate on the "colourIv" field. It's identical to ColourIvEQ.
+func ColourIv(v []byte) predicate.Vault {
+	return predicate.Vault(sql.FieldEQ(FieldColourIv, v))
 }
 
 // CreatedAtEQ applies the EQ predicate on the "createdAt" field.
@@ -112,133 +122,163 @@ func CreatedAtLTE(v time.Time) predicate.Vault {
 }
 
 // NameEQ applies the EQ predicate on the "name" field.
-func NameEQ(v string) predicate.Vault {
+func NameEQ(v []byte) predicate.Vault {
 	return predicate.Vault(sql.FieldEQ(FieldName, v))
 }
 
 // NameNEQ applies the NEQ predicate on the "name" field.
-func NameNEQ(v string) predicate.Vault {
+func NameNEQ(v []byte) predicate.Vault {
 	return predicate.Vault(sql.FieldNEQ(FieldName, v))
 }
 
 // NameIn applies the In predicate on the "name" field.
-func NameIn(vs ...string) predicate.Vault {
+func NameIn(vs ...[]byte) predicate.Vault {
 	return predicate.Vault(sql.FieldIn(FieldName, vs...))
 }
 
 // NameNotIn applies the NotIn predicate on the "name" field.
-func NameNotIn(vs ...string) predicate.Vault {
+func NameNotIn(vs ...[]byte) predicate.Vault {
 	return predicate.Vault(sql.FieldNotIn(FieldName, vs...))
 }
 
 // NameGT applies the GT predicate on the "name" field.
-func NameGT(v string) predicate.Vault {
+func NameGT(v []byte) predicate.Vault {
 	return predicate.Vault(sql.FieldGT(FieldName, v))
 }
 
 // NameGTE applies the GTE predicate on the "name" field.
-func NameGTE(v string) predicate.Vault {
+func NameGTE(v []byte) predicate.Vault {
 	return predicate.Vault(sql.FieldGTE(FieldName, v))
 }
 
 // NameLT applies the LT predicate on the "name" field.
-func NameLT(v string) predicate.Vault {
+func NameLT(v []byte) predicate.Vault {
 	return predicate.Vault(sql.FieldLT(FieldName, v))
 }
 
 // NameLTE applies the LTE predicate on the "name" field.
-func NameLTE(v string) predicate.Vault {
+func NameLTE(v []byte) predicate.Vault {
 	return predicate.Vault(sql.FieldLTE(FieldName, v))
 }
 
-// NameContains applies the Contains predicate on the "name" field.
-func NameContains(v string) predicate.Vault {
-	return predicate.Vault(sql.FieldContains(FieldName, v))
+// NameIvEQ applies the EQ predicate on the "nameIv" field.
+func NameIvEQ(v []byte) predicate.Vault {
+	return predicate.Vault(sql.FieldEQ(FieldNameIv, v))
 }
 
-// NameHasPrefix applies the HasPrefix predicate on the "name" field.
-func NameHasPrefix(v string) predicate.Vault {
-	return predicate.Vault(sql.FieldHasPrefix(FieldName, v))
+// NameIvNEQ applies the NEQ predicate on the "nameIv" field.
+func NameIvNEQ(v []byte) predicate.Vault {
+	return predicate.Vault(sql.FieldNEQ(FieldNameIv, v))
 }
 
-// NameHasSuffix applies the HasSuffix predicate on the "name" field.
-func NameHasSuffix(v string) predicate.Vault {
-	return predicate.Vault(sql.FieldHasSuffix(FieldName, v))
+// NameIvIn applies the In predicate on the "nameIv" field.
+func NameIvIn(vs ...[]byte) predicate.Vault {
+	return predicate.Vault(sql.FieldIn(FieldNameIv, vs...))
 }
 
-// NameEqualFold applies the EqualFold predicate on the "name" field.
-func NameEqualFold(v string) predicate.Vault {
-	return predicate.Vault(sql.FieldEqualFold(FieldName, v))
+// NameIvNotIn applies the NotIn predicate on the "nameIv" field.
+func NameIvNotIn(vs ...[]byte) predicate.Vault {
+	return predicate.Vault(sql.FieldNotIn(FieldNameIv, vs...))
 }
 
-// NameContainsFold applies the ContainsFold predicate on the "name" field.
-func NameContainsFold(v string) predicate.Vault {
-	return predicate.Vault(sql.FieldContainsFold(FieldName, v))
+// NameIvGT applies the GT predicate on the "nameIv" field.
+func NameIvGT(v []byte) predicate.Vault {
+	return predicate.Vault(sql.FieldGT(FieldNameIv, v))
+}
+
+// NameIvGTE applies the GTE predicate on the "nameIv" field.
+func NameIvGTE(v []byte) predicate.Vault {
+	return predicate.Vault(sql.FieldGTE(FieldNameIv, v))
+}
+
+// NameIvLT applies the LT predicate on the "nameIv" field.
+func NameIvLT(v []byte) predicate.Vault {
+	return predicate.Vault(sql.FieldLT(FieldNameIv, v))
+}
+
+// NameIvLTE applies the LTE predicate on the "nameIv" field.
+func NameIvLTE(v []byte) predicate.Vault {
+	return predicate.Vault(sql.FieldLTE(FieldNameIv, v))
 }
 
 // ColourEQ applies the EQ predicate on the "colour" field.
-func ColourEQ(v string) predicate.Vault {
+func ColourEQ(v []byte) predicate.Vault {
 	return predicate.Vault(sql.FieldEQ(FieldColour, v))
 }
 
 // ColourNEQ applies the NEQ predicate on the "colour" field.
-func ColourNEQ(v string) predicate.Vault {
+func ColourNEQ(v []byte) predicate.Vault {
 	return predicate.Vault(sql.FieldNEQ(FieldColour, v))
 }
 
 // ColourIn applies the In predicate on the "colour" field.
-func ColourIn(vs ...string) predicate.Vault {
+func ColourIn(vs ...[]byte) predicate.Vault {
 	return predicate.Vault(sql.FieldIn(FieldColour, vs...))
 }
 
 // ColourNotIn applies the NotIn predicate on the "colour" field.
-func ColourNotIn(vs ...string) predicate.Vault {
+func ColourNotIn(vs ...[]byte) predicate.Vault {
 	return predicate.Vault(sql.FieldNotIn(FieldColour, vs...))
 }
 
 // ColourGT applies the GT predicate on the "colour" field.
-func ColourGT(v string) predicate.Vault {
+func ColourGT(v []byte) predicate.Vault {
 	return predicate.Vault(sql.FieldGT(FieldColour, v))
 }
 
 // ColourGTE applies the GTE predicate on the "colour" field.
-func ColourGTE(v string) predicate.Vault {
+func ColourGTE(v []byte) predicate.Vault {
 	return predicate.Vault(sql.FieldGTE(FieldColour, v))
 }
 
 // ColourLT applies the LT predicate on the "colour" field.
-func ColourLT(v string) predicate.Vault {
+func ColourLT(v []byte) predicate.Vault {
 	return predicate.Vault(sql.FieldLT(FieldColour, v))
 }
 
 // ColourLTE applies the LTE predicate on the "colour" field.
-func ColourLTE(v string) predicate.Vault {
+func ColourLTE(v []byte) predicate.Vault {
 	return predicate.Vault(sql.FieldLTE(FieldColour, v))
 }
 
-// ColourContains applies the Contains predicate on the "colour" field.
-func ColourContains(v string) predicate.Vault {
-	return predicate.Vault(sql.FieldContains(FieldColour, v))
+// ColourIvEQ applies the EQ predicate on the "colourIv" field.
+func ColourIvEQ(v []byte) predicate.Vault {
+	return predicate.Vault(sql.FieldEQ(FieldColourIv, v))
 }
 
-// ColourHasPrefix applies the HasPrefix predicate on the "colour" field.
-func ColourHasPrefix(v string) predicate.Vault {
-	return predicate.Vault(sql.FieldHasPrefix(FieldColour, v))
+// ColourIvNEQ applies the NEQ predicate on the "colourIv" field.
+func ColourIvNEQ(v []byte) predicate.Vault {
+	return predicate.Vault(sql.FieldNEQ(FieldColourIv, v))
 }
 
-// ColourHasSuffix applies the HasSuffix predicate on the "colour" field.
-func ColourHasSuffix(v string) predicate.Vault {
-	return predicate.Vault(sql.FieldHasSuffix(FieldColour, v))
+// ColourIvIn applies the In predicate on the "colourIv" field.
+func ColourIvIn(vs ...[]byte) predicate.Vault {
+	return predicate.Vault(sql.FieldIn(FieldColourIv, vs...))
 }
 
-// ColourEqualFold applies the EqualFold predicate on the "colour" field.
-func ColourEqualFold(v string) predicate.Vault {
-	return predicate.Vault(sql.FieldEqualFold(FieldColour, v))
+// ColourIvNotIn applies the NotIn predicate on the "colourIv" field.
+func ColourIvNotIn(vs ...[]byte) predicate.Vault {
+	return predicate.Vault(sql.FieldNotIn(FieldColourIv, vs...))
 }
 
-// ColourContainsFold applies the ContainsFold predicate on the "colour" field.
-func ColourContainsFold(v string) predicate.Vault {
-	return predicate.Vault(sql.FieldContainsFold(FieldColour, v))
+// ColourIvGT applies the GT predicate on the "colourIv" field.
+func ColourIvGT(v []byte) predicate.Vault {
+	return predicate.Vault(sql.FieldGT(FieldColourIv, v))
+}
+
+// ColourIvGTE applies the GTE predicate on the "colourIv" field.
+func ColourIvGTE(v []byte) predicate.Vault {
+	return predicate.Vault(sql.FieldGTE(FieldColourIv, v))
+}
+
+// ColourIvLT applies the LT predicate on the "colourIv" field.
+func ColourIvLT(v []byte) predicate.Vault {
+	return predicate.Vault(sql.FieldLT(FieldColourIv, v))
+}
+
+// ColourIvLTE applies the LTE predicate on the "colourIv" field.
+func ColourIvLTE(v []byte) predicate.Vault {
+	return predicate.Vault(sql.FieldLTE(FieldColourIv, v))
 }
 
 // HasPasswords applies the HasEdge predicate on the "passwords" edge.
@@ -259,6 +299,33 @@ func HasPasswordsWith(preds ...predicate.Password) predicate.Vault {
 			sqlgraph.From(Table, FieldID),
 			sqlgraph.To(PasswordsInverseTable, FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, PasswordsTable, PasswordsColumn),
+		)
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasNotes applies the HasEdge predicate on the "notes" edge.
+func HasNotes() predicate.Vault {
+	return predicate.Vault(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, NotesTable, NotesColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasNotesWith applies the HasEdge predicate on the "notes" edge with a given conditions (other predicates).
+func HasNotesWith(preds ...predicate.Note) predicate.Vault {
+	return predicate.Vault(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(NotesInverseTable, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, NotesTable, NotesColumn),
 		)
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {

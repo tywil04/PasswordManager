@@ -30,7 +30,9 @@ type Password struct {
 	// PasswordIv holds the value of the "passwordIv" field.
 	PasswordIv []byte `json:"passwordIv,omitempty"`
 	// Colour holds the value of the "colour" field.
-	Colour string `json:"colour,omitempty"`
+	Colour []byte `json:"colour,omitempty"`
+	// ColourIv holds the value of the "colourIv" field.
+	ColourIv []byte `json:"colourIv,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the PasswordQuery when eager-loading is set.
 	Edges           PasswordEdges `json:"edges"`
@@ -86,10 +88,8 @@ func (*Password) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case password.FieldName, password.FieldNameIv, password.FieldUsername, password.FieldUsernameIv, password.FieldPassword, password.FieldPasswordIv:
+		case password.FieldName, password.FieldNameIv, password.FieldUsername, password.FieldUsernameIv, password.FieldPassword, password.FieldPasswordIv, password.FieldColour, password.FieldColourIv:
 			values[i] = new([]byte)
-		case password.FieldColour:
-			values[i] = new(sql.NullString)
 		case password.FieldID:
 			values[i] = new(uuid.UUID)
 		case password.ForeignKeys[0]: // vault_passwords
@@ -152,10 +152,16 @@ func (pa *Password) assignValues(columns []string, values []any) error {
 				pa.PasswordIv = *value
 			}
 		case password.FieldColour:
-			if value, ok := values[i].(*sql.NullString); !ok {
+			if value, ok := values[i].(*[]byte); !ok {
 				return fmt.Errorf("unexpected type %T for field colour", values[i])
-			} else if value.Valid {
-				pa.Colour = value.String
+			} else if value != nil {
+				pa.Colour = *value
+			}
+		case password.FieldColourIv:
+			if value, ok := values[i].(*[]byte); !ok {
+				return fmt.Errorf("unexpected type %T for field colourIv", values[i])
+			} else if value != nil {
+				pa.ColourIv = *value
 			}
 		case password.ForeignKeys[0]:
 			if value, ok := values[i].(*sql.NullScanner); !ok {
@@ -226,16 +232,13 @@ func (pa *Password) String() string {
 	builder.WriteString(fmt.Sprintf("%v", pa.PasswordIv))
 	builder.WriteString(", ")
 	builder.WriteString("colour=")
-	builder.WriteString(pa.Colour)
+	builder.WriteString(fmt.Sprintf("%v", pa.Colour))
+	builder.WriteString(", ")
+	builder.WriteString("colourIv=")
+	builder.WriteString(fmt.Sprintf("%v", pa.ColourIv))
 	builder.WriteByte(')')
 	return builder.String()
 }
 
 // Passwords is a parsable slice of Password.
 type Passwords []*Password
-
-func (pa Passwords) config(cfg config) {
-	for _i := range pa {
-		pa[_i].config = cfg
-	}
-}

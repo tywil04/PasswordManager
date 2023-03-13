@@ -4,7 +4,6 @@ package totpcredential
 
 import (
 	"PasswordManager/ent/predicate"
-	"time"
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
@@ -56,11 +55,6 @@ func IDLTE(id uuid.UUID) predicate.TotpCredential {
 	return predicate.TotpCredential(sql.FieldLTE(FieldID, id))
 }
 
-// CreatedAt applies equality check predicate on the "createdAt" field. It's identical to CreatedAtEQ.
-func CreatedAt(v time.Time) predicate.TotpCredential {
-	return predicate.TotpCredential(sql.FieldEQ(FieldCreatedAt, v))
-}
-
 // Secret applies equality check predicate on the "secret" field. It's identical to SecretEQ.
 func Secret(v string) predicate.TotpCredential {
 	return predicate.TotpCredential(sql.FieldEQ(FieldSecret, v))
@@ -69,46 +63,6 @@ func Secret(v string) predicate.TotpCredential {
 // Validated applies equality check predicate on the "validated" field. It's identical to ValidatedEQ.
 func Validated(v bool) predicate.TotpCredential {
 	return predicate.TotpCredential(sql.FieldEQ(FieldValidated, v))
-}
-
-// CreatedAtEQ applies the EQ predicate on the "createdAt" field.
-func CreatedAtEQ(v time.Time) predicate.TotpCredential {
-	return predicate.TotpCredential(sql.FieldEQ(FieldCreatedAt, v))
-}
-
-// CreatedAtNEQ applies the NEQ predicate on the "createdAt" field.
-func CreatedAtNEQ(v time.Time) predicate.TotpCredential {
-	return predicate.TotpCredential(sql.FieldNEQ(FieldCreatedAt, v))
-}
-
-// CreatedAtIn applies the In predicate on the "createdAt" field.
-func CreatedAtIn(vs ...time.Time) predicate.TotpCredential {
-	return predicate.TotpCredential(sql.FieldIn(FieldCreatedAt, vs...))
-}
-
-// CreatedAtNotIn applies the NotIn predicate on the "createdAt" field.
-func CreatedAtNotIn(vs ...time.Time) predicate.TotpCredential {
-	return predicate.TotpCredential(sql.FieldNotIn(FieldCreatedAt, vs...))
-}
-
-// CreatedAtGT applies the GT predicate on the "createdAt" field.
-func CreatedAtGT(v time.Time) predicate.TotpCredential {
-	return predicate.TotpCredential(sql.FieldGT(FieldCreatedAt, v))
-}
-
-// CreatedAtGTE applies the GTE predicate on the "createdAt" field.
-func CreatedAtGTE(v time.Time) predicate.TotpCredential {
-	return predicate.TotpCredential(sql.FieldGTE(FieldCreatedAt, v))
-}
-
-// CreatedAtLT applies the LT predicate on the "createdAt" field.
-func CreatedAtLT(v time.Time) predicate.TotpCredential {
-	return predicate.TotpCredential(sql.FieldLT(FieldCreatedAt, v))
-}
-
-// CreatedAtLTE applies the LTE predicate on the "createdAt" field.
-func CreatedAtLTE(v time.Time) predicate.TotpCredential {
-	return predicate.TotpCredential(sql.FieldLTE(FieldCreatedAt, v))
 }
 
 // SecretEQ applies the EQ predicate on the "secret" field.

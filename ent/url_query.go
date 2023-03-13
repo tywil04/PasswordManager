@@ -203,10 +203,12 @@ func (uq *URLQuery) AllX(ctx context.Context) []*Url {
 }
 
 // IDs executes the query and returns a list of Url IDs.
-func (uq *URLQuery) IDs(ctx context.Context) ([]uuid.UUID, error) {
-	var ids []uuid.UUID
+func (uq *URLQuery) IDs(ctx context.Context) (ids []uuid.UUID, err error) {
+	if uq.ctx.Unique == nil && uq.path != nil {
+		uq.Unique(true)
+	}
 	ctx = setContextOp(ctx, uq.ctx, "IDs")
-	if err := uq.Select(url.FieldID).Scan(ctx, &ids); err != nil {
+	if err = uq.Select(url.FieldID).Scan(ctx, &ids); err != nil {
 		return nil, err
 	}
 	return ids, nil
@@ -452,20 +454,12 @@ func (uq *URLQuery) sqlCount(ctx context.Context) (int, error) {
 }
 
 func (uq *URLQuery) querySpec() *sqlgraph.QuerySpec {
-	_spec := &sqlgraph.QuerySpec{
-		Node: &sqlgraph.NodeSpec{
-			Table:   url.Table,
-			Columns: url.Columns,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeUUID,
-				Column: url.FieldID,
-			},
-		},
-		From:   uq.sql,
-		Unique: true,
-	}
+	_spec := sqlgraph.NewQuerySpec(url.Table, url.Columns, sqlgraph.NewFieldSpec(url.FieldID, field.TypeUUID))
+	_spec.From = uq.sql
 	if unique := uq.ctx.Unique; unique != nil {
 		_spec.Unique = *unique
+	} else if uq.path != nil {
+		_spec.Unique = true
 	}
 	if fields := uq.ctx.Fields; len(fields) > 0 {
 		_spec.Node.Columns = make([]string, 0, len(fields))

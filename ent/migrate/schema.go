@@ -54,7 +54,7 @@ var (
 	// EmailChallengesColumns holds the columns for the "email_challenges" table.
 	EmailChallengesColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID},
-		{Name: "code", Type: field.TypeString, Nullable: true},
+		{Name: "code", Type: field.TypeBytes, Nullable: true},
 		{Name: "challenge_email_challenge", Type: field.TypeUUID, Unique: true, Nullable: true},
 	}
 	// EmailChallengesTable holds the schema information for the "email_challenges" table.
@@ -71,6 +71,33 @@ var (
 			},
 		},
 	}
+	// NotesColumns holds the columns for the "notes" table.
+	NotesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "name", Type: field.TypeBytes},
+		{Name: "name_iv", Type: field.TypeBytes},
+		{Name: "title", Type: field.TypeBytes},
+		{Name: "title_iv", Type: field.TypeBytes},
+		{Name: "content", Type: field.TypeBytes},
+		{Name: "content_iv", Type: field.TypeBytes},
+		{Name: "colour", Type: field.TypeBytes},
+		{Name: "colour_iv", Type: field.TypeBytes},
+		{Name: "vault_notes", Type: field.TypeUUID, Nullable: true},
+	}
+	// NotesTable holds the schema information for the "notes" table.
+	NotesTable = &schema.Table{
+		Name:       "notes",
+		Columns:    NotesColumns,
+		PrimaryKey: []*schema.Column{NotesColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "notes_vaults_notes",
+				Columns:    []*schema.Column{NotesColumns[9]},
+				RefColumns: []*schema.Column{VaultsColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+		},
+	}
 	// PasswordsColumns holds the columns for the "passwords" table.
 	PasswordsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID},
@@ -80,7 +107,8 @@ var (
 		{Name: "username_iv", Type: field.TypeBytes},
 		{Name: "password", Type: field.TypeBytes},
 		{Name: "password_iv", Type: field.TypeBytes},
-		{Name: "colour", Type: field.TypeString},
+		{Name: "colour", Type: field.TypeBytes},
+		{Name: "colour_iv", Type: field.TypeBytes},
 		{Name: "vault_passwords", Type: field.TypeUUID, Nullable: true},
 	}
 	// PasswordsTable holds the schema information for the "passwords" table.
@@ -91,7 +119,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "passwords_vaults_passwords",
-				Columns:    []*schema.Column{PasswordsColumns[8]},
+				Columns:    []*schema.Column{PasswordsColumns[9]},
 				RefColumns: []*schema.Column{VaultsColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
@@ -122,7 +150,6 @@ var (
 	// TotpCredentialsColumns holds the columns for the "totp_credentials" table.
 	TotpCredentialsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID},
-		{Name: "created_at", Type: field.TypeTime},
 		{Name: "secret", Type: field.TypeString},
 		{Name: "validated", Type: field.TypeBool, Default: false},
 		{Name: "challenge_totp_credential", Type: field.TypeUUID, Unique: true, Nullable: true},
@@ -136,13 +163,13 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "totp_credentials_challenges_totpCredential",
-				Columns:    []*schema.Column{TotpCredentialsColumns[4]},
+				Columns:    []*schema.Column{TotpCredentialsColumns[3]},
 				RefColumns: []*schema.Column{ChallengesColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
 			{
 				Symbol:     "totp_credentials_users_totpCredential",
-				Columns:    []*schema.Column{TotpCredentialsColumns[5]},
+				Columns:    []*schema.Column{TotpCredentialsColumns[4]},
 				RefColumns: []*schema.Column{UsersColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
@@ -198,8 +225,10 @@ var (
 	VaultsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID},
 		{Name: "created_at", Type: field.TypeTime},
-		{Name: "name", Type: field.TypeString},
-		{Name: "colour", Type: field.TypeString},
+		{Name: "name", Type: field.TypeBytes},
+		{Name: "name_iv", Type: field.TypeBytes},
+		{Name: "colour", Type: field.TypeBytes},
+		{Name: "colour_iv", Type: field.TypeBytes},
 		{Name: "user_vaults", Type: field.TypeUUID, Nullable: true},
 	}
 	// VaultsTable holds the schema information for the "vaults" table.
@@ -210,7 +239,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "vaults_users_vaults",
-				Columns:    []*schema.Column{VaultsColumns[4]},
+				Columns:    []*schema.Column{VaultsColumns[6]},
 				RefColumns: []*schema.Column{UsersColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
@@ -297,6 +326,7 @@ var (
 		AdditionalFieldsTable,
 		ChallengesTable,
 		EmailChallengesTable,
+		NotesTable,
 		PasswordsTable,
 		SessionsTable,
 		TotpCredentialsTable,
@@ -313,6 +343,7 @@ func init() {
 	AdditionalFieldsTable.ForeignKeys[0].RefTable = PasswordsTable
 	ChallengesTable.ForeignKeys[0].RefTable = UsersTable
 	EmailChallengesTable.ForeignKeys[0].RefTable = ChallengesTable
+	NotesTable.ForeignKeys[0].RefTable = VaultsTable
 	PasswordsTable.ForeignKeys[0].RefTable = VaultsTable
 	SessionsTable.ForeignKeys[0].RefTable = UsersTable
 	TotpCredentialsTable.ForeignKeys[0].RefTable = ChallengesTable

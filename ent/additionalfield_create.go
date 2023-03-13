@@ -182,13 +182,7 @@ func (afc *AdditionalFieldCreate) sqlSave(ctx context.Context) (*AdditionalField
 func (afc *AdditionalFieldCreate) createSpec() (*AdditionalField, *sqlgraph.CreateSpec) {
 	var (
 		_node = &AdditionalField{config: afc.config}
-		_spec = &sqlgraph.CreateSpec{
-			Table: additionalfield.Table,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeUUID,
-				Column: additionalfield.FieldID,
-			},
-		}
+		_spec = sqlgraph.NewCreateSpec(additionalfield.Table, sqlgraph.NewFieldSpec(additionalfield.FieldID, field.TypeUUID))
 	)
 	if id, ok := afc.mutation.ID(); ok {
 		_node.ID = id

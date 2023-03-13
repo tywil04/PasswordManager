@@ -19,8 +19,10 @@ func (Vault) Fields() []ent.Field {
 	return []ent.Field{
 		field.UUID("id", uuid.UUID{}).Default(uuid.New),
 		field.Time("createdAt").Default(time.Now),
-		field.String("name").NotEmpty(),
-		field.String("colour"),
+		field.Bytes("name").NotEmpty(),
+		field.Bytes("nameIv").NotEmpty(),
+		field.Bytes("colour").NotEmpty(),
+		field.Bytes("colourIv").NotEmpty(),
 	}
 }
 
@@ -28,6 +30,7 @@ func (Vault) Fields() []ent.Field {
 func (Vault) Edges() []ent.Edge {
 	return []ent.Edge{
 		edge.To("passwords", Password.Type),
+		edge.To("notes", Note.Type),
 		edge.From("user", User.Type).
 			Ref("vaults").
 			Unique(),

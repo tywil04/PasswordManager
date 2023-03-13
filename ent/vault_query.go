@@ -3,6 +3,7 @@
 package ent
 
 import (
+	"PasswordManager/ent/note"
 	"PasswordManager/ent/password"
 	"PasswordManager/ent/predicate"
 	"PasswordManager/ent/user"
@@ -26,6 +27,7 @@ type VaultQuery struct {
 	inters        []Interceptor
 	predicates    []predicate.Vault
 	withPasswords *PasswordQuery
+	withNotes     *NoteQuery
 	withUser      *UserQuery
 	withFKs       bool
 	// intermediate query (i.e. traversal path).
@@ -79,6 +81,28 @@ func (vq *VaultQuery) QueryPasswords() *PasswordQuery {
 			sqlgraph.From(vault.Table, vault.FieldID, selector),
 			sqlgraph.To(password.Table, password.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, vault.PasswordsTable, vault.PasswordsColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(vq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryNotes chains the current query on the "notes" edge.
+func (vq *VaultQuery) QueryNotes() *NoteQuery {
+	query := (&NoteClient{config: vq.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := vq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := vq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(vault.Table, vault.FieldID, selector),
+			sqlgraph.To(note.Table, note.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, vault.NotesTable, vault.NotesColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(vq.driver.Dialect(), step)
 		return fromU, nil
@@ -228,10 +252,12 @@ func (vq *VaultQuery) AllX(ctx context.Context) []*Vault {
 }
 
 // IDs executes the query and returns a list of Vault IDs.
-func (vq *VaultQuery) IDs(ctx context.Context) ([]uuid.UUID, error) {
-	var ids []uuid.UUID
+func (vq *VaultQuery) IDs(ctx context.Context) (ids []uuid.UUID, err error) {
+	if vq.ctx.Unique == nil && vq.path != nil {
+		vq.Unique(true)
+	}
 	ctx = setContextOp(ctx, vq.ctx, "IDs")
-	if err := vq.Select(vault.FieldID).Scan(ctx, &ids); err != nil {
+	if err = vq.Select(vault.FieldID).Scan(ctx, &ids); err != nil {
 		return nil, err
 	}
 	return ids, nil
@@ -299,6 +325,7 @@ func (vq *VaultQuery) Clone() *VaultQuery {
 		inters:        append([]Interceptor{}, vq.inters...),
 		predicates:    append([]predicate.Vault{}, vq.predicates...),
 		withPasswords: vq.withPasswords.Clone(),
+		withNotes:     vq.withNotes.Clone(),
 		withUser:      vq.withUser.Clone(),
 		// clone intermediate query.
 		sql:  vq.sql.Clone(),
@@ -314,6 +341,17 @@ func (vq *VaultQuery) WithPasswords(opts ...func(*PasswordQuery)) *VaultQuery {
 		opt(query)
 	}
 	vq.withPasswords = query
+	return vq
+}
+
+// WithNotes tells the query-builder to eager-load the nodes that are connected to
+// the "notes" edge. The optional arguments are used to configure the query builder of the edge.
+func (vq *VaultQuery) WithNotes(opts ...func(*NoteQuery)) *VaultQuery {
+	query := (&NoteClient{config: vq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	vq.withNotes = query
 	return vq
 }
 
@@ -409,8 +447,9 @@ func (vq *VaultQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Vault,
 		nodes       = []*Vault{}
 		withFKs     = vq.withFKs
 		_spec       = vq.querySpec()
-		loadedTypes = [2]bool{
+		loadedTypes = [3]bool{
 			vq.withPasswords != nil,
+			vq.withNotes != nil,
 			vq.withUser != nil,
 		}
 	)
@@ -442,6 +481,13 @@ func (vq *VaultQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Vault,
 		if err := vq.loadPasswords(ctx, query, nodes,
 			func(n *Vault) { n.Edges.Passwords = []*Password{} },
 			func(n *Vault, e *Password) { n.Edges.Passwords = append(n.Edges.Passwords, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := vq.withNotes; query != nil {
+		if err := vq.loadNotes(ctx, query, nodes,
+			func(n *Vault) { n.Edges.Notes = []*Note{} },
+			func(n *Vault, e *Note) { n.Edges.Notes = append(n.Edges.Notes, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -480,6 +526,37 @@ func (vq *VaultQuery) loadPasswords(ctx context.Context, query *PasswordQuery, n
 		node, ok := nodeids[*fk]
 		if !ok {
 			return fmt.Errorf(`unexpected foreign-key "vault_passwords" returned %v for node %v`, *fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (vq *VaultQuery) loadNotes(ctx context.Context, query *NoteQuery, nodes []*Vault, init func(*Vault), assign func(*Vault, *Note)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[uuid.UUID]*Vault)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	query.withFKs = true
+	query.Where(predicate.Note(func(s *sql.Selector) {
+		s.Where(sql.InValues(vault.NotesColumn, fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.vault_notes
+		if fk == nil {
+			return fmt.Errorf(`foreign-key "vault_notes" is nil for node %v`, n.ID)
+		}
+		node, ok := nodeids[*fk]
+		if !ok {
+			return fmt.Errorf(`unexpected foreign-key "vault_notes" returned %v for node %v`, *fk, n.ID)
 		}
 		assign(node, n)
 	}
@@ -528,20 +605,12 @@ func (vq *VaultQuery) sqlCount(ctx context.Context) (int, error) {
 }
 
 func (vq *VaultQuery) querySpec() *sqlgraph.QuerySpec {
-	_spec := &sqlgraph.QuerySpec{
-		Node: &sqlgraph.NodeSpec{
-			Table:   vault.Table,
-			Columns: vault.Columns,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeUUID,
-				Column: vault.FieldID,
-			},
-		},
-		From:   vq.sql,
-		Unique: true,
-	}
+	_spec := sqlgraph.NewQuerySpec(vault.Table, vault.Columns, sqlgraph.NewFieldSpec(vault.FieldID, field.TypeUUID))
+	_spec.From = vq.sql
 	if unique := vq.ctx.Unique; unique != nil {
 		_spec.Unique = *unique
+	} else if vq.path != nil {
+		_spec.Unique = true
 	}
 	if fields := vq.ctx.Fields; len(fields) > 0 {
 		_spec.Node.Columns = make([]string, 0, len(fields))

@@ -18,7 +18,7 @@ type EmailChallenge struct {
 	// ID of the ent.
 	ID uuid.UUID `json:"id,omitempty"`
 	// Code holds the value of the "code" field.
-	Code string `json:"code,omitempty"`
+	Code []byte `json:"code,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the EmailChallengeQuery when eager-loading is set.
 	Edges                     EmailChallengeEdges `json:"edges"`
@@ -53,7 +53,7 @@ func (*EmailChallenge) scanValues(columns []string) ([]any, error) {
 	for i := range columns {
 		switch columns[i] {
 		case emailchallenge.FieldCode:
-			values[i] = new(sql.NullString)
+			values[i] = new([]byte)
 		case emailchallenge.FieldID:
 			values[i] = new(uuid.UUID)
 		case emailchallenge.ForeignKeys[0]: // challenge_email_challenge
@@ -80,10 +80,10 @@ func (ec *EmailChallenge) assignValues(columns []string, values []any) error {
 				ec.ID = *value
 			}
 		case emailchallenge.FieldCode:
-			if value, ok := values[i].(*sql.NullString); !ok {
+			if value, ok := values[i].(*[]byte); !ok {
 				return fmt.Errorf("unexpected type %T for field code", values[i])
-			} else if value.Valid {
-				ec.Code = value.String
+			} else if value != nil {
+				ec.Code = *value
 			}
 		case emailchallenge.ForeignKeys[0]:
 			if value, ok := values[i].(*sql.NullScanner); !ok {
@@ -126,16 +126,10 @@ func (ec *EmailChallenge) String() string {
 	builder.WriteString("EmailChallenge(")
 	builder.WriteString(fmt.Sprintf("id=%v, ", ec.ID))
 	builder.WriteString("code=")
-	builder.WriteString(ec.Code)
+	builder.WriteString(fmt.Sprintf("%v", ec.Code))
 	builder.WriteByte(')')
 	return builder.String()
 }
 
 // EmailChallenges is a parsable slice of EmailChallenge.
 type EmailChallenges []*EmailChallenge
-
-func (ec EmailChallenges) config(cfg config) {
-	for _i := range ec {
-		ec[_i].config = cfg
-	}
-}

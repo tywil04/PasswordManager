@@ -8,7 +8,6 @@ import (
 	"PasswordManager/ent/user"
 	"fmt"
 	"strings"
-	"time"
 
 	"entgo.io/ent/dialect/sql"
 	"github.com/google/uuid"
@@ -19,8 +18,6 @@ type TotpCredential struct {
 	config `json:"-"`
 	// ID of the ent.
 	ID uuid.UUID `json:"id,omitempty"`
-	// CreatedAt holds the value of the "createdAt" field.
-	CreatedAt time.Time `json:"createdAt,omitempty"`
 	// Secret holds the value of the "secret" field.
 	Secret string `json:"secret,omitempty"`
 	// Validated holds the value of the "validated" field.
@@ -78,8 +75,6 @@ func (*TotpCredential) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullBool)
 		case totpcredential.FieldSecret:
 			values[i] = new(sql.NullString)
-		case totpcredential.FieldCreatedAt:
-			values[i] = new(sql.NullTime)
 		case totpcredential.FieldID:
 			values[i] = new(uuid.UUID)
 		case totpcredential.ForeignKeys[0]: // challenge_totp_credential
@@ -106,12 +101,6 @@ func (tc *TotpCredential) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field id", values[i])
 			} else if value != nil {
 				tc.ID = *value
-			}
-		case totpcredential.FieldCreatedAt:
-			if value, ok := values[i].(*sql.NullTime); !ok {
-				return fmt.Errorf("unexpected type %T for field createdAt", values[i])
-			} else if value.Valid {
-				tc.CreatedAt = value.Time
 			}
 		case totpcredential.FieldSecret:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -177,9 +166,6 @@ func (tc *TotpCredential) String() string {
 	var builder strings.Builder
 	builder.WriteString("TotpCredential(")
 	builder.WriteString(fmt.Sprintf("id=%v, ", tc.ID))
-	builder.WriteString("createdAt=")
-	builder.WriteString(tc.CreatedAt.Format(time.ANSIC))
-	builder.WriteString(", ")
 	builder.WriteString("secret=")
 	builder.WriteString(tc.Secret)
 	builder.WriteString(", ")
@@ -191,9 +177,3 @@ func (tc *TotpCredential) String() string {
 
 // TotpCredentials is a parsable slice of TotpCredential.
 type TotpCredentials []*TotpCredential
-
-func (tc TotpCredentials) config(cfg config) {
-	for _i := range tc {
-		tc[_i].config = cfg
-	}
-}

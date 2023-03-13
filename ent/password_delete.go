@@ -40,15 +40,7 @@ func (pd *PasswordDelete) ExecX(ctx context.Context) int {
 }
 
 func (pd *PasswordDelete) sqlExec(ctx context.Context) (int, error) {
-	_spec := &sqlgraph.DeleteSpec{
-		Node: &sqlgraph.NodeSpec{
-			Table: password.Table,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeUUID,
-				Column: password.FieldID,
-			},
-		},
-	}
+	_spec := sqlgraph.NewDeleteSpec(password.Table, sqlgraph.NewFieldSpec(password.FieldID, field.TypeUUID))
 	if ps := pd.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {

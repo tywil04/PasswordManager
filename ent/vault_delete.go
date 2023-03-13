@@ -40,15 +40,7 @@ func (vd *VaultDelete) ExecX(ctx context.Context) int {
 }
 
 func (vd *VaultDelete) sqlExec(ctx context.Context) (int, error) {
-	_spec := &sqlgraph.DeleteSpec{
-		Node: &sqlgraph.NodeSpec{
-			Table: vault.Table,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeUUID,
-				Column: vault.FieldID,
-			},
-		},
-	}
+	_spec := sqlgraph.NewDeleteSpec(vault.Table, sqlgraph.NewFieldSpec(vault.FieldID, field.TypeUUID))
 	if ps := vd.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {

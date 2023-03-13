@@ -86,8 +86,13 @@ func PasswordIv(v []byte) predicate.Password {
 }
 
 // Colour applies equality check predicate on the "colour" field. It's identical to ColourEQ.
-func Colour(v string) predicate.Password {
+func Colour(v []byte) predicate.Password {
 	return predicate.Password(sql.FieldEQ(FieldColour, v))
+}
+
+// ColourIv applies equality check predicate on the "colourIv" field. It's identical to ColourIvEQ.
+func ColourIv(v []byte) predicate.Password {
+	return predicate.Password(sql.FieldEQ(FieldColourIv, v))
 }
 
 // NameEQ applies the EQ predicate on the "name" field.
@@ -331,68 +336,83 @@ func PasswordIvLTE(v []byte) predicate.Password {
 }
 
 // ColourEQ applies the EQ predicate on the "colour" field.
-func ColourEQ(v string) predicate.Password {
+func ColourEQ(v []byte) predicate.Password {
 	return predicate.Password(sql.FieldEQ(FieldColour, v))
 }
 
 // ColourNEQ applies the NEQ predicate on the "colour" field.
-func ColourNEQ(v string) predicate.Password {
+func ColourNEQ(v []byte) predicate.Password {
 	return predicate.Password(sql.FieldNEQ(FieldColour, v))
 }
 
 // ColourIn applies the In predicate on the "colour" field.
-func ColourIn(vs ...string) predicate.Password {
+func ColourIn(vs ...[]byte) predicate.Password {
 	return predicate.Password(sql.FieldIn(FieldColour, vs...))
 }
 
 // ColourNotIn applies the NotIn predicate on the "colour" field.
-func ColourNotIn(vs ...string) predicate.Password {
+func ColourNotIn(vs ...[]byte) predicate.Password {
 	return predicate.Password(sql.FieldNotIn(FieldColour, vs...))
 }
 
 // ColourGT applies the GT predicate on the "colour" field.
-func ColourGT(v string) predicate.Password {
+func ColourGT(v []byte) predicate.Password {
 	return predicate.Password(sql.FieldGT(FieldColour, v))
 }
 
 // ColourGTE applies the GTE predicate on the "colour" field.
-func ColourGTE(v string) predicate.Password {
+func ColourGTE(v []byte) predicate.Password {
 	return predicate.Password(sql.FieldGTE(FieldColour, v))
 }
 
 // ColourLT applies the LT predicate on the "colour" field.
-func ColourLT(v string) predicate.Password {
+func ColourLT(v []byte) predicate.Password {
 	return predicate.Password(sql.FieldLT(FieldColour, v))
 }
 
 // ColourLTE applies the LTE predicate on the "colour" field.
-func ColourLTE(v string) predicate.Password {
+func ColourLTE(v []byte) predicate.Password {
 	return predicate.Password(sql.FieldLTE(FieldColour, v))
 }
 
-// ColourContains applies the Contains predicate on the "colour" field.
-func ColourContains(v string) predicate.Password {
-	return predicate.Password(sql.FieldContains(FieldColour, v))
+// ColourIvEQ applies the EQ predicate on the "colourIv" field.
+func ColourIvEQ(v []byte) predicate.Password {
+	return predicate.Password(sql.FieldEQ(FieldColourIv, v))
 }
 
-// ColourHasPrefix applies the HasPrefix predicate on the "colour" field.
-func ColourHasPrefix(v string) predicate.Password {
-	return predicate.Password(sql.FieldHasPrefix(FieldColour, v))
+// ColourIvNEQ applies the NEQ predicate on the "colourIv" field.
+func ColourIvNEQ(v []byte) predicate.Password {
+	return predicate.Password(sql.FieldNEQ(FieldColourIv, v))
 }
 
-// ColourHasSuffix applies the HasSuffix predicate on the "colour" field.
-func ColourHasSuffix(v string) predicate.Password {
-	return predicate.Password(sql.FieldHasSuffix(FieldColour, v))
+// ColourIvIn applies the In predicate on the "colourIv" field.
+func ColourIvIn(vs ...[]byte) predicate.Password {
+	return predicate.Password(sql.FieldIn(FieldColourIv, vs...))
 }
 
-// ColourEqualFold applies the EqualFold predicate on the "colour" field.
-func ColourEqualFold(v string) predicate.Password {
-	return predicate.Password(sql.FieldEqualFold(FieldColour, v))
+// ColourIvNotIn applies the NotIn predicate on the "colourIv" field.
+func ColourIvNotIn(vs ...[]byte) predicate.Password {
+	return predicate.Password(sql.FieldNotIn(FieldColourIv, vs...))
 }
 
-// ColourContainsFold applies the ContainsFold predicate on the "colour" field.
-func ColourContainsFold(v string) predicate.Password {
-	return predicate.Password(sql.FieldContainsFold(FieldColour, v))
+// ColourIvGT applies the GT predicate on the "colourIv" field.
+func ColourIvGT(v []byte) predicate.Password {
+	return predicate.Password(sql.FieldGT(FieldColourIv, v))
+}
+
+// ColourIvGTE applies the GTE predicate on the "colourIv" field.
+func ColourIvGTE(v []byte) predicate.Password {
+	return predicate.Password(sql.FieldGTE(FieldColourIv, v))
+}
+
+// ColourIvLT applies the LT predicate on the "colourIv" field.
+func ColourIvLT(v []byte) predicate.Password {
+	return predicate.Password(sql.FieldLT(FieldColourIv, v))
+}
+
+// ColourIvLTE applies the LTE predicate on the "colourIv" field.
+func ColourIvLTE(v []byte) predicate.Password {
+	return predicate.Password(sql.FieldLTE(FieldColourIv, v))
 }
 
 // HasAdditionalFields applies the HasEdge predicate on the "additionalFields" edge.

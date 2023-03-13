@@ -22,7 +22,7 @@ type EmailChallenge struct {
 func (EmailChallenge) Fields() []ent.Field {
 	return []ent.Field{
 		field.UUID("id", uuid.UUID{}).Default(uuid.New),
-		field.String("code").Optional(),
+		field.Bytes("code").Optional(),
 	}
 }
 

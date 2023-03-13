@@ -139,16 +139,7 @@ func (afu *AdditionalFieldUpdate) sqlSave(ctx context.Context) (n int, err error
 	if err := afu.check(); err != nil {
 		return n, err
 	}
-	_spec := &sqlgraph.UpdateSpec{
-		Node: &sqlgraph.NodeSpec{
-			Table:   additionalfield.Table,
-			Columns: additionalfield.Columns,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeUUID,
-				Column: additionalfield.FieldID,
-			},
-		},
-	}
+	_spec := sqlgraph.NewUpdateSpec(additionalfield.Table, additionalfield.Columns, sqlgraph.NewFieldSpec(additionalfield.FieldID, field.TypeUUID))
 	if ps := afu.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
@@ -277,6 +268,12 @@ func (afuo *AdditionalFieldUpdateOne) ClearPassword() *AdditionalFieldUpdateOne 
 	return afuo
 }
 
+// Where appends a list predicates to the AdditionalFieldUpdate builder.
+func (afuo *AdditionalFieldUpdateOne) Where(ps ...predicate.AdditionalField) *AdditionalFieldUpdateOne {
+	afuo.mutation.Where(ps...)
+	return afuo
+}
+
 // Select allows selecting one or more fields (columns) of the returned entity.
 // The default is selecting all fields defined in the entity schema.
 func (afuo *AdditionalFieldUpdateOne) Select(field string, fields ...string) *AdditionalFieldUpdateOne {
@@ -340,16 +337,7 @@ func (afuo *AdditionalFieldUpdateOne) sqlSave(ctx context.Context) (_node *Addit
 	if err := afuo.check(); err != nil {
 		return _node, err
 	}
-	_spec := &sqlgraph.UpdateSpec{
-		Node: &sqlgraph.NodeSpec{
-			Table:   additionalfield.Table,
-			Columns: additionalfield.Columns,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeUUID,
-				Column: additionalfield.FieldID,
-			},
-		},
-	}
+	_spec := sqlgraph.NewUpdateSpec(additionalfield.Table, additionalfield.Columns, sqlgraph.NewFieldSpec(additionalfield.FieldID, field.TypeUUID))
 	id, ok := afuo.mutation.ID()
 	if !ok {
 		return nil, &ValidationError{Name: "id", err: errors.New(`ent: missing "AdditionalField.id" for update`)}

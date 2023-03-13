@@ -10,7 +10,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"time"
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
@@ -28,20 +27,6 @@ type TotpCredentialUpdate struct {
 // Where appends a list predicates to the TotpCredentialUpdate builder.
 func (tcu *TotpCredentialUpdate) Where(ps ...predicate.TotpCredential) *TotpCredentialUpdate {
 	tcu.mutation.Where(ps...)
-	return tcu
-}
-
-// SetCreatedAt sets the "createdAt" field.
-func (tcu *TotpCredentialUpdate) SetCreatedAt(t time.Time) *TotpCredentialUpdate {
-	tcu.mutation.SetCreatedAt(t)
-	return tcu
-}
-
-// SetNillableCreatedAt sets the "createdAt" field if the given value is not nil.
-func (tcu *TotpCredentialUpdate) SetNillableCreatedAt(t *time.Time) *TotpCredentialUpdate {
-	if t != nil {
-		tcu.SetCreatedAt(*t)
-	}
 	return tcu
 }
 
@@ -161,25 +146,13 @@ func (tcu *TotpCredentialUpdate) sqlSave(ctx context.Context) (n int, err error)
 	if err := tcu.check(); err != nil {
 		return n, err
 	}
-	_spec := &sqlgraph.UpdateSpec{
-		Node: &sqlgraph.NodeSpec{
-			Table:   totpcredential.Table,
-			Columns: totpcredential.Columns,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeUUID,
-				Column: totpcredential.FieldID,
-			},
-		},
-	}
+	_spec := sqlgraph.NewUpdateSpec(totpcredential.Table, totpcredential.Columns, sqlgraph.NewFieldSpec(totpcredential.FieldID, field.TypeUUID))
 	if ps := tcu.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
 				ps[i](selector)
 			}
 		}
-	}
-	if value, ok := tcu.mutation.CreatedAt(); ok {
-		_spec.SetField(totpcredential.FieldCreatedAt, field.TypeTime, value)
 	}
 	if value, ok := tcu.mutation.Secret(); ok {
 		_spec.SetField(totpcredential.FieldSecret, field.TypeString, value)
@@ -277,20 +250,6 @@ type TotpCredentialUpdateOne struct {
 	mutation *TotpCredentialMutation
 }
 
-// SetCreatedAt sets the "createdAt" field.
-func (tcuo *TotpCredentialUpdateOne) SetCreatedAt(t time.Time) *TotpCredentialUpdateOne {
-	tcuo.mutation.SetCreatedAt(t)
-	return tcuo
-}
-
-// SetNillableCreatedAt sets the "createdAt" field if the given value is not nil.
-func (tcuo *TotpCredentialUpdateOne) SetNillableCreatedAt(t *time.Time) *TotpCredentialUpdateOne {
-	if t != nil {
-		tcuo.SetCreatedAt(*t)
-	}
-	return tcuo
-}
-
 // SetSecret sets the "secret" field.
 func (tcuo *TotpCredentialUpdateOne) SetSecret(s string) *TotpCredentialUpdateOne {
 	tcuo.mutation.SetSecret(s)
@@ -366,6 +325,12 @@ func (tcuo *TotpCredentialUpdateOne) ClearChallenge() *TotpCredentialUpdateOne {
 	return tcuo
 }
 
+// Where appends a list predicates to the TotpCredentialUpdate builder.
+func (tcuo *TotpCredentialUpdateOne) Where(ps ...predicate.TotpCredential) *TotpCredentialUpdateOne {
+	tcuo.mutation.Where(ps...)
+	return tcuo
+}
+
 // Select allows selecting one or more fields (columns) of the returned entity.
 // The default is selecting all fields defined in the entity schema.
 func (tcuo *TotpCredentialUpdateOne) Select(field string, fields ...string) *TotpCredentialUpdateOne {
@@ -414,16 +379,7 @@ func (tcuo *TotpCredentialUpdateOne) sqlSave(ctx context.Context) (_node *TotpCr
 	if err := tcuo.check(); err != nil {
 		return _node, err
 	}
-	_spec := &sqlgraph.UpdateSpec{
-		Node: &sqlgraph.NodeSpec{
-			Table:   totpcredential.Table,
-			Columns: totpcredential.Columns,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeUUID,
-				Column: totpcredential.FieldID,
-			},
-		},
-	}
+	_spec := sqlgraph.NewUpdateSpec(totpcredential.Table, totpcredential.Columns, sqlgraph.NewFieldSpec(totpcredential.FieldID, field.TypeUUID))
 	id, ok := tcuo.mutation.ID()
 	if !ok {
 		return nil, &ValidationError{Name: "id", err: errors.New(`ent: missing "TotpCredential.id" for update`)}
@@ -447,9 +403,6 @@ func (tcuo *TotpCredentialUpdateOne) sqlSave(ctx context.Context) (_node *TotpCr
 				ps[i](selector)
 			}
 		}
-	}
-	if value, ok := tcuo.mutation.CreatedAt(); ok {
-		_spec.SetField(totpcredential.FieldCreatedAt, field.TypeTime, value)
 	}
 	if value, ok := tcuo.mutation.Secret(); ok {
 		_spec.SetField(totpcredential.FieldSecret, field.TypeString, value)

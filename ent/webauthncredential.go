@@ -233,9 +233,3 @@ func (wac *WebAuthnCredential) String() string {
 
 // WebAuthnCredentials is a parsable slice of WebAuthnCredential.
 type WebAuthnCredentials []*WebAuthnCredential
-
-func (wac WebAuthnCredentials) config(cfg config) {
-	for _i := range wac {
-		wac[_i].config = cfg
-	}
-}

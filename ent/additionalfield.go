@@ -166,9 +166,3 @@ func (af *AdditionalField) String() string {
 
 // AdditionalFields is a parsable slice of AdditionalField.
 type AdditionalFields []*AdditionalField
-
-func (af AdditionalFields) config(cfg config) {
-	for _i := range af {
-		af[_i].config = cfg
-	}
-}

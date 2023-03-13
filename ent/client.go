@@ -13,6 +13,7 @@ import (
 	"PasswordManager/ent/additionalfield"
 	"PasswordManager/ent/challenge"
 	"PasswordManager/ent/emailchallenge"
+	"PasswordManager/ent/note"
 	"PasswordManager/ent/password"
 	"PasswordManager/ent/session"
 	"PasswordManager/ent/totpcredential"
@@ -23,6 +24,7 @@ import (
 	"PasswordManager/ent/webauthncredential"
 	"PasswordManager/ent/webauthnregisterchallenge"
 
+	"entgo.io/ent"
 	"entgo.io/ent/dialect"
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
@@ -40,6 +42,8 @@ type Client struct {
 	Challenge *ChallengeClient
 	// EmailChallenge is the client for interacting with the EmailChallenge builders.
 	EmailChallenge *EmailChallengeClient
+	// Note is the client for interacting with the Note builders.
+	Note *NoteClient
 	// Password is the client for interacting with the Password builders.
 	Password *PasswordClient
 	// Session is the client for interacting with the Session builders.
@@ -74,6 +78,7 @@ func (c *Client) init() {
 	c.AdditionalField = NewAdditionalFieldClient(c.config)
 	c.Challenge = NewChallengeClient(c.config)
 	c.EmailChallenge = NewEmailChallengeClient(c.config)
+	c.Note = NewNoteClient(c.config)
 	c.Password = NewPasswordClient(c.config)
 	c.Session = NewSessionClient(c.config)
 	c.TotpCredential = NewTotpCredentialClient(c.config)
@@ -83,6 +88,55 @@ func (c *Client) init() {
 	c.WebAuthnChallenge = NewWebAuthnChallengeClient(c.config)
 	c.WebAuthnCredential = NewWebAuthnCredentialClient(c.config)
 	c.WebAuthnRegisterChallenge = NewWebAuthnRegisterChallengeClient(c.config)
+}
+
+type (
+	// config is the configuration for the client and its builder.
+	config struct {
+		// driver used for executing database requests.
+		driver dialect.Driver
+		// debug enable a debug logging.
+		debug bool
+		// log used for logging on debug mode.
+		log func(...any)
+		// hooks to execute on mutations.
+		hooks *hooks
+		// interceptors to execute on queries.
+		inters *inters
+	}
+	// Option function to configure the client.
+	Option func(*config)
+)
+
+// options applies the options on the config object.
+func (c *config) options(opts ...Option) {
+	for _, opt := range opts {
+		opt(c)
+	}
+	if c.debug {
+		c.driver = dialect.Debug(c.driver, c.log)
+	}
+}
+
+// Debug enables debug logging on the ent.Driver.
+func Debug() Option {
+	return func(c *config) {
+		c.debug = true
+	}
+}
+
+// Log sets the logging function for debug mode.
+func Log(fn func(...any)) Option {
+	return func(c *config) {
+		c.log = fn
+	}
+}
+
+// Driver configures the client driver.
+func Driver(driver dialect.Driver) Option {
+	return func(c *config) {
+		c.driver = driver
+	}
 }
 
 // Open opens a database/sql.DB specified by the driver name and
@@ -119,6 +173,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		AdditionalField:           NewAdditionalFieldClient(cfg),
 		Challenge:                 NewChallengeClient(cfg),
 		EmailChallenge:            NewEmailChallengeClient(cfg),
+		Note:                      NewNoteClient(cfg),
 		Password:                  NewPasswordClient(cfg),
 		Session:                   NewSessionClient(cfg),
 		TotpCredential:            NewTotpCredentialClient(cfg),
@@ -150,6 +205,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		AdditionalField:           NewAdditionalFieldClient(cfg),
 		Challenge:                 NewChallengeClient(cfg),
 		EmailChallenge:            NewEmailChallengeClient(cfg),
+		Note:                      NewNoteClient(cfg),
 		Password:                  NewPasswordClient(cfg),
 		Session:                   NewSessionClient(cfg),
 		TotpCredential:            NewTotpCredentialClient(cfg),
@@ -188,35 +244,25 @@ func (c *Client) Close() error {
 // Use adds the mutation hooks to all the entity clients.
 // In order to add hooks to a specific client, call: `client.Node.Use(...)`.
 func (c *Client) Use(hooks ...Hook) {
-	c.AdditionalField.Use(hooks...)
-	c.Challenge.Use(hooks...)
-	c.EmailChallenge.Use(hooks...)
-	c.Password.Use(hooks...)
-	c.Session.Use(hooks...)
-	c.TotpCredential.Use(hooks...)
-	c.Url.Use(hooks...)
-	c.User.Use(hooks...)
-	c.Vault.Use(hooks...)
-	c.WebAuthnChallenge.Use(hooks...)
-	c.WebAuthnCredential.Use(hooks...)
-	c.WebAuthnRegisterChallenge.Use(hooks...)
+	for _, n := range []interface{ Use(...Hook) }{
+		c.AdditionalField, c.Challenge, c.EmailChallenge, c.Note, c.Password, c.Session,
+		c.TotpCredential, c.Url, c.User, c.Vault, c.WebAuthnChallenge,
+		c.WebAuthnCredential, c.WebAuthnRegisterChallenge,
+	} {
+		n.Use(hooks...)
+	}
 }
 
 // Intercept adds the query interceptors to all the entity clients.
 // In order to add interceptors to a specific client, call: `client.Node.Intercept(...)`.
 func (c *Client) Intercept(interceptors ...Interceptor) {
-	c.AdditionalField.Intercept(interceptors...)
-	c.Challenge.Intercept(interceptors...)
-	c.EmailChallenge.Intercept(interceptors...)
-	c.Password.Intercept(interceptors...)
-	c.Session.Intercept(interceptors...)
-	c.TotpCredential.Intercept(interceptors...)
-	c.Url.Intercept(interceptors...)
-	c.User.Intercept(interceptors...)
-	c.Vault.Intercept(interceptors...)
-	c.WebAuthnChallenge.Intercept(interceptors...)
-	c.WebAuthnCredential.Intercept(interceptors...)
-	c.WebAuthnRegisterChallenge.Intercept(interceptors...)
+	for _, n := range []interface{ Intercept(...Interceptor) }{
+		c.AdditionalField, c.Challenge, c.EmailChallenge, c.Note, c.Password, c.Session,
+		c.TotpCredential, c.Url, c.User, c.Vault, c.WebAuthnChallenge,
+		c.WebAuthnCredential, c.WebAuthnRegisterChallenge,
+	} {
+		n.Intercept(interceptors...)
+	}
 }
 
 // Mutate implements the ent.Mutator interface.
@@ -228,6 +274,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.Challenge.mutate(ctx, m)
 	case *EmailChallengeMutation:
 		return c.EmailChallenge.mutate(ctx, m)
+	case *NoteMutation:
+		return c.Note.mutate(ctx, m)
 	case *PasswordMutation:
 		return c.Password.mutate(ctx, m)
 	case *SessionMutation:
@@ -267,7 +315,7 @@ func (c *AdditionalFieldClient) Use(hooks ...Hook) {
 	c.hooks.AdditionalField = append(c.hooks.AdditionalField, hooks...)
 }
 
-// Use adds a list of query interceptors to the interceptors stack.
+// Intercept adds a list of query interceptors to the interceptors stack.
 // A call to `Intercept(f, g, h)` equals to `additionalfield.Intercept(f(g(h())))`.
 func (c *AdditionalFieldClient) Intercept(interceptors ...Interceptor) {
 	c.inters.AdditionalField = append(c.inters.AdditionalField, interceptors...)
@@ -401,7 +449,7 @@ func (c *ChallengeClient) Use(hooks ...Hook) {
 	c.hooks.Challenge = append(c.hooks.Challenge, hooks...)
 }
 
-// Use adds a list of query interceptors to the interceptors stack.
+// Intercept adds a list of query interceptors to the interceptors stack.
 // A call to `Intercept(f, g, h)` equals to `challenge.Intercept(f(g(h())))`.
 func (c *ChallengeClient) Intercept(interceptors ...Interceptor) {
 	c.inters.Challenge = append(c.inters.Challenge, interceptors...)
@@ -583,7 +631,7 @@ func (c *EmailChallengeClient) Use(hooks ...Hook) {
 	c.hooks.EmailChallenge = append(c.hooks.EmailChallenge, hooks...)
 }
 
-// Use adds a list of query interceptors to the interceptors stack.
+// Intercept adds a list of query interceptors to the interceptors stack.
 // A call to `Intercept(f, g, h)` equals to `emailchallenge.Intercept(f(g(h())))`.
 func (c *EmailChallengeClient) Intercept(interceptors ...Interceptor) {
 	c.inters.EmailChallenge = append(c.inters.EmailChallenge, interceptors...)
@@ -701,6 +749,140 @@ func (c *EmailChallengeClient) mutate(ctx context.Context, m *EmailChallengeMuta
 	}
 }
 
+// NoteClient is a client for the Note schema.
+type NoteClient struct {
+	config
+}
+
+// NewNoteClient returns a client for the Note from the given config.
+func NewNoteClient(c config) *NoteClient {
+	return &NoteClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `note.Hooks(f(g(h())))`.
+func (c *NoteClient) Use(hooks ...Hook) {
+	c.hooks.Note = append(c.hooks.Note, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `note.Intercept(f(g(h())))`.
+func (c *NoteClient) Intercept(interceptors ...Interceptor) {
+	c.inters.Note = append(c.inters.Note, interceptors...)
+}
+
+// Create returns a builder for creating a Note entity.
+func (c *NoteClient) Create() *NoteCreate {
+	mutation := newNoteMutation(c.config, OpCreate)
+	return &NoteCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of Note entities.
+func (c *NoteClient) CreateBulk(builders ...*NoteCreate) *NoteCreateBulk {
+	return &NoteCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for Note.
+func (c *NoteClient) Update() *NoteUpdate {
+	mutation := newNoteMutation(c.config, OpUpdate)
+	return &NoteUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *NoteClient) UpdateOne(n *Note) *NoteUpdateOne {
+	mutation := newNoteMutation(c.config, OpUpdateOne, withNote(n))
+	return &NoteUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *NoteClient) UpdateOneID(id uuid.UUID) *NoteUpdateOne {
+	mutation := newNoteMutation(c.config, OpUpdateOne, withNoteID(id))
+	return &NoteUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for Note.
+func (c *NoteClient) Delete() *NoteDelete {
+	mutation := newNoteMutation(c.config, OpDelete)
+	return &NoteDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *NoteClient) DeleteOne(n *Note) *NoteDeleteOne {
+	return c.DeleteOneID(n.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *NoteClient) DeleteOneID(id uuid.UUID) *NoteDeleteOne {
+	builder := c.Delete().Where(note.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &NoteDeleteOne{builder}
+}
+
+// Query returns a query builder for Note.
+func (c *NoteClient) Query() *NoteQuery {
+	return &NoteQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeNote},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a Note entity by its id.
+func (c *NoteClient) Get(ctx context.Context, id uuid.UUID) (*Note, error) {
+	return c.Query().Where(note.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *NoteClient) GetX(ctx context.Context, id uuid.UUID) *Note {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryVault queries the vault edge of a Note.
+func (c *NoteClient) QueryVault(n *Note) *VaultQuery {
+	query := (&VaultClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := n.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(note.Table, note.FieldID, id),
+			sqlgraph.To(vault.Table, vault.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, note.VaultTable, note.VaultColumn),
+		)
+		fromV = sqlgraph.Neighbors(n.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *NoteClient) Hooks() []Hook {
+	return c.hooks.Note
+}
+
+// Interceptors returns the client interceptors.
+func (c *NoteClient) Interceptors() []Interceptor {
+	return c.inters.Note
+}
+
+func (c *NoteClient) mutate(ctx context.Context, m *NoteMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&NoteCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&NoteUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&NoteUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&NoteDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown Note mutation op: %q", m.Op())
+	}
+}
+
 // PasswordClient is a client for the Password schema.
 type PasswordClient struct {
 	config
@@ -717,7 +899,7 @@ func (c *PasswordClient) Use(hooks ...Hook) {
 	c.hooks.Password = append(c.hooks.Password, hooks...)
 }
 
-// Use adds a list of query interceptors to the interceptors stack.
+// Intercept adds a list of query interceptors to the interceptors stack.
 // A call to `Intercept(f, g, h)` equals to `password.Intercept(f(g(h())))`.
 func (c *PasswordClient) Intercept(interceptors ...Interceptor) {
 	c.inters.Password = append(c.inters.Password, interceptors...)
@@ -883,7 +1065,7 @@ func (c *SessionClient) Use(hooks ...Hook) {
 	c.hooks.Session = append(c.hooks.Session, hooks...)
 }
 
-// Use adds a list of query interceptors to the interceptors stack.
+// Intercept adds a list of query interceptors to the interceptors stack.
 // A call to `Intercept(f, g, h)` equals to `session.Intercept(f(g(h())))`.
 func (c *SessionClient) Intercept(interceptors ...Interceptor) {
 	c.inters.Session = append(c.inters.Session, interceptors...)
@@ -1017,7 +1199,7 @@ func (c *TotpCredentialClient) Use(hooks ...Hook) {
 	c.hooks.TotpCredential = append(c.hooks.TotpCredential, hooks...)
 }
 
-// Use adds a list of query interceptors to the interceptors stack.
+// Intercept adds a list of query interceptors to the interceptors stack.
 // A call to `Intercept(f, g, h)` equals to `totpcredential.Intercept(f(g(h())))`.
 func (c *TotpCredentialClient) Intercept(interceptors ...Interceptor) {
 	c.inters.TotpCredential = append(c.inters.TotpCredential, interceptors...)
@@ -1167,7 +1349,7 @@ func (c *URLClient) Use(hooks ...Hook) {
 	c.hooks.Url = append(c.hooks.Url, hooks...)
 }
 
-// Use adds a list of query interceptors to the interceptors stack.
+// Intercept adds a list of query interceptors to the interceptors stack.
 // A call to `Intercept(f, g, h)` equals to `url.Intercept(f(g(h())))`.
 func (c *URLClient) Intercept(interceptors ...Interceptor) {
 	c.inters.Url = append(c.inters.Url, interceptors...)
@@ -1301,7 +1483,7 @@ func (c *UserClient) Use(hooks ...Hook) {
 	c.hooks.User = append(c.hooks.User, hooks...)
 }
 
-// Use adds a list of query interceptors to the interceptors stack.
+// Intercept adds a list of query interceptors to the interceptors stack.
 // A call to `Intercept(f, g, h)` equals to `user.Intercept(f(g(h())))`.
 func (c *UserClient) Intercept(interceptors ...Interceptor) {
 	c.inters.User = append(c.inters.User, interceptors...)
@@ -1515,7 +1697,7 @@ func (c *VaultClient) Use(hooks ...Hook) {
 	c.hooks.Vault = append(c.hooks.Vault, hooks...)
 }
 
-// Use adds a list of query interceptors to the interceptors stack.
+// Intercept adds a list of query interceptors to the interceptors stack.
 // A call to `Intercept(f, g, h)` equals to `vault.Intercept(f(g(h())))`.
 func (c *VaultClient) Intercept(interceptors ...Interceptor) {
 	c.inters.Vault = append(c.inters.Vault, interceptors...)
@@ -1608,6 +1790,22 @@ func (c *VaultClient) QueryPasswords(v *Vault) *PasswordQuery {
 	return query
 }
 
+// QueryNotes queries the notes edge of a Vault.
+func (c *VaultClient) QueryNotes(v *Vault) *NoteQuery {
+	query := (&NoteClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := v.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(vault.Table, vault.FieldID, id),
+			sqlgraph.To(note.Table, note.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, vault.NotesTable, vault.NotesColumn),
+		)
+		fromV = sqlgraph.Neighbors(v.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // QueryUser queries the user edge of a Vault.
 func (c *VaultClient) QueryUser(v *Vault) *UserQuery {
 	query := (&UserClient{config: c.config}).Query()
@@ -1665,7 +1863,7 @@ func (c *WebAuthnChallengeClient) Use(hooks ...Hook) {
 	c.hooks.WebAuthnChallenge = append(c.hooks.WebAuthnChallenge, hooks...)
 }
 
-// Use adds a list of query interceptors to the interceptors stack.
+// Intercept adds a list of query interceptors to the interceptors stack.
 // A call to `Intercept(f, g, h)` equals to `webauthnchallenge.Intercept(f(g(h())))`.
 func (c *WebAuthnChallengeClient) Intercept(interceptors ...Interceptor) {
 	c.inters.WebAuthnChallenge = append(c.inters.WebAuthnChallenge, interceptors...)
@@ -1799,7 +1997,7 @@ func (c *WebAuthnCredentialClient) Use(hooks ...Hook) {
 	c.hooks.WebAuthnCredential = append(c.hooks.WebAuthnCredential, hooks...)
 }
 
-// Use adds a list of query interceptors to the interceptors stack.
+// Intercept adds a list of query interceptors to the interceptors stack.
 // A call to `Intercept(f, g, h)` equals to `webauthncredential.Intercept(f(g(h())))`.
 func (c *WebAuthnCredentialClient) Intercept(interceptors ...Interceptor) {
 	c.inters.WebAuthnCredential = append(c.inters.WebAuthnCredential, interceptors...)
@@ -1933,7 +2131,7 @@ func (c *WebAuthnRegisterChallengeClient) Use(hooks ...Hook) {
 	c.hooks.WebAuthnRegisterChallenge = append(c.hooks.WebAuthnRegisterChallenge, hooks...)
 }
 
-// Use adds a list of query interceptors to the interceptors stack.
+// Intercept adds a list of query interceptors to the interceptors stack.
 // A call to `Intercept(f, g, h)` equals to `webauthnregisterchallenge.Intercept(f(g(h())))`.
 func (c *WebAuthnRegisterChallengeClient) Intercept(interceptors ...Interceptor) {
 	c.inters.WebAuthnRegisterChallenge = append(c.inters.WebAuthnRegisterChallenge, interceptors...)
@@ -2050,3 +2248,17 @@ func (c *WebAuthnRegisterChallengeClient) mutate(ctx context.Context, m *WebAuth
 		return nil, fmt.Errorf("ent: unknown WebAuthnRegisterChallenge mutation op: %q", m.Op())
 	}
 }
+
+// hooks and interceptors per client, for fast access.
+type (
+	hooks struct {
+		AdditionalField, Challenge, EmailChallenge, Note, Password, Session,
+		TotpCredential, Url, User, Vault, WebAuthnChallenge, WebAuthnCredential,
+		WebAuthnRegisterChallenge []ent.Hook
+	}
+	inters struct {
+		AdditionalField, Challenge, EmailChallenge, Note, Password, Session,
+		TotpCredential, Url, User, Vault, WebAuthnChallenge, WebAuthnCredential,
+		WebAuthnRegisterChallenge []ent.Interceptor
+	}
+)

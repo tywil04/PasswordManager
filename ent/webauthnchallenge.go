@@ -184,9 +184,3 @@ func (wac *WebAuthnChallenge) String() string {
 
 // WebAuthnChallenges is a parsable slice of WebAuthnChallenge.
 type WebAuthnChallenges []*WebAuthnChallenge
-
-func (wac WebAuthnChallenges) config(cfg config) {
-	for _i := range wac {
-		wac[_i].config = cfg
-	}
-}

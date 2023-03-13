@@ -203,10 +203,12 @@ func (warcq *WebAuthnRegisterChallengeQuery) AllX(ctx context.Context) []*WebAut
 }
 
 // IDs executes the query and returns a list of WebAuthnRegisterChallenge IDs.
-func (warcq *WebAuthnRegisterChallengeQuery) IDs(ctx context.Context) ([]uuid.UUID, error) {
-	var ids []uuid.UUID
+func (warcq *WebAuthnRegisterChallengeQuery) IDs(ctx context.Context) (ids []uuid.UUID, err error) {
+	if warcq.ctx.Unique == nil && warcq.path != nil {
+		warcq.Unique(true)
+	}
 	ctx = setContextOp(ctx, warcq.ctx, "IDs")
-	if err := warcq.Select(webauthnregisterchallenge.FieldID).Scan(ctx, &ids); err != nil {
+	if err = warcq.Select(webauthnregisterchallenge.FieldID).Scan(ctx, &ids); err != nil {
 		return nil, err
 	}
 	return ids, nil
@@ -452,20 +454,12 @@ func (warcq *WebAuthnRegisterChallengeQuery) sqlCount(ctx context.Context) (int,
 }
 
 func (warcq *WebAuthnRegisterChallengeQuery) querySpec() *sqlgraph.QuerySpec {
-	_spec := &sqlgraph.QuerySpec{
-		Node: &sqlgraph.NodeSpec{
-			Table:   webauthnregisterchallenge.Table,
-			Columns: webauthnregisterchallenge.Columns,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeUUID,
-				Column: webauthnregisterchallenge.FieldID,
-			},
-		},
-		From:   warcq.sql,
-		Unique: true,
-	}
+	_spec := sqlgraph.NewQuerySpec(webauthnregisterchallenge.Table, webauthnregisterchallenge.Columns, sqlgraph.NewFieldSpec(webauthnregisterchallenge.FieldID, field.TypeUUID))
+	_spec.From = warcq.sql
 	if unique := warcq.ctx.Unique; unique != nil {
 		_spec.Unique = *unique
+	} else if warcq.path != nil {
+		_spec.Unique = true
 	}
 	if fields := warcq.ctx.Fields; len(fields) > 0 {
 		_spec.Node.Columns = make([]string, 0, len(fields))

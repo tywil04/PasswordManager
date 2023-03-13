@@ -52,7 +52,7 @@ All environment variables are required unless explicitly mentioned otherwise, if
 ### General
 - `ENVIRONMENT` *(optional, default is production)*: This is used to determin the environment the application should be running in. Allowed options are `production` and `development`.
 
-- `ALLOWED_ORIGINS` *(optional, default is all origins)*: This is a comma seperated list of allowed origins. e.g `http://localhost:8080,http://localhost:5173`.
+- `ALLOWED_ORIGINS` *(optional, default is all origins)*: This is a comma seperated list of allowed origins (this is also used to define allowed origins for the webauthn relying party). e.g `http://localhost:8080,http://localhost:5173`.
 
 - `DB_PATH`: This is the path for your db, this project uses sqlite3. Example value: `./ent/dev.db`.
 
@@ -77,8 +77,6 @@ All environment variables are required unless explicitly mentioned otherwise, if
 - `RP_DISPLAY_NAME`: This is the display name for a relying party..
 
 - `RP_ID`: This is the relying partys origin domain. Example value: `localhost`.
-
-- `RP_ORIGINS`: This is a comma seperated list of allowed origins. Example value: `http://localhost:8080,https://example.org`.
 
 - `RP_ICON`: This is a URL to the icon for a relying party. This is optional, a blank value can be set.
 

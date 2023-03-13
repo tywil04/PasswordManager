@@ -215,13 +215,7 @@ func (wacc *WebAuthnCredentialCreate) sqlSave(ctx context.Context) (*WebAuthnCre
 func (wacc *WebAuthnCredentialCreate) createSpec() (*WebAuthnCredential, *sqlgraph.CreateSpec) {
 	var (
 		_node = &WebAuthnCredential{config: wacc.config}
-		_spec = &sqlgraph.CreateSpec{
-			Table: webauthncredential.Table,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeUUID,
-				Column: webauthncredential.FieldID,
-			},
-		}
+		_spec = sqlgraph.NewCreateSpec(webauthncredential.Table, sqlgraph.NewFieldSpec(webauthncredential.FieldID, field.TypeUUID))
 	)
 	if id, ok := wacc.mutation.ID(); ok {
 		_node.ID = id

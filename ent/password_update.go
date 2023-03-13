@@ -68,8 +68,14 @@ func (pu *PasswordUpdate) SetPasswordIv(b []byte) *PasswordUpdate {
 }
 
 // SetColour sets the "colour" field.
-func (pu *PasswordUpdate) SetColour(s string) *PasswordUpdate {
-	pu.mutation.SetColour(s)
+func (pu *PasswordUpdate) SetColour(b []byte) *PasswordUpdate {
+	pu.mutation.SetColour(b)
+	return pu
+}
+
+// SetColourIv sets the "colourIv" field.
+func (pu *PasswordUpdate) SetColourIv(b []byte) *PasswordUpdate {
+	pu.mutation.SetColourIv(b)
 	return pu
 }
 
@@ -234,6 +240,16 @@ func (pu *PasswordUpdate) check() error {
 			return &ValidationError{Name: "passwordIv", err: fmt.Errorf(`ent: validator failed for field "Password.passwordIv": %w`, err)}
 		}
 	}
+	if v, ok := pu.mutation.Colour(); ok {
+		if err := password.ColourValidator(v); err != nil {
+			return &ValidationError{Name: "colour", err: fmt.Errorf(`ent: validator failed for field "Password.colour": %w`, err)}
+		}
+	}
+	if v, ok := pu.mutation.ColourIv(); ok {
+		if err := password.ColourIvValidator(v); err != nil {
+			return &ValidationError{Name: "colourIv", err: fmt.Errorf(`ent: validator failed for field "Password.colourIv": %w`, err)}
+		}
+	}
 	return nil
 }
 
@@ -241,16 +257,7 @@ func (pu *PasswordUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if err := pu.check(); err != nil {
 		return n, err
 	}
-	_spec := &sqlgraph.UpdateSpec{
-		Node: &sqlgraph.NodeSpec{
-			Table:   password.Table,
-			Columns: password.Columns,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeUUID,
-				Column: password.FieldID,
-			},
-		},
-	}
+	_spec := sqlgraph.NewUpdateSpec(password.Table, password.Columns, sqlgraph.NewFieldSpec(password.FieldID, field.TypeUUID))
 	if ps := pu.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
@@ -277,7 +284,10 @@ func (pu *PasswordUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		_spec.SetField(password.FieldPasswordIv, field.TypeBytes, value)
 	}
 	if value, ok := pu.mutation.Colour(); ok {
-		_spec.SetField(password.FieldColour, field.TypeString, value)
+		_spec.SetField(password.FieldColour, field.TypeBytes, value)
+	}
+	if value, ok := pu.mutation.ColourIv(); ok {
+		_spec.SetField(password.FieldColourIv, field.TypeBytes, value)
 	}
 	if pu.mutation.AdditionalFieldsCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -479,8 +489,14 @@ func (puo *PasswordUpdateOne) SetPasswordIv(b []byte) *PasswordUpdateOne {
 }
 
 // SetColour sets the "colour" field.
-func (puo *PasswordUpdateOne) SetColour(s string) *PasswordUpdateOne {
-	puo.mutation.SetColour(s)
+func (puo *PasswordUpdateOne) SetColour(b []byte) *PasswordUpdateOne {
+	puo.mutation.SetColour(b)
+	return puo
+}
+
+// SetColourIv sets the "colourIv" field.
+func (puo *PasswordUpdateOne) SetColourIv(b []byte) *PasswordUpdateOne {
+	puo.mutation.SetColourIv(b)
 	return puo
 }
 
@@ -586,6 +602,12 @@ func (puo *PasswordUpdateOne) ClearVault() *PasswordUpdateOne {
 	return puo
 }
 
+// Where appends a list predicates to the PasswordUpdate builder.
+func (puo *PasswordUpdateOne) Where(ps ...predicate.Password) *PasswordUpdateOne {
+	puo.mutation.Where(ps...)
+	return puo
+}
+
 // Select allows selecting one or more fields (columns) of the returned entity.
 // The default is selecting all fields defined in the entity schema.
 func (puo *PasswordUpdateOne) Select(field string, fields ...string) *PasswordUpdateOne {
@@ -652,6 +674,16 @@ func (puo *PasswordUpdateOne) check() error {
 			return &ValidationError{Name: "passwordIv", err: fmt.Errorf(`ent: validator failed for field "Password.passwordIv": %w`, err)}
 		}
 	}
+	if v, ok := puo.mutation.Colour(); ok {
+		if err := password.ColourValidator(v); err != nil {
+			return &ValidationError{Name: "colour", err: fmt.Errorf(`ent: validator failed for field "Password.colour": %w`, err)}
+		}
+	}
+	if v, ok := puo.mutation.ColourIv(); ok {
+		if err := password.ColourIvValidator(v); err != nil {
+			return &ValidationError{Name: "colourIv", err: fmt.Errorf(`ent: validator failed for field "Password.colourIv": %w`, err)}
+		}
+	}
 	return nil
 }
 
@@ -659,16 +691,7 @@ func (puo *PasswordUpdateOne) sqlSave(ctx context.Context) (_node *Password, err
 	if err := puo.check(); err != nil {
 		return _node, err
 	}
-	_spec := &sqlgraph.UpdateSpec{
-		Node: &sqlgraph.NodeSpec{
-			Table:   password.Table,
-			Columns: password.Columns,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeUUID,
-				Column: password.FieldID,
-			},
-		},
-	}
+	_spec := sqlgraph.NewUpdateSpec(password.Table, password.Columns, sqlgraph.NewFieldSpec(password.FieldID, field.TypeUUID))
 	id, ok := puo.mutation.ID()
 	if !ok {
 		return nil, &ValidationError{Name: "id", err: errors.New(`ent: missing "Password.id" for update`)}
@@ -712,7 +735,10 @@ func (puo *PasswordUpdateOne) sqlSave(ctx context.Context) (_node *Password, err
 		_spec.SetField(password.FieldPasswordIv, field.TypeBytes, value)
 	}
 	if value, ok := puo.mutation.Colour(); ok {
-		_spec.SetField(password.FieldColour, field.TypeString, value)
+		_spec.SetField(password.FieldColour, field.TypeBytes, value)
+	}
+	if value, ok := puo.mutation.ColourIv(); ok {
+		_spec.SetField(password.FieldColourIv, field.TypeBytes, value)
 	}
 	if puo.mutation.AdditionalFieldsCleared() {
 		edge := &sqlgraph.EdgeSpec{

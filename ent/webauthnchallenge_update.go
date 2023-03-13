@@ -170,16 +170,7 @@ func (wacu *WebAuthnChallengeUpdate) ExecX(ctx context.Context) {
 }
 
 func (wacu *WebAuthnChallengeUpdate) sqlSave(ctx context.Context) (n int, err error) {
-	_spec := &sqlgraph.UpdateSpec{
-		Node: &sqlgraph.NodeSpec{
-			Table:   webauthnchallenge.Table,
-			Columns: webauthnchallenge.Columns,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeUUID,
-				Column: webauthnchallenge.FieldID,
-			},
-		},
-	}
+	_spec := sqlgraph.NewUpdateSpec(webauthnchallenge.Table, webauthnchallenge.Columns, sqlgraph.NewFieldSpec(webauthnchallenge.FieldID, field.TypeUUID))
 	if ps := wacu.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
@@ -389,6 +380,12 @@ func (wacuo *WebAuthnChallengeUpdateOne) ClearChallenge() *WebAuthnChallengeUpda
 	return wacuo
 }
 
+// Where appends a list predicates to the WebAuthnChallengeUpdate builder.
+func (wacuo *WebAuthnChallengeUpdateOne) Where(ps ...predicate.WebAuthnChallenge) *WebAuthnChallengeUpdateOne {
+	wacuo.mutation.Where(ps...)
+	return wacuo
+}
+
 // Select allows selecting one or more fields (columns) of the returned entity.
 // The default is selecting all fields defined in the entity schema.
 func (wacuo *WebAuthnChallengeUpdateOne) Select(field string, fields ...string) *WebAuthnChallengeUpdateOne {
@@ -424,16 +421,7 @@ func (wacuo *WebAuthnChallengeUpdateOne) ExecX(ctx context.Context) {
 }
 
 func (wacuo *WebAuthnChallengeUpdateOne) sqlSave(ctx context.Context) (_node *WebAuthnChallenge, err error) {
-	_spec := &sqlgraph.UpdateSpec{
-		Node: &sqlgraph.NodeSpec{
-			Table:   webauthnchallenge.Table,
-			Columns: webauthnchallenge.Columns,
-			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeUUID,
-				Column: webauthnchallenge.FieldID,
-			},
-		},
-	}
+	_spec := sqlgraph.NewUpdateSpec(webauthnchallenge.Table, webauthnchallenge.Columns, sqlgraph.NewFieldSpec(webauthnchallenge.FieldID, field.TypeUUID))
 	id, ok := wacuo.mutation.ID()
 	if !ok {
 		return nil, &ValidationError{Name: "id", err: errors.New(`ent: missing "WebAuthnChallenge.id" for update`)}
