@@ -35,7 +35,7 @@ go run server.go
 ### Developing
 To develop the application, you must have gotten to a stage where you can run the application. The best way to develop is to start a UI-less instance of the golang server with 
 ```
-go run server.go --ui=false
+DISABLE_UI=true go run server.go
 ``` 
 and then in a new terminal run
 ```
