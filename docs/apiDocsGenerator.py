@@ -423,7 +423,12 @@ for (dirPath, dirNames, fileNames) in os.walk(path):
 
                             test = parts[1].split('pmParseType:"')
                             if len(test) == 2:
-                                thirdEmbededStructDataLocation[name] = f"{test[1][:-2]} {expectedType}"
+                                testType = test[1][:-2]
+                                if testType == "totpCode":
+                                    testType = "totp code"
+                                elif testType == "emailCode":
+                                    testType = "email code"
+                                thirdEmbededStructDataLocation[name] = f"{testType} {expectedType}"
                             else:
                                 thirdEmbededStructDataLocation[name] = expectedType
 
@@ -462,7 +467,12 @@ for (dirPath, dirNames, fileNames) in os.walk(path):
 
                                 test = parts[1].split('pmParseType:"')
                                 if len(test) == 2:
-                                    embededStructDataLocation[name] = f"{test[1][:-2]} {expectedType}"
+                                    testType = test[1][:-2]
+                                    if testType == "totpCode":
+                                        testType = "totp code"
+                                    elif testType == "emailCode":
+                                        testType = "email code"
+                                    embededStructDataLocation[name] = f"{testType} {expectedType}"
                                 else:
                                     embededStructDataLocation[name] = expectedType
 
@@ -496,7 +506,12 @@ for (dirPath, dirNames, fileNames) in os.walk(path):
 
                                 test = parts[1].split('pmParseType:"')
                                 if len(test) == 2:
-                                    structDataLocation[name] = f"{test[1][:-2]} {expectedType}"
+                                    testType = test[1][:-2]
+                                    if testType == "totpCode":
+                                        testType = "totp code"
+                                    elif testType == "emailCode":
+                                        testType = "email code"
+                                    structDataLocation[name] = f"{testType} {expectedType}"
                                 else:
                                     structDataLocation[name] = expectedType
 

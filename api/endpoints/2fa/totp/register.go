@@ -19,7 +19,7 @@ type GetRegisterInput struct{}
 
 type PostRegisterInput struct {
 	TotpCredentialId string `form:"totpCredentialId" json:"totpCredentialId" xml:"totpCredentialId" pmParseType:"uuid"`
-	Code             string `form:"code" json:"code" xml:"code"`
+	Code             string `form:"code" json:"code" xml:"code" pmParseType:"totpCode"`
 }
 
 func GetRegister(c *gin.Context) {

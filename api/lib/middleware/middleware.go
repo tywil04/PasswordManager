@@ -93,6 +93,22 @@ func processParamsRecursive(c *gin.Context, inputValue reflect.Value) map[string
 					dA = exceptions.Email
 				}
 				d = indexValue.String()
+			case "emailCode":
+				regex, _ := regexp.Compile(`^[a-zA-Z0-9]{4}\-[a-zA-Z0-9]{4}$`)
+				valid := regex.MatchString(indexValue.String())
+				if !valid {
+					dE = errors.New("Invalid email code")
+					dA = exceptions.EmailCode
+				}
+				d = indexValue.String()
+			case "totpCode":
+				regex, _ := regexp.Compile(`^[0-9]{6}$`)
+				valid := regex.MatchString(indexValue.String())
+				if !valid {
+					dE = errors.New("Invalid totp code")
+					dA = exceptions.TotpCode
+				}
+				d = indexValue.String()
 			default:
 				d = indexValue.Interface()
 			}

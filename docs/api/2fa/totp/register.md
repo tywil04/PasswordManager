@@ -66,7 +66,7 @@ This API is public, however, it is strongly recommended that you use an official
 ```json
 {
     "totpCredentialId": "uuid string",
-    "code": "string"
+    "code": "totp code string"
 }
 ```
 

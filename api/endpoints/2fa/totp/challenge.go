@@ -15,7 +15,7 @@ import (
 
 type PostChallengeInput struct {
 	ChallengeId string `form:"challengeId" json:"challengeId" xml:"challengeId" pmParseType:"uuid"`
-	Code        string `form:"code" json:"code" xml:"code"`
+	Code        string `form:"code" json:"code" xml:"code" pmParseType:"totpCode"`
 }
 
 func PostChallenge(c *gin.Context) {

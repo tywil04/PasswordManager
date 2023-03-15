@@ -13,6 +13,8 @@ const (
 	Base64
 	Uuid
 	HexColour
+	EmailCode
+	TotpCode
 	Email
 	JsonOrXml
 	Expired
@@ -32,6 +34,10 @@ func (a Addition) String() string {
 		return "Are you sure it's a well-formed uuid?"
 	case HexColour:
 		return "Are you sure it's a valid hex colour code?"
+	case EmailCode:
+		return "Are you sure it's a valid email code?"
+	case TotpCode:
+		return "Are you sure it's a valid totp code?"
 	case Email:
 		return "Are you sure it's a valid email address?"
 	case JsonOrXml:
@@ -47,7 +53,7 @@ func (a Addition) String() string {
 	case Authtoken:
 		return "Are you sure it's both a non-expired and valid authToken?"
 	case DidntStart2FA:
-		return "Are you sure you started the 2FA process? Some endpoints require you to do so."
+		return "Are you sure you started the 2FA process? Some challenges require you to do so."
 	case TryAgain:
 		return "Please try again later."
 	}
