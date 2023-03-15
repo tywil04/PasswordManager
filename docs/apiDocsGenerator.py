@@ -503,10 +503,11 @@ for (dirPath, dirNames, fileNames) in os.walk(path):
 doc = Document(docx="/home/tyler/Development/PasswordManager5/docs/Tyler Williams - Computer Science Project.docx")
 startDocxFormat(doc)
 for path, data in data.items():
+    writePath = path
     if path in namePathDict.keys():
-        path = namePathDict[path]
+        writePath = namePathDict[path]
     markdown = formatMarkdown(path, data)
-    fileName = f"{outputPath}{path.replace(apiPrefix, '')}.md"
+    fileName = f"{outputPath}{writePath.replace(apiPrefix, '')}.md"
     os.makedirs(os.path.dirname(fileName), exist_ok=True)
     with open(fileName, "w+") as fileWriter:
         fileWriter.write(markdown)

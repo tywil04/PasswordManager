@@ -1,4 +1,4 @@
-# /api/v1/vaults/vaults
+# /api/v1/vaults
 If a GET request requires parameters, the parameters can only be passed using query parameters. (GET requests does not support body).
 
 All requests need to have a `Content-type` header that is either `application/json` or `application/xml`, requests wont work otherwise. 
