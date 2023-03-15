@@ -21,6 +21,7 @@ errorResponse = {
 }
 
 data = {}
+namePathDict = {}
 
 def formatMarkdown(path, entries):
     content = f"""# {path}
@@ -205,14 +206,14 @@ for (dirPath, dirNames, fileNames) in os.walk(path):
     for fileName in fileNames:
         endpointPath = apiPrefix + (dirPath + "/" + fileName).replace(dirPathPrefix, "")
 
-        print(endpointPath)
-
         splitEndpointPath = endpointPath.split("/")
         folderName = splitEndpointPath[-2:-1][0]
         goFileName = splitEndpointPath[-1:][0].replace(".go", "")
 
         if folderName == goFileName:
+            temp = endpointPath.replace(".go", "")
             endpointPath = endpointPath.replace("/" + folderName + ".go", "")
+            namePathDict[endpointPath] = temp
         else:
             endpointPath = endpointPath.replace(".go", "")
 
@@ -502,6 +503,8 @@ for (dirPath, dirNames, fileNames) in os.walk(path):
 doc = Document(docx="/home/tyler/Development/PasswordManager5/docs/Tyler Williams - Computer Science Project.docx")
 startDocxFormat(doc)
 for path, data in data.items():
+    if path in namePathDict.keys():
+        path = namePathDict[path]
     markdown = formatMarkdown(path, data)
     fileName = f"{outputPath}{path.replace(apiPrefix, '')}.md"
     os.makedirs(os.path.dirname(fileName), exist_ok=True)
