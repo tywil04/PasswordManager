@@ -8,10 +8,6 @@ import (
 	"PasswordManager/ent"
 )
 
-const (
-	SignoutDescription string = ""
-)
-
 type DeleteSignoutInput struct{}
 
 func DeleteSignout(c *gin.Context) {

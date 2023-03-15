@@ -1,4 +1,4 @@
-# /api/v1/totp/register
+# /api/v1/2fa/webauthn/credential
 If a GET request requires parameters, the parameters can only be passed using query parameters. (GET requests does not support body).
 
 All requests need to have a `Content-type` header that is either `application/json` or `application/xml`, requests wont work otherwise. 
@@ -30,9 +30,13 @@ This API is public, however, it is strongly recommended that you use an official
 #### 200
 ```json
 {
-    "totpCredentialId": "uuid string",
-    "totpSecret": "base64 string",
-    "totpSecretQr": "base64 string"
+    "webauthnCredentials": [
+        {
+            "id": "uuid string",
+            "name": "string",
+            "createdAt": "time string"
+        }
+    ]
 }
 ```
 #### 500 (Server Error)
@@ -50,7 +54,7 @@ This API is public, however, it is strongly recommended that you use an official
 // JAVASCRIPT EXAMPLE HERE
 ```
 
-## POST
+## DELETE
 ### Description
 // DESCRIPTION HERE //
 
@@ -65,19 +69,16 @@ This API is public, however, it is strongly recommended that you use an official
 #### Params
 ```json
 {
-    "totpCredentialId": "string",
-    "code": "string"
+    "webauthnCredentialId": "uuid string"
 }
 ```
 
 ### Response Format
 #### 200
 ```json
-{
-    "totpCredentialId": "uuid string"
-}
+{}
 ```
-#### 400 (Client Error)
+#### 500 (Server Error)
 ```json
 {
     "error": {

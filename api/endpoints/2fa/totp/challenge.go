@@ -13,10 +13,6 @@ import (
 	"PasswordManager/api/lib/smtp"
 )
 
-const (
-	ChallengeDescription string = "Both a challengeId and list of available challenges will be issued to the client by some other request (e.g /api/v1/auth/signup). To start the 2FA process via totp, you need to prompt the user for a code which they can get from the authenticator app they setup. Once you have the code use a POST request with both the challengeId and the code from the user. If successful, a valid authToken (they expire after an hour) is generated and returned (this allows you to make requests for authenticated endpoints). The users protectedDatabaseKey and protectedDatabaseKeyIv are also returned so they can be decoded and stored within sessionStorage."
-)
-
 type PostChallengeInput struct {
 	ChallengeId string `form:"challengeId" json:"challengeId" xml:"challengeId" pmParseType:"uuid"`
 	Code        string `form:"code" json:"code" xml:"code"`

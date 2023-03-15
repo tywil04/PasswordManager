@@ -22,8 +22,8 @@ This API is public, however, it is strongly recommended that you use an official
 #### Params
 ```json
 {
-    "email": "string",
-    "masterHash": "string"
+    "email": "email string",
+    "masterHash": "base64 string"
 }
 ```
 

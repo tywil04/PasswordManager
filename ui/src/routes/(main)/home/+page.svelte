@@ -29,6 +29,8 @@
     import { Pane, Splitpanes } from "svelte-splitpanes"
     import { Plus, ChevronDown, Key, DocumentText, ArrowLeftOnRectangle, ArrowPath, Eye, EyeSlash } from "svelte-heros-v2"
 
+    import Dialog from "$lib/components/dialog/Dialog.svelte"
+
     import * as server from "$lib/js/server.js"
 
     export let data
@@ -48,6 +50,13 @@
     {/each}
 </div> -->
 
+<Dialog title="Webauthn" open>
+    <div class="flex flex-col">
+        <label class="pl-[1px] text-sm">Name</label>
+        <input type="text" class="bg-gray-100 rounded-[4px] !border-gray-300 py-2 px-3 !outline-none !ring-0"/>
+    </div>
+</Dialog>
+
 <Splitpanes>
 	<Pane class="!bg-gray-100 flex flex-col" minSize={20} size={20}>
         <div class="bg-gray-200 border-b border-gray-300 py-2.5 px-2.5 flex flex-row">
@@ -56,9 +65,11 @@
 
         <div class="pb-0.5 pt-2.5 mx-2.5 flex flex-row"> 
             <b>Vaults</b>
-            <button class="ml-auto">
-                <Plus class="focus:outline-none" strokeWidth="1"/>
-            </button>
+            <abbr class="ml-auto" title="New Vault">
+                <button>
+                    <Plus class="focus:outline-none" strokeWidth="1"/>
+                </button>
+            </abbr>
         </div>
 
         <button on:click={() => { selectedVaultId = "all"; selectedType = "password"; selectedId = "" }} class="hover:bg-gray-200 group-open:border-b transition-opacity duration-100 border-gray-300 flex flex-row py-1 px-2.5 cursor-pointer">
@@ -99,10 +110,12 @@
     </Pane>
 	<Pane class="!bg-white !overflow-auto max-h-full flex flex-col" minSize={20} size={25}>
         <div class="bg-gray-200 border-b border-gray-300 py-2.5 px-2.5 flex flex-row">
-            <button class="bg-gray-100 w-full flex flex-row justify-center py-2 rounded-[4px] hover:bg-gray-300 duration-100" on:click={() => data.passwords = [...data.passwords, {colour:"#000042", name:"blue"}]}>
-                <Plus strokeWidth="1"/>
-                <p class="ml-2 leading-[22.5px]">New {selectedType === "password" ? "Password": "Note"}</p>
-            </button>
+            <abbr class="w-full !no-underline" title={selectedType === "password" ? "Create New Password": "Create New Note"}>
+                <button class="bg-gray-100 w-full flex flex-row justify-center py-2 rounded-[4px] hover:bg-gray-300 duration-100" on:click={() => data.passwords = [...data.passwords, {colour:"#000042", name:"blue"}]}>
+                    <Plus strokeWidth="1"/>
+                    <p class="ml-2 leading-[22.5px]">{selectedType === "password" ? "New Password": "New Note"}</p>
+                </button>
+            </abbr>
         </div>
         <div class="flex flex-col !overflow-auto max-h-full">
             {#if data.passwords}
@@ -124,10 +137,12 @@
 	<Pane class="!bg-gray-100" minSize={20} size={65}>
         <div class="bg-gray-200 border-b border-gray-300 py-2.5 px-2.5 flex flex-row">
             <div class="flex flex-row mr-auto">
-                <button on:click={server.syncClientData} class="bg-gray-100 w-fit flex flex-row justify-center py-2 px-3 rounded-[4px] hover:bg-gray-300 duration-100">
-                    <ArrowPath strokeWidth="1"/>
-                    <p class="ml-1 leading-[22.5px]">Sync</p>
-                </button>
+                <abbr class="!no-underline" title="Synchronise Client Database">
+                    <button on:click={server.syncClientData} class="bg-gray-100 w-fit flex flex-row justify-center py-2 px-3 rounded-[4px] hover:bg-gray-300 duration-100">
+                        <ArrowPath strokeWidth="1"/>
+                        <p class="ml-1 leading-[22.5px]">Sync</p>
+                    </button>
+                </abbr>
             </div>
 
             <div class="flex flex-row ml-auto">
@@ -174,7 +189,12 @@
                     </div>
 
                     <div class="flex flex-col">
-                        <label for="password" class="pl-[1px] text-sm">Additional Fields</label>
+                        <div class="flex flex-row">
+                            <label for="af" class="pl-[1px] text-sm">Additional Fields</label>
+                            <abbr class="ml-auto" title="New Additional Field">
+                                <Plus class="w-5" strokeWidth="1"/>
+                            </abbr>
+                        </div>
                         {#if data.passwords[selectedId].additionalFields.length > 0}
                             {#each data.passwords[selectedId].additionalFields as additionalField, index}
                                 <div class="flex flex-row">
@@ -188,10 +208,15 @@
                     </div>
 
                     <div class="flex flex-col">
-                        <label for="password" class="pl-[1px] text-sm">Urls</label>
+                        <div class="flex flex-row">
+                            <label for="url" class="pl-[1px] text-sm">URLs</label>
+                            <abbr class="ml-auto" title="New URL">
+                                <Plus class="w-5" strokeWidth="1"/>
+                            </abbr>
+                        </div>
                         {#if data.passwords[selectedId].urls.length > 0}
                             {#each data.passwords[selectedId].urls as url, index}
-                                <input id={"irl-" + index} type="text" readonly bind:value={url.url} class="bg-gray-50 rounded-[4px] !border-gray-200 py-2 px-3 !outline-none !ring-0"/>
+                                <input id={"url-" + index} type="text" readonly bind:value={url.url} class="bg-gray-50 rounded-[4px] !border-gray-200 py-2 px-3 !outline-none !ring-0"/>
                             {/each}
                         {:else}
                             <input id="url" type="url" readonly value="No urls." class="bg-gray-50 rounded-[4px] !border-gray-200 py-2 px-3 !outline-none !ring-0"/>

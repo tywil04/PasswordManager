@@ -11,14 +11,6 @@ import (
 	"PasswordManager/api/lib/helpers"
 )
 
-const (
-	SignupDescription string = `This endpoints starts the signup process. The response contains a list of all the supported 2FA challenges the user has registered and an id for a challenge (by default the user will have only an email challenge available, other challenges include totp and webauthn). 
-
-- 'email' should be a valid email address
-- 'masterHash' should be generated using a flow similar to 'docs/signupFlow.png' but technically any base64 string is valid because the server cannot validate what it doesn't know.
-- 'protectedDatabaseKey' is an encrypted randomly generated key that is encrypted and 'protectedDatabaseKeyIv' is the iv used for encryption. These should be generated and encrypted using a flow similar to 'docs/signupFlow.png'. Both of these can technically be any base64 string because the server cannot validate encrypted data.`
-)
-
 type PostSignupInput struct {
 	Email                  string `form:"email" json:"email" xml:"email" pmParseType:"email"`
 	MasterHash             string `form:"masterHash" json:"masterHash" xml:"masterHash" pmParseType:"base64"`

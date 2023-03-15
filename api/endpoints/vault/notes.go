@@ -9,10 +9,6 @@ import (
 	"PasswordManager/ent"
 )
 
-const (
-	NoteDescription string = ""
-)
-
 type GetNoteInput struct{}
 
 type PostNoteInput struct {
@@ -27,9 +23,22 @@ type PostNoteInput struct {
 	ColourIv  string `form:"colourIv" json:"colourIv" xml:"colourIv" pmParseType:"base64"`
 }
 
+type PutNoteInput struct {
+	NoteId    string `form:"noteId" json:"noteId" xml:"noteId" pmParseType:"uuid"`
+	VaultId   string `form:"vaultId" json:"vaultId" xml:"vaultId" pmParseType:"uuid"`
+	Name      string `form:"name" json:"name" xml:"name" pmParseType:"base64"`
+	NameIv    string `form:"nameIv" json:"nameIv" xml:"nameIv" pmParseType:"base64"`
+	Title     string `form:"title" json:"title" xml:"title" pmParseType:"base64"`
+	TitleIv   string `form:"titleIv" json:"titleIv" xml:"titleIv" pmParseType:"base64"`
+	Content   string `form:"content" json:"content" xml:"content" pmParseType:"base64"`
+	ContentIv string `form:"contentIv" json:"contentIv" xml:"contentIv" pmParseType:"base64"`
+	Colour    string `form:"colour" json:"colour" xml:"colour" pmParseType:"base64"`
+	ColourIv  string `form:"colourIv" json:"colourIv" xml:"colourIv" pmParseType:"base64"`
+}
+
 type DeleteNoteInput struct {
-	VaultId string `form:"vaultId" json:"vaultId" xml:"vaultId" pmParseType:"uuid"`
 	NoteId  string `form:"noteId" json:"noteId" xml:"noteId" pmParseType:"uuid"`
+	VaultId string `form:"vaultId" json:"vaultId" xml:"vaultId" pmParseType:"uuid"`
 }
 
 func GetNote(c *gin.Context) {
@@ -94,6 +103,42 @@ func PostNote(c *gin.Context) {
 	}
 
 	c.JSON(200, gin.H{"noteId": newNote.ID.String()})
+}
+
+func PutNote(c *gin.Context) {
+	authedUser := c.MustGet("authedUser").(*ent.User)
+	params := c.GetStringMap("params")
+
+	vault, vaultErr := db.GetUserVault(authedUser, params["vaultId"].(uuid.UUID))
+	if vaultErr != nil {
+		c.JSON(400, exceptions.Builder("vaultId", exceptions.InvalidParam, exceptions.Uuid, exceptions.Owns))
+		return
+	}
+
+	note, noteErr := db.GetVaultNote(vault, params["noteId"].(uuid.UUID))
+	if noteErr != nil {
+		c.JSON(400, exceptions.Builder("noteId", exceptions.InvalidParam, exceptions.Uuid, exceptions.Owns))
+		return
+	}
+
+	updatedNote, updatingErr := note.Update().
+		SetVault(vault).
+		SetName(params["name"].([]byte)).
+		SetNameIv(params["nameIv"].([]byte)).
+		SetTitle(params["title"].([]byte)).
+		SetTitleIv(params["titleIv"].([]byte)).
+		SetContent(params["content"].([]byte)).
+		SetContentIv(params["contentIv"].([]byte)).
+		SetColour(params["colour"].([]byte)).
+		SetColourIv(params["colourIv"].([]byte)).
+		Save(db.Context)
+
+	if updatingErr != nil {
+		c.JSON(500, exceptions.Builder("note", exceptions.Updating, exceptions.TryAgain))
+		return
+	}
+
+	c.JSON(200, gin.H{"noteId": updatedNote.ID.String()})
 }
 
 func DeleteNote(c *gin.Context) {

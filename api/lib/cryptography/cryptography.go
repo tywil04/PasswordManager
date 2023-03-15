@@ -4,7 +4,6 @@ import (
 	"crypto"
 	"crypto/rand"
 	"crypto/rsa"
-	"crypto/sha512"
 	"crypto/subtle"
 	"math/big"
 	"os"
@@ -14,12 +13,18 @@ import (
 
 // https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html#introduction
 var (
+	// master hash options
 	masterHashPasses    uint32 = 3
 	masterHashMemory    uint32 = 64 * 1024
 	masterHashThreads   uint8  = 4
 	masterHashKeyLength uint32 = 32 // AES-256 needs 32-byte key
 
+	// rsa key size
 	rsaSize = 4096
+
+	// rsa pss options
+	rsapssSaltLength int         = 16 // 16 byte salt
+	rsapssHash       crypto.Hash = crypto.SHA3_512
 )
 
 func StrengthenMasterHash(masterHash []byte, salt []byte) []byte {
@@ -59,14 +64,18 @@ func RandomString(n int) string {
 func GenerateSignature(value string) (*rsa.PublicKey, []byte) {
 	privateKey, _ := rsa.GenerateKey(rand.Reader, rsaSize)
 	publicKey := &privateKey.PublicKey
-	hashed := sha512.Sum512([]byte(value))
-	signature, _ := rsa.SignPKCS1v15(rand.Reader, privateKey, crypto.SHA512, hashed[:])
+	signature, _ := rsa.SignPSS(rand.Reader, privateKey, crypto.SHA512, HashString(value)[:], &rsa.PSSOptions{
+		SaltLength: rsapssSaltLength,
+		Hash:       rsapssHash,
+	})
 	return publicKey, signature
 }
 
 func VerifySignature(publicKey *rsa.PublicKey, signature []byte, value string) bool {
-	hashed := sha512.Sum512([]byte(value))
-	return rsa.VerifyPKCS1v15(publicKey, crypto.SHA512, hashed[:], signature) == nil
+	return rsa.VerifyPSS(publicKey, crypto.SHA512, HashString(value)[:], signature, &rsa.PSSOptions{
+		SaltLength: rsapssSaltLength,
+		Hash:       rsapssHash,
+	}) == nil
 }
 
 func ImportPublicKey(n []byte, e int) *rsa.PublicKey {
@@ -84,6 +93,6 @@ func ConstantTimeCompare(x []byte, y []byte) bool {
 }
 
 func HashString(input string) []byte {
-	hasher := sha512.New()
+	hasher := crypto.SHA3_512.New()
 	return hasher.Sum([]byte(input))
 }

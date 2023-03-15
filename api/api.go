@@ -68,12 +68,15 @@ func Start(router *gin.Engine) {
 	// Vault Endpoints
 	authGroup.GET("/vaults", middleware.ProcessParams(vaults.GetInput{}), vaults.Get)
 	authGroup.POST("/vaults", middleware.ProcessParams(vaults.PostInput{}), vaults.Post)
+	authGroup.PUT("/vaults", middleware.ProcessParams(vaults.PutInput{}), vaults.Put)
 	authGroup.DELETE("/vaults", middleware.ProcessParams(vaults.DeleteInput{}), vaults.Delete)
 	authGroup.GET("/vaults/passwords", middleware.ProcessParams(vaults.GetPasswordInput{}), vaults.GetPassword)
 	authGroup.POST("/vaults/passwords", middleware.ProcessParams(vaults.PostPasswordInput{}), vaults.PostPassword)
+	authGroup.PUT("/vault/passwords", middleware.ProcessParams(vaults.PutPasswordInput{}), vaults.PutPassword)
 	authGroup.DELETE("/vaults/passwords", middleware.ProcessParams(vaults.DeletePasswordInput{}), vaults.DeletePassword)
 	authGroup.GET("/vaults/notes", middleware.ProcessParams(vaults.GetNoteInput{}), vaults.GetNote)
 	authGroup.POST("/vaults/notes", middleware.ProcessParams(vaults.PostNoteInput{}), vaults.PostNote)
+	authGroup.PUT("/vaults/notes", middleware.ProcessParams(vaults.PutNoteInput{}), vaults.PutNote)
 	authGroup.DELETE("/vaults/notes", middleware.ProcessParams(vaults.DeleteNoteInput{}), vaults.DeleteNote)
 }
 

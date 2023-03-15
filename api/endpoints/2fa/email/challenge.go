@@ -13,10 +13,6 @@ import (
 	"PasswordManager/api/lib/smtp"
 )
 
-const (
-	ChallengeDescription string = "This is the endpoint for completing a 2FA challenge via email. Every user has this 2FA challenge available. Both a challengeId and list of available challenges will be issued to the client by some other request (e.g /api/v1/auth/signup). To start the 2FA process via email, you need to inform the server via a GET request containing a challengeId (this request actually generates and sends the code to the user via email, hence its required). To finish the 2FA process, use the POST request with both the challengeId and the code from the user. If successful, a valid authToken (they expire after an hour) is generated and returned (this allows you to make requests for authenticated endpoints). The users protectedDatabaseKey and protectedDatabaseKeyIv are also returned so they can be decoded and stored within sessionStorage."
-)
-
 type GetChallengeInput struct {
 	ChallengeId string `form:"challengeId" json:"challengeId" xml:"challengeId" pmParseType:"uuid"`
 }

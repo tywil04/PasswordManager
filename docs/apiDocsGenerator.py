@@ -331,13 +331,15 @@ for (dirPath, dirNames, fileNames) in os.walk(path):
                             returnResponseDict[key] = [
                                 {
                                     "id": "uuid string",
+                                    "vaultId": "uuid string",
                                     "name": "base64 string",
                                     "nameIv": "base64 string",
                                     "username": "base64 string",
                                     "usernameIv": "base64 string",
                                     "password": "base64 string",
                                     "passwordIv": "base64 string",
-                                    "colour": "hex colour string",
+                                    "colour": "base64 string",
+                                    "colourIv": "base64 string",
                                     "additionalFields": [
                                         {
                                             "key": "base64 string",
@@ -354,10 +356,37 @@ for (dirPath, dirNames, fileNames) in os.walk(path):
                                     ],
                                 }
                             ]
+                        elif key == "notes":
+                            returnResponseDict[key] = [
+                                {
+                                    "id": "uuid string",
+                                    "vaultId": "uuid string",
+                                    "name": "base64 string",
+                                    "nameIv": "base64 string",
+                                    "title": "base64 string",
+                                    "titleIv": "base64 string",
+                                    "content": "base64 string",
+                                    "contentIv": "base64 string",
+                                    "colour": "base64 string",
+                                    "colourIv": "base64 string"
+                                }
+                            ]
+                        elif key == "vaults":
+                            returnResponseDict[key] = [
+                                {
+                                    "id": "uuid string",
+                                    "name": "base64 string",
+                                    "nameIv": "base64 string",
+                                    "colour": "base64 string",
+                                    "colourIv": "base64 string"
+                                }
+                            ]
                         elif key == "authToken":
                             returnResponseDict[key] = "authToken string"
                         else:
                             returnResponseDict[key] = "base64 string"
+
+                        # print(returnResponseDict)
 
                     data[endpointPath][dataKey]["responses"][200] = returnResponseDict
                     if len(finishedStructs) > dataIndex:
@@ -384,7 +413,18 @@ for (dirPath, dirNames, fileNames) in os.walk(path):
                         elif len(parts) == 2:
                             expectedType = parts[0].replace("  ", " ").replace("  ", " ").replace("  ", " ").replace("  ", " ").replace("  ", " ").replace("  ", " ").replace("  ", " ").replace("  ", " ").split(" ")[1]
                             name = parts[1].replace('form:"', "").replace('" json:"', "//").split("//")[0]
-                            thirdEmbededStructDataLocation[name] = expectedType
+
+                            nameTest = parts[1].split('pmOptional:"')
+                            if len(nameTest) == 2 and nameTest[1][:-2] == "true":
+                                name = f"[{name}]"
+
+                            test = parts[1].split('pmParseType:"')
+                            if len(test) == 2:
+                                thirdEmbededStructDataLocation[name] = f"{test[1][:-2]} {expectedType}"
+                            else:
+                                thirdEmbededStructDataLocation[name] = expectedType
+
+                            # thirdEmbededStructDataLocation[name] = expectedType
 
                 if embededStructContinue and not thirdEmbededStructContinue:
                     stripped = line.strip()
@@ -412,13 +452,25 @@ for (dirPath, dirNames, fileNames) in os.walk(path):
                                 thirdEmbededIsArray = True
                             elif len(parts) == 2:
                                 name = parts[1].replace('form:"', "").replace('" json:"', "//").split("//")[0]
-                                embededStructDataLocation[name] = expectedType
+                                
+                                nameTest = parts[1].split('pmOptional:"')
+                                if len(nameTest) == 2 and nameTest[1][:-2] == "true":
+                                    name = f"[{name}]"
+
+                                test = parts[1].split('pmParseType:"')
+                                if len(test) == 2:
+                                    embededStructDataLocation[name] = f"{test[1][:-2]} {expectedType}"
+                                else:
+                                    embededStructDataLocation[name] = expectedType
+
+                                # embededStructDataLocation = expectedType
 
                 if structContinue and not embededStructContinue and not thirdEmbededStructContinue:
                     stripped = line.strip()
                     if stripped == "}":
                         structContinue = False
                         finishedStructs.append(structDataLocation)
+                        # print(finishedStructs)
                     else:
                         parts = line.strip().split(" `")
                         if parts[0] == "}":
@@ -434,16 +486,25 @@ for (dirPath, dirNames, fileNames) in os.walk(path):
                                 embededIsArray = True
                             elif len(parts) == 2:
                                 name = parts[1].replace('form:"', "").replace('" json:"', "//").split("//")[0]
-                                structDataLocation[name] = expectedType
+
+                                nameTest = parts[1].split('pmOptional:"')
+                                if len(nameTest) == 2 and nameTest[1][:-2] == "true":
+                                    name = f"[{name}]"
+
+                                test = parts[1].split('pmParseType:"')
+                                if len(test) == 2:
+                                    structDataLocation[name] = f"{test[1][:-2]} {expectedType}"
+                                else:
+                                    structDataLocation[name] = expectedType
 
 doc = Document(docx="/home/tyler/Development/PasswordManager5/docs/Tyler Williams - Computer Science Project.docx")
 startDocxFormat(doc)
 for path, data in data.items():
-    # markdown = formatMarkdown(path, data)
-    # fileName = f"{outputPath}{path.replace(apiPrefix, '')}.md"
-    # os.makedirs(os.path.dirname(fileName), exist_ok=True)
-    # with open(fileName, "w+") as fileWriter:
-    #     fileWriter.write(markdown)
+    markdown = formatMarkdown(path, data)
+    fileName = f"{outputPath}{path.replace(apiPrefix, '')}.md"
+    os.makedirs(os.path.dirname(fileName), exist_ok=True)
+    with open(fileName, "w+") as fileWriter:
+        fileWriter.write(markdown)
     formatDocx(doc, path, data)
 
 doc.save(outputPath + "/test.docx")

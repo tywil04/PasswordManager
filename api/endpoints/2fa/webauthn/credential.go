@@ -9,10 +9,6 @@ import (
 	"PasswordManager/ent"
 )
 
-const (
-	CredentialDescription string = ""
-)
-
 type GetCredentialInput struct{}
 
 type DeleteCredentialInput struct {

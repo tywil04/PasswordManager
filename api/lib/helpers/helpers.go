@@ -6,7 +6,10 @@ import (
 	"PasswordManager/ent"
 	entChallenge "PasswordManager/ent/challenge"
 	"encoding/base64"
+	"strings"
 	"time"
+
+	"github.com/google/uuid"
 )
 
 func GenerateEmailChallenge(challenge *ent.Challenge) (*ent.EmailChallenge, error) {
@@ -98,4 +101,54 @@ func GenerateSession(user *ent.User) (string, string, string, error) {
 	encodedProtectedDatabaseKeyIv := base64.StdEncoding.EncodeToString(user.ProtectedDatabaseKeyIv)
 
 	return token, encodedProtectedDatabaseKey, encodedProtectedDatabaseKeyIv, nil
+}
+
+func ValidateSession(authToken string) (bool, *ent.User, *ent.Session) {
+	parts := strings.Split(authToken, ";")
+	if len(parts) != 3 {
+		return false, nil, nil
+	}
+
+	sessionId := parts[0]
+	encodedSalt := parts[1]
+	signature := parts[2]
+
+	decodedSessionId, dsiErr := base64.StdEncoding.DecodeString(sessionId)
+	if dsiErr != nil {
+		return false, nil, nil
+	}
+
+	decodedSignature, dsErr := base64.StdEncoding.DecodeString(signature)
+	if dsErr != nil {
+		return false, nil, nil
+	}
+
+	parsedDecodedSessionId, pdsiErr := uuid.Parse(string(decodedSessionId[:]))
+	if pdsiErr != nil {
+		return false, nil, nil
+	}
+
+	session, sessionErr := db.Client.Session.Get(db.Context, parsedDecodedSessionId)
+	if sessionErr != nil {
+		return false, nil, nil
+	}
+
+	if session.Expiry.Before(time.Now()) {
+		db.DeleteSession(session)
+		return false, nil, nil
+	}
+
+	user, userErr := session.QueryUser().First(db.Context)
+	if userErr != nil {
+		return false, nil, nil
+	}
+
+	publicKey := cryptography.ImportPublicKey(session.N, session.E)
+	valid := cryptography.VerifySignature(publicKey, decodedSignature, user.Email+base64.StdEncoding.EncodeToString(user.StrengthenedMasterHash)+encodedSalt)
+
+	if valid {
+		return true, user, session
+	}
+
+	return false, nil, nil
 }

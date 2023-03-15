@@ -2,9 +2,11 @@ package db
 
 import (
 	"PasswordManager/ent"
+	"PasswordManager/ent/additionalfield"
 	"PasswordManager/ent/note"
 	"PasswordManager/ent/password"
 	"PasswordManager/ent/session"
+	"PasswordManager/ent/url"
 	"PasswordManager/ent/user"
 	"PasswordManager/ent/vault"
 	"PasswordManager/ent/webauthncredential"
@@ -96,6 +98,10 @@ func DeleteVaultPasswordViaId(vault *ent.Vault, passwordId uuid.UUID) error {
 	return DeletePassword(password)
 }
 
+func GetPasswordVault(password *ent.Password) (*ent.Vault, error) {
+	return password.QueryVault().Unique(true).First(Context)
+}
+
 func GetPasswordAdditionalFields(password *ent.Password) ([]*ent.AdditionalField, error) {
 	return password.QueryAdditionalFields().All(Context)
 }
@@ -104,8 +110,14 @@ func GetPasswordUrls(password *ent.Password) ([]*ent.Url, error) {
 	return password.QueryUrls().All(Context)
 }
 
-func GetPasswordVault(password *ent.Password) (*ent.Vault, error) {
-	return password.QueryVault().Unique(true).First(Context)
+func DeletePasswordAdditionalFields(pass *ent.Password) error {
+	_, err := Client.AdditionalField.Delete().Where(additionalfield.HasPasswordWith(password.IDEQ(pass.ID))).Exec(Context)
+	return err
+}
+
+func DeletePasswordUrls(pass *ent.Password) error {
+	_, err := Client.Url.Delete().Where(url.HasPasswordWith(password.IDEQ(pass.ID))).Exec(Context)
+	return err
 }
 
 // Webauthn Credential
@@ -209,6 +221,10 @@ func DeleteEmailChallenge(emailChallenge *ent.EmailChallenge) error {
 
 func GetUserSession(user *ent.User, sessionId uuid.UUID) (*ent.Session, error) {
 	return user.QuerySessions().Where(session.IDEQ(sessionId)).Unique(true).First(Context)
+}
+
+func DeleteSession(session *ent.Session) error {
+	return Client.Session.DeleteOne(session).Exec(Context)
 }
 
 func DeleteUserSession(user *ent.User, session *ent.Session) error {

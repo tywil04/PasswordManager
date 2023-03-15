@@ -1,4 +1,4 @@
-# /api/v1/webauthn/challenge
+# /api/v1/2fa/webauthn/register
 If a GET request requires parameters, the parameters can only be passed using query parameters. (GET requests does not support body).
 
 All requests need to have a `Content-type` header that is either `application/json` or `application/xml`, requests wont work otherwise. 
@@ -16,31 +16,21 @@ This API is public, however, it is strongly recommended that you use an official
 ### Request Format
 #### Headers
 ```json
-{}
+{
+    "Authorization": "valid authToken"
+}
 ```
 
 #### Params
 ```json
-{
-    "challengeId": "string",
-    "credential": {
-        "authenticatorAttachment": "string",
-        "id": "string",
-        "rawId": "string",
-        "response": {
-            "authenticatorData": "string",
-            "clientDataJSON": "string",
-            "signature": "string"
-        },
-        "type": "string"
-    }
-}
+{}
 ```
 
 ### Response Format
 #### 200
 ```json
 {
+    "webauthnRegisterChallengeId": "uuid string",
     "options": {
         "publicKey": {
             "challenge": "url base64 string",
@@ -82,15 +72,6 @@ This API is public, however, it is strongly recommended that you use an official
     }
 }
 ```
-#### 400 (Client Error)
-```json
-{
-    "error": {
-        "code": "string",
-        "message": "string"
-    }
-}
-```
 #### 500 (Server Error)
 ```json
 {
@@ -113,23 +94,25 @@ This API is public, however, it is strongly recommended that you use an official
 ### Request Format
 #### Headers
 ```json
-{}
+{
+    "Authorization": "valid authToken"
+}
 ```
 
 #### Params
 ```json
 {
-    "challengeId": "string",
+    "webauthnRegisterChallengeId": "uuid string",
+    "name": "string",
     "credential": {
-        "authenticatorAttachment": "string",
-        "id": "string",
-        "rawId": "string",
+        "[authenticatorAttachment]": "string",
+        "[id]": "string",
+        "[rawId]": "string",
         "response": {
-            "authenticatorData": "string",
-            "clientDataJSON": "string",
-            "signature": "string"
+            "[attestationObject]": "string",
+            "[clientDataJSON]": "string"
         },
-        "type": "string"
+        "[type]": "string"
     }
 }
 ```
@@ -138,9 +121,7 @@ This API is public, however, it is strongly recommended that you use an official
 #### 200
 ```json
 {
-    "authToken": "authToken string",
-    "protectedDatabaseKey": "base64 string",
-    "protectedDatabaseKeyIv": "base64 string"
+    "webauthnCredentialId": "uuid string"
 }
 ```
 #### 400 (Client Error)

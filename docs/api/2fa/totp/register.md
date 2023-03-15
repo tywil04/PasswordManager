@@ -1,4 +1,4 @@
-# /api/v1/email/challenge
+# /api/v1/2fa/totp/register
 If a GET request requires parameters, the parameters can only be passed using query parameters. (GET requests does not support body).
 
 All requests need to have a `Content-type` header that is either `application/json` or `application/xml`, requests wont work otherwise. 
@@ -16,29 +16,23 @@ This API is public, however, it is strongly recommended that you use an official
 ### Request Format
 #### Headers
 ```json
-{}
+{
+    "Authorization": "valid authToken"
+}
 ```
 
 #### Params
 ```json
-{
-    "challengeId": "string",
-    "code": "string"
-}
+{}
 ```
 
 ### Response Format
 #### 200
 ```json
-{}
-```
-#### 400 (Client Error)
-```json
 {
-    "error": {
-        "code": "string",
-        "message": "string"
-    }
+    "totpCredentialId": "uuid string",
+    "totpSecret": "base64 string",
+    "totpSecretQr": "base64 string"
 }
 ```
 #### 500 (Server Error)
@@ -63,13 +57,15 @@ This API is public, however, it is strongly recommended that you use an official
 ### Request Format
 #### Headers
 ```json
-{}
+{
+    "Authorization": "valid authToken"
+}
 ```
 
 #### Params
 ```json
 {
-    "challengeId": "string",
+    "totpCredentialId": "uuid string",
     "code": "string"
 }
 ```
@@ -78,21 +74,10 @@ This API is public, however, it is strongly recommended that you use an official
 #### 200
 ```json
 {
-    "authToken": "authToken string",
-    "protectedDatabaseKey": "base64 string",
-    "protectedDatabaseKeyIv": "base64 string"
+    "totpCredentialId": "uuid string"
 }
 ```
 #### 400 (Client Error)
-```json
-{
-    "error": {
-        "code": "string",
-        "message": "string"
-    }
-}
-```
-#### 500 (Server Error)
 ```json
 {
     "error": {

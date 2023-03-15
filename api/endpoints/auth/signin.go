@@ -9,13 +9,6 @@ import (
 	"PasswordManager/api/lib/helpers"
 )
 
-const (
-	SigninDescription string = `This endpoints starts the signin process. The response contains a list of all the supported 2FA challenges the user has registered and an id for a challenge (by default the user will have only an email challenge available, other challenges include totp and webauthn). 
-
-- 'email' should be a valid email address
-- 'masterHash' should be generated using a flow similar to 'docs/signinFlow.png' but technically any base64 string is valid because the server cannot validate what it doesn't know.`
-)
-
 type PostSigninInput struct {
 	Email      string `form:"email" json:"email" xml:"email" pmParseType:"email"`
 	MasterHash string `form:"masterHash" json:"masterHash" xml:"masterHash" pmParseType:"base64"`

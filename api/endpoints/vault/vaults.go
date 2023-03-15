@@ -9,13 +9,17 @@ import (
 	"github.com/google/uuid"
 )
 
-const (
-	Description string = ""
-)
-
 type GetInput struct{}
 
 type PostInput struct {
+	Name     string `form:"name" json:"name" xml:"name" pmParseType:"base64"`
+	NameIv   string `form:"nameIv" json:"nameIv" xml:"nameIv" pmParseType:"base64"`
+	Colour   string `form:"colour" json:"colour" xml:"colour" pmParseType:"base64"`
+	ColourIv string `form:"colourIv" json:"colourIv" xml:"colourIv" pmParseType:"base64"`
+}
+
+type PutInput struct {
+	VaultId  string `form:"vaultId" json:"vaultId" xml:"vaultId" pmParseType:"uuid"`
 	Name     string `form:"name" json:"name" xml:"name" pmParseType:"base64"`
 	NameIv   string `form:"nameIv" json:"nameIv" xml:"nameIv" pmParseType:"base64"`
 	Colour   string `form:"colour" json:"colour" xml:"colour" pmParseType:"base64"`
@@ -67,6 +71,32 @@ func Post(c *gin.Context) {
 	}
 
 	c.JSON(200, gin.H{"vaultId": newVault.ID.String()})
+}
+
+func Put(c *gin.Context) {
+	authedUser := c.MustGet("authedUser").(*ent.User)
+	params := c.GetStringMap("params")
+
+	vault, vaultErr := db.GetUserVault(authedUser, params["vaultId"].(uuid.UUID))
+	if vaultErr != nil {
+		c.JSON(400, exceptions.Builder("vaultId", exceptions.InvalidParam, exceptions.Uuid, exceptions.Owns))
+		return
+	}
+
+	updatedVault, updatingErr := vault.Update().
+		SetUser(authedUser).
+		SetName(params["name"].([]byte)).
+		SetNameIv(params["nameIv"].([]byte)).
+		SetColour(params["colour"].([]byte)).
+		SetColourIv(params["colourIv"].([]byte)).
+		Save(db.Context)
+
+	if updatingErr != nil {
+		c.JSON(500, exceptions.Builder("vault", exceptions.Updating, exceptions.TryAgain))
+		return
+	}
+
+	c.JSON(200, gin.H{"vaultId": updatedVault.ID.String()})
 }
 
 func Delete(c *gin.Context) {
