@@ -25,7 +25,7 @@ namePathDict = {}
 
 def formatMarkdown(path, entries):
     content = f"""# {path}
-If a GET request requires parameters, the parameters can only be passed using query parameters. (GET requests does not support body).
+If a GET request requires parameters, the parameters can only be passed using query parameters. (GET requests do not support having a body).
 
 All requests need to have a `Content-type` header that is either `application/json` or `application/xml`, requests wont work otherwise. 
 
@@ -78,7 +78,7 @@ This API is public, however, it is strongly recommended that you use an official
 def startDocxFormat(doc):
     doc.add_page_break()
     doc.add_heading("API Docs", level=1)
-    doc.add_paragraph("If a GET request requires parameters, the parameters can only be passed using query parameters. (GET requests does not support body).")
+    doc.add_paragraph("If a GET request requires parameters, the parameters can only be passed using query parameters. (GET requests do not support having a body).")
     doc.add_paragraph("All requests need to have a `Content-type` header that is either `application/json` or `application/xml`, requests wont work otherwise.")
     doc.add_paragraph("Required/Optional Request/Response parameters are denoted like so:")
     doc.add_paragraph("`required param` or `<required param>`", style="List Paragraph")

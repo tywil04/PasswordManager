@@ -1,5 +1,5 @@
 # /api/v1/auth/signin
-If a GET request requires parameters, the parameters can only be passed using query parameters. (GET requests does not support body).
+If a GET request requires parameters, the parameters can only be passed using query parameters. (GET requests do not support having a body).
 
 All requests need to have a `Content-type` header that is either `application/json` or `application/xml`, requests wont work otherwise. 
 
