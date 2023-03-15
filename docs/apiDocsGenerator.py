@@ -515,7 +515,7 @@ for (dirPath, dirNames, fileNames) in os.walk(path):
                                 else:
                                     structDataLocation[name] = expectedType
 
-doc = Document(docx="/home/tyler/Development/PasswordManager5/docs/Tyler Williams - Computer Science Project.docx")
+doc = Document(docx="/home/tyler/Development/PasswordManager5/docs/api/input.docx")
 startDocxFormat(doc)
 for path, data in data.items():
     writePath = path
@@ -528,6 +528,6 @@ for path, data in data.items():
         fileWriter.write(markdown)
     formatDocx(doc, path, data)
 
-doc.save(outputPath + "/test.docx")
+doc.save("/home/tyler/Development/PasswordManager5/docs/api/output.docx")
 
 print("Success")
