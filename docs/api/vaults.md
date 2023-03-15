@@ -1,4 +1,4 @@
-# /api/v1/vault/passwords
+# /api/v1/vaults
 If a GET request requires parameters, the parameters can only be passed using query parameters. (GET requests does not support body).
 
 All requests need to have a `Content-type` header that is either `application/json` or `application/xml`, requests wont work otherwise. 
@@ -30,32 +30,13 @@ This API is public, however, it is strongly recommended that you use an official
 #### 200
 ```json
 {
-    "passwords": [
+    "vaults": [
         {
             "id": "uuid string",
-            "vaultId": "uuid string",
             "name": "base64 string",
             "nameIv": "base64 string",
-            "username": "base64 string",
-            "usernameIv": "base64 string",
-            "password": "base64 string",
-            "passwordIv": "base64 string",
             "colour": "base64 string",
-            "colourIv": "base64 string",
-            "additionalFields": [
-                {
-                    "key": "base64 string",
-                    "keyIv": "base64 string",
-                    "value": "base64 string",
-                    "valueIv": "base64 string"
-                }
-            ],
-            "urls": [
-                {
-                    "url": "base64 string",
-                    "urlIv": "base64 string"
-                }
-            ]
+            "colourIv": "base64 string"
         }
     ]
 }
@@ -90,30 +71,11 @@ This API is public, however, it is strongly recommended that you use an official
 #### Params
 ```json
 {
-    "vaultId": "uuid string",
     "name": "base64 string",
     "nameIv": "base64 string",
-    "username": "base64 string",
-    "usernameIv": "base64 string",
-    "password": "base64 string",
-    "passwordIv": "base64 string",
     "colour": "base64 string",
     "colourIv": "base64 string",
-    "additionalFields": [
-        {
-            "key": "base64 string",
-            "keyIv": "base64 string",
-            "value": "base64 string",
-            "valueIv": "base64 string"
-        }
-    ],
-    "urls": [
-        {
-            "url": "base64 string",
-            "urlIv": "base64 string"
-        }
-    ],
-    "passwordId": "uuid string"
+    "vaultId": "uuid string"
 }
 ```
 
@@ -121,16 +83,7 @@ This API is public, however, it is strongly recommended that you use an official
 #### 200
 ```json
 {
-    "passwordId": "uuid string"
-}
-```
-#### 400 (Client Error)
-```json
-{
-    "error": {
-        "code": "string",
-        "message": "string"
-    }
+    "vaultId": "uuid string"
 }
 ```
 #### 500 (Server Error)
@@ -163,30 +116,11 @@ This API is public, however, it is strongly recommended that you use an official
 #### Params
 ```json
 {
-    "vaultId": "uuid string",
     "name": "base64 string",
     "nameIv": "base64 string",
-    "username": "base64 string",
-    "usernameIv": "base64 string",
-    "password": "base64 string",
-    "passwordIv": "base64 string",
     "colour": "base64 string",
     "colourIv": "base64 string",
-    "additionalFields": [
-        {
-            "key": "base64 string",
-            "keyIv": "base64 string",
-            "value": "base64 string",
-            "valueIv": "base64 string"
-        }
-    ],
-    "urls": [
-        {
-            "url": "base64 string",
-            "urlIv": "base64 string"
-        }
-    ],
-    "passwordId": "uuid string"
+    "vaultId": "uuid string"
 }
 ```
 
@@ -194,7 +128,7 @@ This API is public, however, it is strongly recommended that you use an official
 #### 200
 ```json
 {
-    "passwordId": "uuid string"
+    "vaultId": "uuid string"
 }
 ```
 #### 400 (Client Error)
@@ -236,30 +170,11 @@ This API is public, however, it is strongly recommended that you use an official
 #### Params
 ```json
 {
-    "vaultId": "uuid string",
     "name": "base64 string",
     "nameIv": "base64 string",
-    "username": "base64 string",
-    "usernameIv": "base64 string",
-    "password": "base64 string",
-    "passwordIv": "base64 string",
     "colour": "base64 string",
     "colourIv": "base64 string",
-    "additionalFields": [
-        {
-            "key": "base64 string",
-            "keyIv": "base64 string",
-            "value": "base64 string",
-            "valueIv": "base64 string"
-        }
-    ],
-    "urls": [
-        {
-            "url": "base64 string",
-            "urlIv": "base64 string"
-        }
-    ],
-    "passwordId": "uuid string"
+    "vaultId": "uuid string"
 }
 ```
 

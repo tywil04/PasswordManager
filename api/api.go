@@ -9,7 +9,7 @@ import (
 	"PasswordManager/api/endpoints/2fa/totp"
 	"PasswordManager/api/endpoints/2fa/webauthn"
 	"PasswordManager/api/endpoints/auth"
-	vaults "PasswordManager/api/endpoints/vault"
+	vaults "PasswordManager/api/endpoints/vaults"
 	"PasswordManager/api/lib/db"
 	"PasswordManager/api/lib/middleware"
 	"PasswordManager/api/lib/smtp"

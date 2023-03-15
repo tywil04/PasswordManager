@@ -205,6 +205,8 @@ for (dirPath, dirNames, fileNames) in os.walk(path):
     for fileName in fileNames:
         endpointPath = apiPrefix + (dirPath + "/" + fileName).replace(dirPathPrefix, "")
 
+        print(endpointPath)
+
         splitEndpointPath = endpointPath.split("/")
         folderName = splitEndpointPath[-2:-1][0]
         goFileName = splitEndpointPath[-1:][0].replace(".go", "")
