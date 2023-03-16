@@ -21,8 +21,8 @@ var (
 	masterHashKeyLength uint32 = 32 // AES-256 needs 32-byte key
 
 	// generic
-	hash         crypto.Hash = crypto.SHA3_512
-	hashFunction             = sha3.Sum512
+	hash         crypto.Hash           = crypto.SHA3_512
+	hashFunction func([]byte) [64]byte = sha3.Sum512
 
 	// rsa key size
 	rsaSize = 4096
