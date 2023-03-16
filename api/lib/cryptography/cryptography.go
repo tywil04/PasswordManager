@@ -9,6 +9,7 @@ import (
 	"os"
 
 	"golang.org/x/crypto/argon2"
+	"golang.org/x/crypto/sha3"
 )
 
 // https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html#introduction
@@ -19,12 +20,15 @@ var (
 	masterHashThreads   uint8  = 4
 	masterHashKeyLength uint32 = 32 // AES-256 needs 32-byte key
 
+	// generic
+	hash         crypto.Hash = crypto.SHA3_512
+	hashFunction             = sha3.Sum512
+
 	// rsa key size
 	rsaSize = 4096
 
 	// rsa pss options
-	rsapssSaltLength int         = 16 // 16 byte salt
-	rsapssHash       crypto.Hash = crypto.SHA3_512
+	rsapssSaltLength int = 16 // 16 byte salt
 )
 
 func StrengthenMasterHash(masterHash []byte, salt []byte) []byte {
@@ -64,17 +68,15 @@ func RandomString(n int) string {
 func GenerateSignature(value string) (*rsa.PublicKey, []byte) {
 	privateKey, _ := rsa.GenerateKey(rand.Reader, rsaSize)
 	publicKey := &privateKey.PublicKey
-	signature, _ := rsa.SignPSS(rand.Reader, privateKey, crypto.SHA512, HashString(value)[:], &rsa.PSSOptions{
+	signature, _ := rsa.SignPSS(rand.Reader, privateKey, hash, HashString(value), &rsa.PSSOptions{
 		SaltLength: rsapssSaltLength,
-		Hash:       rsapssHash,
 	})
 	return publicKey, signature
 }
 
 func VerifySignature(publicKey *rsa.PublicKey, signature []byte, value string) bool {
-	return rsa.VerifyPSS(publicKey, crypto.SHA512, HashString(value)[:], signature, &rsa.PSSOptions{
+	return rsa.VerifyPSS(publicKey, hash, HashString(value), signature, &rsa.PSSOptions{
 		SaltLength: rsapssSaltLength,
-		Hash:       rsapssHash,
 	}) == nil
 }
 
@@ -92,7 +94,11 @@ func ConstantTimeCompare(x []byte, y []byte) bool {
 	return subtle.ConstantTimeCompare(x, y) == 1
 }
 
+func Hash(input []byte) []byte {
+	hashed := hashFunction(input)
+	return hashed[:]
+}
+
 func HashString(input string) []byte {
-	hasher := crypto.SHA3_512.New()
-	return hasher.Sum([]byte(input))
+	return Hash([]byte(input))
 }
