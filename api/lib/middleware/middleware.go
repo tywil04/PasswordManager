@@ -29,6 +29,7 @@ func AuthMiddleware() gin.HandlerFunc {
 			c.Set("authedUser", user)
 			c.Set("authedSession", session)
 			c.Next()
+			return
 		}
 
 		c.JSON(401, exceptions.Builder("Authorization", exceptions.InvalidHeader, exceptions.Authtoken))
@@ -89,7 +90,7 @@ func processParamsRecursive(c *gin.Context, inputValue reflect.Value) map[string
 				regex, _ := regexp.Compile(`^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))`)
 				valid := regex.MatchString(indexValue.String())
 				if !valid {
-					dE = errors.New("Invalid email")
+					dE = errors.New("invalid email")
 					dA = exceptions.Email
 				}
 				d = indexValue.String()
@@ -97,7 +98,7 @@ func processParamsRecursive(c *gin.Context, inputValue reflect.Value) map[string
 				regex, _ := regexp.Compile(`^[a-zA-Z0-9]{4}\-[a-zA-Z0-9]{4}$`)
 				valid := regex.MatchString(indexValue.String())
 				if !valid {
-					dE = errors.New("Invalid email code")
+					dE = errors.New("invalid email code")
 					dA = exceptions.EmailCode
 				}
 				d = indexValue.String()
@@ -105,7 +106,7 @@ func processParamsRecursive(c *gin.Context, inputValue reflect.Value) map[string
 				regex, _ := regexp.Compile(`^[0-9]{6}$`)
 				valid := regex.MatchString(indexValue.String())
 				if !valid {
-					dE = errors.New("Invalid totp code")
+					dE = errors.New("invalid totp code")
 					dA = exceptions.TotpCode
 				}
 				d = indexValue.String()
@@ -135,8 +136,9 @@ func ProcessParams(structure any) gin.HandlerFunc {
 		structureType := reflect.TypeOf(structure)
 		input := reflect.New(structureType).Interface()
 
-		bindingErr := c.Bind(input)
-		if bindingErr != nil {
+		bindingErr := c.ShouldBind(input)
+
+		if bindingErr != nil && c.Request.ContentLength > 0 {
 			fmt.Println(bindingErr)
 			c.JSON(400, exceptions.Builder("body", exceptions.Invalid, exceptions.JsonOrXml))
 			c.Abort()
