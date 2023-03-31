@@ -74,33 +74,24 @@
 
         const processedAdditionalFields = []
         const processedUrls = []
-
-        let aFLastWasField = false
-        let skip = false
-        let temp = {}
-
+        let lastKey
+        
         for (const [ key, value ] of data) {
-            if (!aFLastWasField && key === "key") {
-                if (value.trim() === "") {
-                    skip = true
-                } else {
-                    const encryptedKey = await cryptography.encrypt(databaseKey, utils.stringToArrayBuffer(value))
-                    temp.key = base64.encode(encryptedKey.encrypted)
-                    temp.keyIv = base64.encode(encryptedKey.iv)
-                }
-            } else if (aFLastWasField && key === "value" && !skip) {
-                if (value.trim() !== "") {
-                    const encryptedValue = await cryptography.encrypt(databaseKey, utils.stringToArrayBuffer(value))
-                    temp.value = base64.encode(encryptedValue.encrypted)
-                    temp.valueIv = base64.encode(encryptedValue.iv)
-                    processedAdditionalFields.push(temp)
-                }
-                temp = {}
-            } else if (skip) {
-                skip = false
-                temp = {}
+            if (lastKey !== undefined && key === "value") {
+                const encryptedKey = await cryptography.encrypt(databaseKey, utils.stringToArrayBuffer(lastKey))
+                const encryptedValue = await cryptography.encrypt(databaseKey, utils.stringToArrayBuffer(value))
+            
+                processedAdditionalFields.push({
+                    key: base64.encode(encryptedKey.encrypted),
+                    keyIv: base64.encode(encryptedKey.iv),
+                    value: base64.encode(encryptedValue.encrypted),
+                    valueIv: base64.encode(encryptedValue.iv)
+                })
             }
-            aFLastWasField = !aFLastWasField
+
+            if (key === "key") {
+                lastKey = value
+            }
 
             if (key === "url") {
                 const encryptedUrl = await cryptography.encrypt(databaseKey, utils.stringToArrayBuffer(value))
@@ -111,7 +102,7 @@
             }
         }
 
-        const { status, json } = await utils.postJson("/api/v1/vaults/password", {  
+        const { status, json } = await utils.postJson("/api/v1/vaults/passwords", {  
             body: {
                 vaultId: vaultId,
                 name: base64.encode(encryptedName.encrypted),
