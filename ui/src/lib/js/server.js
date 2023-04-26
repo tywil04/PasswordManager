@@ -39,6 +39,27 @@ export async function signout() {
     }
 }
 
+export async function syncClientData() {
+    const tempVaults = await storage.getVaults()
+    const tempPasswords = await storage.getPasswords()
+    const tempNotes = await storage.getNotes()
+
+    await storage.removeVaults()
+    await storage.removePasswords()
+    await storage.removeNotes()
+
+    if (await getVaults() === undefined)
+        storage.setVaults(tempVaults)
+
+    if (await getPasswords() === undefined)
+        storage.setPasswords(tempPasswords)
+
+    if (await getNotes() === undefined)
+        storage.setNotes(tempNotes)
+
+    window.location.reload()
+}
+
 export async function getVaults() {
     const authToken =  await storage.getAuthToken()
     const databaseKey = await storage.getDatabaseKey()
@@ -221,23 +242,148 @@ export async function getNotes() {
     return parsedNotes
 }
 
-export async function syncClientData() {
-    const tempVaults = await storage.getVaults()
-    const tempPasswords = await storage.getPasswords()
-    const tempNotes = await storage.getNotes()
+export async function updatePassword(id, newPassword) {
+    const databaseKey = await storage.getDatabaseKey()
+    const authToken = await storage.getAuthToken()
 
-    await storage.removeVaults()
-    await storage.removePasswords()
-    await storage.removeNotes()
+    const encryptedName = await cryptography.encrypt(databaseKey, utils.stringToArrayBuffer(newPassword.name))
+    const encryptedUsername = await cryptography.encrypt(databaseKey, utils.stringToArrayBuffer(newPassword.username))
+    const encryptedPassword = await cryptography.encrypt(databaseKey, utils.stringToArrayBuffer(newPassword.password))
+    const encryptedColour = await cryptography.encrypt(databaseKey, utils.stringToArrayBuffer(newPassword.colour.replace("#", "")))
 
-    if (await getVaults() === undefined)
-        storage.setVaults(tempVaults)
+    const processedAdditionalFields = []
+    const processedUrls = []
 
-    if (await getPasswords() === undefined)
-        storage.setPasswords(tempPasswords)
+    for (let additionalField of newPassword.additionalFields) {
+        const encryptedKey = await cryptography.encrypt(databaseKey, utils.stringToArrayBuffer(additionalField.key))
+        const encryptedValue = await cryptography.encrypt(databaseKey, utils.stringToArrayBuffer(additionalField.value))
 
-    if (await getNotes() === undefined)
-        storage.setNotes(tempNotes)
+        processedAdditionalFields.push({
+            key: base64.encode(encryptedKey.encrypted),
+            keyIv: base64.encode(encryptedKey.iv),
+            value: base64.encode(encryptedValue.encrypted),
+            valueIv: base64.encode(encryptedValue.iv)
+        })
+    }
 
-    window.location.reload()
+    for (let url of newPassword.urls) {
+        const encryptedUrl = await cryptography.encrypt(databaseKey, utils.stringToArrayBuffer(url.url))
+
+        processedUrls.push({
+            url: base64.encode(encryptedUrl.encrypted),
+            urlIv: base64.encode(encryptedUrl.iv)
+        })
+    }
+
+    let updatedPassword = {
+        passwordId: id,
+        vaultId: newPassword.vaultId,
+        name: base64.encode(encryptedName.encrypted),
+        nameIv: base64.encode(encryptedName.iv),
+        username: base64.encode(encryptedUsername.encrypted),
+        usernameIv: base64.encode(encryptedUsername.iv),
+        password: base64.encode(encryptedPassword.encrypted),
+        passwordIv: base64.encode(encryptedPassword.iv),
+        colour: base64.encode(encryptedColour.encrypted),
+        colourIv: base64.encode(encryptedColour.iv),
+        additionalFields: processedAdditionalFields,
+        urls: processedUrls,
+    }
+
+    const { status, json } = await utils.putJson("/api/v1/vaults/passwords", {  
+        body: updatedPassword,
+        headers: {
+            "Authorization": authToken,
+        }
+    })
+
+    if (status == 200) {
+        updatedPassword.name = newPassword.name
+        updatedPassword.colour = newPassword.colour
+    
+        delete updatedPassword.nameIv
+        delete updatedPassword.colourIv
+
+        await storage.updatePassword(id, updatedPassword)
+    }
+
+    return { status, json }
+}
+
+export async function updateNote(id, newNote) {
+    const databaseKey = await storage.getDatabaseKey()
+    const authToken = await storage.getAuthToken()
+
+    const encryptedName = await cryptography.encrypt(databaseKey, utils.stringToArrayBuffer(newNote.name))
+    const encryptedTitle = await cryptography.encrypt(databaseKey, utils.stringToArrayBuffer(newNote.title))
+    const encryptedContent = await cryptography.encrypt(databaseKey, utils.stringToArrayBuffer(newNote.content))
+    const encryptedColour = await cryptography.encrypt(databaseKey, utils.stringToArrayBuffer(newNote.colour.replace("#", "")))
+
+    let updatedNote = {
+        noteId: id,
+        vaultId: newNote.vaultId,
+        name: base64.encode(encryptedName.encrypted),
+        nameIv: base64.encode(encryptedName.iv),
+        title: base64.encode(encryptedTitle.encrypted),
+        titleIv: base64.encode(encryptedTitle.iv),
+        content: base64.encode(encryptedContent.encrypted),
+        contentIv: base64.encode(encryptedContent.iv),
+        colour: base64.encode(encryptedColour.encrypted),
+        colourIv: base64.encode(encryptedColour.iv),
+    }
+
+    const { status, json } = await utils.putJson("/api/v1/vaults/notes", {  
+        body: updatedNote,
+        headers: {
+            "Authorization": authToken,
+        }
+    })
+
+    if (status == 200) {
+        updatedNote.name = newPassword.name
+        updatedNote.colour = newPassword.colour
+    
+        delete updatedNote.nameIv
+        delete updatedNote.colourIv
+
+        await storage.updateNote(id, updatedNote)
+    }
+
+    return { status, json }
+}
+
+export async function deletePassword(id, vaultId) {
+    const authToken = await storage.getAuthToken()
+
+    const { status, _ } = await utils.deleteJson("/api/v1/vaults/passwords", {  
+        body: {
+            passwordId: id,
+            vaultId: vaultId,
+        },
+        headers: {
+            "Authorization": authToken,
+        }
+    })
+
+    if (status == 200) {
+        await storage.removePassword(id)
+    }
+}
+
+export async function deleteNote(id, vaultId) {
+    const authToken = await storage.getAuthToken()
+
+    const { status, _ } = await utils.deleteJson("/api/v1/vaults/notes", {  
+        body: {
+            noteId: id,
+            vaultId: vaultId,
+        },
+        headers: {
+            "Authorization": authToken,
+        }
+    })
+
+    if (status == 200) {
+        await storage.removeNote(id)
+    }
 }

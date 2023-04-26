@@ -38,6 +38,10 @@ export async function postJson(url, data) {
     return fetchJson("POST", url, data)
 }
 
+export async function putJson(url, data) {
+    return fetchJson("PUT", url, data)
+}
+
 export async function deleteJson(url, data) {
     return fetchJson("DELETE", url, data)
 }

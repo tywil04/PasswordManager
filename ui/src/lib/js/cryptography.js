@@ -19,6 +19,9 @@ export const config = {
   hash: {
     digest: "SHA-512",
   },
+  quickHash: {
+    digest: "SHA-256",
+  },
   passwordEncryption: {
     algorithm: "AES-CBC"
   }
@@ -148,12 +151,29 @@ export async function unprotectDatabaseKey(masterKey, protectedDatabaseKey) {
 
 export async function encrypt(databaseKey, payload) {
   const iv = crypto.getRandomValues(new Uint8Array(16))
-  return { encrypted: await crypto.subtle.encrypt({ name: config.passwordEncryption.algorithm, iv }, databaseKey, payload), iv }
+  return { 
+    encrypted: await crypto.subtle.encrypt(
+      { 
+        name: config.passwordEncryption.algorithm, 
+        iv 
+      }, 
+      databaseKey, 
+      payload
+    ), 
+    iv 
+  }
 }
 
 export async function decrypt(databaseKey, encryptedData) {
   const { encrypted, iv } = encryptedData
-  return await crypto.subtle.decrypt({ name: config.passwordEncryption.algorithm, iv }, databaseKey, encrypted)
+  return await crypto.subtle.decrypt(
+    { 
+      name: config.passwordEncryption.algorithm, 
+      iv 
+    }, 
+    databaseKey, 
+    encrypted
+  )
 }
 
 export function randomUUID() {
@@ -162,6 +182,12 @@ export function randomUUID() {
 
 export async function hash(value) {
   var buffer = utils.stringToArrayBuffer(value)
-  var hashBytes = await crypto.subtle.digest(config.hash.digest, buffer);
+  var hashBytes = await crypto.subtle.digest(config.hash.digest, buffer)
+  return utils.arrayBufferToHex(hashBytes)
+}
+
+export async function quickHash(value) {
+  let buffer = utils.stringToArrayBuffer(value)
+  let hashBytes = await crypto.subtle.digest(config.quickHash.digest, buffer)
   return utils.arrayBufferToHex(hashBytes)
 }

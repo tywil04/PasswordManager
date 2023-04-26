@@ -8,10 +8,10 @@ from docx import Document
 from docx.shared import Pt
 import re
 
-path = "/home/tyler/Development/PasswordManager5/api/endpoints"
+path = "/home/tyler/Development/PasswordManager/api/endpoints"
 apiPrefix = "/api/v1"
-dirPathPrefix = "/home/tyler/Development/PasswordManager5/api/endpoints"
-outputPath = "/home/tyler/Development/PasswordManager5/docs/api"
+dirPathPrefix = "/home/tyler/Development/PasswordManager/api/endpoints"
+outputPath = "/home/tyler/Development/PasswordManager/docs/api"
 
 errorResponse = {
     "error": {
@@ -86,33 +86,33 @@ def startDocxFormat(doc):
     doc.add_paragraph("This API is public, however, it is strongly recommended that you use an official client.")
 
 def formatDocx(doc, path, entries):
-    doc.add_page_break()
-
+    doc.add_paragraph("")
+    
     style = doc.styles['Normal']
     font = style.font
     font.name = "Calibri (Body)"
     font.size = Pt(11)
 
-    tableStyle = doc.styles["List Table 1 Light Accent 5"]
+    tableStyle = doc.styles["List Table 1 Light Accent 3"]
     tableFont = tableStyle.font
     tableFont.name = "Cascadia Code"
     tableFont.size = Pt(8)
     tableFont.bold = False
 
-    doc.add_heading(path, level=1)
+    doc.add_heading(path, level=3)
     
     for method, data in entries.items():
-        doc.add_heading(method, level=2)
+        doc.add_heading(method, level=4)
         
-        doc.add_heading("Description", level=3)
+        doc.add_heading("Description", level=5)
 
         if "description" in list(data.keys()):
             doc.add_paragraph(data["description"], style=style)
         else:
-            doc.add_paragraph("// DESCRIPTION HERE //", style=style)
+            doc.add_paragraph("NEEDS DOING", style=style)
 
-        # doc.add_paragraph("", style="No Spacing")
-        doc.add_heading("Request Format", level=3)
+        doc.add_paragraph("", style="No Spacing")
+        doc.add_heading("Request Format", level=5)
         
         table = doc.add_table(rows=2, cols=2, style=tableStyle)
         table.rows[0].cells[0].text = "Headers"
@@ -147,8 +147,8 @@ def formatDocx(doc, path, entries):
                 run.font.size = Pt(8)
                 run.font.bold = False 
 
-        # doc.add_paragraph("", style="No Spacing")
-        doc.add_heading("Response Format", level=3)
+        doc.add_paragraph("", style="No Spacing")
+        doc.add_heading("Response Format", level=5)
 
         table1 = doc.add_table(rows=2, cols=1, style=tableStyle)
         table1.autofit = True
@@ -199,8 +199,8 @@ def formatDocx(doc, path, entries):
                     col += 1
 
         # doc.add_paragraph("", style="No Spacing")
-        doc.add_heading("Example", level=3)
-        doc.add_paragraph("// JAVASCRIPT EXAMPLE HERE //")
+        #doc.add_heading("Example", level=3)
+        #doc.add_paragraph("// JAVASCRIPT EXAMPLE HERE //")
 
 for (dirPath, dirNames, fileNames) in os.walk(path):
     for fileName in fileNames:
@@ -515,19 +515,19 @@ for (dirPath, dirNames, fileNames) in os.walk(path):
                                 else:
                                     structDataLocation[name] = expectedType
 
-doc = Document(docx="/home/tyler/Development/PasswordManager5/docs/api/input.docx")
+doc = Document(docx="/home/tyler/Development/PasswordManager/docs/api/input.docx")
 startDocxFormat(doc)
 for path, data in data.items():
     writePath = path
     if path in namePathDict.keys():
         writePath = namePathDict[path]
-    markdown = formatMarkdown(path, data)
-    fileName = f"{outputPath}{writePath.replace(apiPrefix, '')}.md"
-    os.makedirs(os.path.dirname(fileName), exist_ok=True)
-    with open(fileName, "w+") as fileWriter:
-        fileWriter.write(markdown)
+    #markdown = formatMarkdown(path, data)
+    #fileName = f"{outputPath}{writePath.replace(apiPrefix, '')}.md"
+    #os.makedirs(os.path.dirname(fileName), exist_ok=True)
+    #with open(fileName, "w+") as fileWriter:
+    #    fileWriter.write(markdown)
     formatDocx(doc, path, data)
 
-doc.save("/home/tyler/Development/PasswordManager5/docs/api/output.docx")
+doc.save("/home/tyler/Development/PasswordManager/docs/api/output.docx")
 
 print("Success")
