@@ -23,14 +23,12 @@ Once the project has been built, you run it simply by running the executable (pr
 ### Running
 Instead of building, its possible to run this Go project, run the `Building` commands but replace:
 ```
-go generate ./...      # Generate DB and compile Svelte Frontend
 go build server.go     # Build the project into a single executable
 ```
 with
 ```
-go run server.go
+go run server.go     # Runs the project by building in a temporary location
 ```
-(this builds the project in a temporary location and runs it).
 
 ### Developing
 To develop the application, you must have gotten to a stage where you can run the application. The best way to develop is to start a UI-less instance of the golang server with 
