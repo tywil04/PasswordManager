@@ -20,16 +20,6 @@ go build server.go                                        # Build the project in
 ```
 Once the project has been built, you run it simply by running the executable (provided you are in the same directory you built the project from): `./server`.
 
-### Running
-Instead of building, its possible to run this Go project, run the `Building` commands but replace:
-```
-go build server.go     # Build the project into a single executable
-```
-with
-```
-go run server.go     # Runs the project by building in a temporary location
-```
-
 ### Developing
 To develop the application, you must have gotten to a stage where you can run the application. The best way to develop is to start a UI-less instance of the golang server with 
 ```
