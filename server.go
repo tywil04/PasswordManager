@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"log"
 	"net/http"
 	"os"
 	"os/signal"
@@ -35,24 +36,24 @@ func main() {
 	}
 
 	// Start Server
-	fmt.Println("Starting Server...")
+	log.Println("Starting server...")
 
 	apiEnabled := !(os.Getenv("DISABLE_API") == "true")
 	uiEnabled := !(os.Getenv("DISABLE_UI") == "true")
 
 	if apiEnabled {
 		api.Start(router)
-		fmt.Println("Started API...")
+		log.Println("API started")
 	}
 
 	if uiEnabled {
 		ui.Start(router)
-		fmt.Println("Started UI...")
+		log.Println("UI started")
 	}
 
 	addr := os.Getenv("SERVER_ADDRESS")
 	if strings.TrimSpace(addr) == "" {
-		addr = ":8080"
+		addr = ":8000"
 	}
 
 	server := &http.Server{
@@ -62,26 +63,27 @@ func main() {
 
 	go router.Run(addr)
 
-	fmt.Println("Server started.")
+	log.Printf("Successfully started server on %s\n", addr)
 
 	quit := make(chan os.Signal)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	<-quit
 
-	fmt.Println("Stopping Server...")
+	fmt.Println("")
+	log.Println("Stopping Server...")
 
 	// Stop API/Frontend
 	if apiEnabled {
 		api.Stop()
-		fmt.Println("Stopped API...")
+		log.Println("API stopped")
 	}
 
 	if uiEnabled {
 		ui.Stop()
-		fmt.Println("Stopped UI...")
+		log.Println("UI stopped")
 	}
 
 	server.Shutdown(context.Background())
 
-	fmt.Println("Server stopped.")
+	log.Println("Successfully stopped server")
 }
