@@ -380,7 +380,6 @@ func (pq *PasswordQuery) WithVault(opts ...func(*VaultQuery)) *PasswordQuery {
 //		GroupBy(password.FieldName).
 //		Aggregate(ent.Count()).
 //		Scan(ctx, &v)
-//
 func (pq *PasswordQuery) GroupBy(field string, fields ...string) *PasswordGroupBy {
 	pq.ctx.Fields = append([]string{field}, fields...)
 	grbuild := &PasswordGroupBy{build: pq}
@@ -402,7 +401,6 @@ func (pq *PasswordQuery) GroupBy(field string, fields ...string) *PasswordGroupB
 //	client.Password.Query().
 //		Select(password.FieldName).
 //		Scan(ctx, &v)
-//
 func (pq *PasswordQuery) Select(fields ...string) *PasswordSelect {
 	pq.ctx.Fields = append(pq.ctx.Fields, fields...)
 	sbuild := &PasswordSelect{PasswordQuery: pq}

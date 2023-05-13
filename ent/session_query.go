@@ -307,7 +307,6 @@ func (sq *SessionQuery) WithUser(opts ...func(*UserQuery)) *SessionQuery {
 //		GroupBy(session.FieldN).
 //		Aggregate(ent.Count()).
 //		Scan(ctx, &v)
-//
 func (sq *SessionQuery) GroupBy(field string, fields ...string) *SessionGroupBy {
 	sq.ctx.Fields = append([]string{field}, fields...)
 	grbuild := &SessionGroupBy{build: sq}
@@ -329,7 +328,6 @@ func (sq *SessionQuery) GroupBy(field string, fields ...string) *SessionGroupBy 
 //	client.Session.Query().
 //		Select(session.FieldN).
 //		Scan(ctx, &v)
-//
 func (sq *SessionQuery) Select(fields ...string) *SessionSelect {
 	sq.ctx.Fields = append(sq.ctx.Fields, fields...)
 	sbuild := &SessionSelect{SessionQuery: sq}

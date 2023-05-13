@@ -218,10 +218,7 @@ func (wacu *WebAuthnCredentialUpdate) sqlSave(ctx context.Context) (n int, err e
 			Columns: []string{webauthncredential.UserColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeUUID,
-					Column: user.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeUUID),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -234,10 +231,7 @@ func (wacu *WebAuthnCredentialUpdate) sqlSave(ctx context.Context) (n int, err e
 			Columns: []string{webauthncredential.UserColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeUUID,
-					Column: user.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -482,10 +476,7 @@ func (wacuo *WebAuthnCredentialUpdateOne) sqlSave(ctx context.Context) (_node *W
 			Columns: []string{webauthncredential.UserColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeUUID,
-					Column: user.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeUUID),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -498,10 +489,7 @@ func (wacuo *WebAuthnCredentialUpdateOne) sqlSave(ctx context.Context) (_node *W
 			Columns: []string{webauthncredential.UserColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeUUID,
-					Column: user.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

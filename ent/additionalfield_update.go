@@ -167,10 +167,7 @@ func (afu *AdditionalFieldUpdate) sqlSave(ctx context.Context) (n int, err error
 			Columns: []string{additionalfield.PasswordColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeUUID,
-					Column: password.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(password.FieldID, field.TypeUUID),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -183,10 +180,7 @@ func (afu *AdditionalFieldUpdate) sqlSave(ctx context.Context) (n int, err error
 			Columns: []string{additionalfield.PasswordColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeUUID,
-					Column: password.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(password.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -382,10 +376,7 @@ func (afuo *AdditionalFieldUpdateOne) sqlSave(ctx context.Context) (_node *Addit
 			Columns: []string{additionalfield.PasswordColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeUUID,
-					Column: password.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(password.FieldID, field.TypeUUID),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -398,10 +389,7 @@ func (afuo *AdditionalFieldUpdateOne) sqlSave(ctx context.Context) (_node *Addit
 			Columns: []string{additionalfield.PasswordColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeUUID,
-					Column: password.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(password.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

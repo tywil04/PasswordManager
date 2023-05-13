@@ -212,10 +212,7 @@ func (afc *AdditionalFieldCreate) createSpec() (*AdditionalField, *sqlgraph.Crea
 			Columns: []string{additionalfield.PasswordColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeUUID,
-					Column: password.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(password.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

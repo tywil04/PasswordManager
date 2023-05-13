@@ -168,10 +168,7 @@ func (tcu *TotpCredentialUpdate) sqlSave(ctx context.Context) (n int, err error)
 			Columns: []string{totpcredential.UserColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeUUID,
-					Column: user.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeUUID),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -184,10 +181,7 @@ func (tcu *TotpCredentialUpdate) sqlSave(ctx context.Context) (n int, err error)
 			Columns: []string{totpcredential.UserColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeUUID,
-					Column: user.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -203,10 +197,7 @@ func (tcu *TotpCredentialUpdate) sqlSave(ctx context.Context) (n int, err error)
 			Columns: []string{totpcredential.ChallengeColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeUUID,
-					Column: challenge.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(challenge.FieldID, field.TypeUUID),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -219,10 +210,7 @@ func (tcu *TotpCredentialUpdate) sqlSave(ctx context.Context) (n int, err error)
 			Columns: []string{totpcredential.ChallengeColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeUUID,
-					Column: challenge.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(challenge.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -418,10 +406,7 @@ func (tcuo *TotpCredentialUpdateOne) sqlSave(ctx context.Context) (_node *TotpCr
 			Columns: []string{totpcredential.UserColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeUUID,
-					Column: user.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeUUID),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -434,10 +419,7 @@ func (tcuo *TotpCredentialUpdateOne) sqlSave(ctx context.Context) (_node *TotpCr
 			Columns: []string{totpcredential.UserColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeUUID,
-					Column: user.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -453,10 +435,7 @@ func (tcuo *TotpCredentialUpdateOne) sqlSave(ctx context.Context) (_node *TotpCr
 			Columns: []string{totpcredential.ChallengeColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeUUID,
-					Column: challenge.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(challenge.FieldID, field.TypeUUID),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -469,10 +448,7 @@ func (tcuo *TotpCredentialUpdateOne) sqlSave(ctx context.Context) (_node *TotpCr
 			Columns: []string{totpcredential.ChallengeColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeUUID,
-					Column: challenge.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(challenge.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

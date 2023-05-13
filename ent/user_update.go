@@ -412,10 +412,7 @@ func (uu *UserUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{user.TotpCredentialColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeUUID,
-					Column: totpcredential.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(totpcredential.FieldID, field.TypeUUID),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -428,10 +425,7 @@ func (uu *UserUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{user.TotpCredentialColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeUUID,
-					Column: totpcredential.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(totpcredential.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -447,10 +441,7 @@ func (uu *UserUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{user.WebauthnCredentialsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeUUID,
-					Column: webauthncredential.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(webauthncredential.FieldID, field.TypeUUID),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -463,10 +454,7 @@ func (uu *UserUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{user.WebauthnCredentialsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeUUID,
-					Column: webauthncredential.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(webauthncredential.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -482,10 +470,7 @@ func (uu *UserUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{user.WebauthnCredentialsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeUUID,
-					Column: webauthncredential.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(webauthncredential.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -501,10 +486,7 @@ func (uu *UserUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{user.WebauthnRegisterChallengesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeUUID,
-					Column: webauthnregisterchallenge.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(webauthnregisterchallenge.FieldID, field.TypeUUID),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -517,10 +499,7 @@ func (uu *UserUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{user.WebauthnRegisterChallengesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeUUID,
-					Column: webauthnregisterchallenge.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(webauthnregisterchallenge.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -536,10 +515,7 @@ func (uu *UserUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{user.WebauthnRegisterChallengesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeUUID,
-					Column: webauthnregisterchallenge.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(webauthnregisterchallenge.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -555,10 +531,7 @@ func (uu *UserUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{user.VaultsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeUUID,
-					Column: vault.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(vault.FieldID, field.TypeUUID),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -571,10 +544,7 @@ func (uu *UserUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{user.VaultsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeUUID,
-					Column: vault.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(vault.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -590,10 +560,7 @@ func (uu *UserUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{user.VaultsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeUUID,
-					Column: vault.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(vault.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -609,10 +576,7 @@ func (uu *UserUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{user.SessionsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeUUID,
-					Column: session.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(session.FieldID, field.TypeUUID),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -625,10 +589,7 @@ func (uu *UserUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{user.SessionsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeUUID,
-					Column: session.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(session.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -644,10 +605,7 @@ func (uu *UserUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{user.SessionsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeUUID,
-					Column: session.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(session.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -663,10 +621,7 @@ func (uu *UserUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{user.ChallengesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeUUID,
-					Column: challenge.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(challenge.FieldID, field.TypeUUID),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -679,10 +634,7 @@ func (uu *UserUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{user.ChallengesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeUUID,
-					Column: challenge.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(challenge.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -698,10 +650,7 @@ func (uu *UserUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{user.ChallengesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeUUID,
-					Column: challenge.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(challenge.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -1137,10 +1086,7 @@ func (uuo *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) 
 			Columns: []string{user.TotpCredentialColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeUUID,
-					Column: totpcredential.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(totpcredential.FieldID, field.TypeUUID),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -1153,10 +1099,7 @@ func (uuo *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) 
 			Columns: []string{user.TotpCredentialColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeUUID,
-					Column: totpcredential.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(totpcredential.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -1172,10 +1115,7 @@ func (uuo *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) 
 			Columns: []string{user.WebauthnCredentialsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeUUID,
-					Column: webauthncredential.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(webauthncredential.FieldID, field.TypeUUID),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -1188,10 +1128,7 @@ func (uuo *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) 
 			Columns: []string{user.WebauthnCredentialsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeUUID,
-					Column: webauthncredential.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(webauthncredential.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -1207,10 +1144,7 @@ func (uuo *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) 
 			Columns: []string{user.WebauthnCredentialsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeUUID,
-					Column: webauthncredential.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(webauthncredential.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -1226,10 +1160,7 @@ func (uuo *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) 
 			Columns: []string{user.WebauthnRegisterChallengesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeUUID,
-					Column: webauthnregisterchallenge.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(webauthnregisterchallenge.FieldID, field.TypeUUID),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -1242,10 +1173,7 @@ func (uuo *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) 
 			Columns: []string{user.WebauthnRegisterChallengesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeUUID,
-					Column: webauthnregisterchallenge.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(webauthnregisterchallenge.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -1261,10 +1189,7 @@ func (uuo *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) 
 			Columns: []string{user.WebauthnRegisterChallengesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeUUID,
-					Column: webauthnregisterchallenge.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(webauthnregisterchallenge.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -1280,10 +1205,7 @@ func (uuo *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) 
 			Columns: []string{user.VaultsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeUUID,
-					Column: vault.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(vault.FieldID, field.TypeUUID),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -1296,10 +1218,7 @@ func (uuo *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) 
 			Columns: []string{user.VaultsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeUUID,
-					Column: vault.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(vault.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -1315,10 +1234,7 @@ func (uuo *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) 
 			Columns: []string{user.VaultsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeUUID,
-					Column: vault.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(vault.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -1334,10 +1250,7 @@ func (uuo *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) 
 			Columns: []string{user.SessionsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeUUID,
-					Column: session.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(session.FieldID, field.TypeUUID),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -1350,10 +1263,7 @@ func (uuo *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) 
 			Columns: []string{user.SessionsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeUUID,
-					Column: session.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(session.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -1369,10 +1279,7 @@ func (uuo *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) 
 			Columns: []string{user.SessionsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeUUID,
-					Column: session.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(session.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -1388,10 +1295,7 @@ func (uuo *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) 
 			Columns: []string{user.ChallengesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeUUID,
-					Column: challenge.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(challenge.FieldID, field.TypeUUID),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -1404,10 +1308,7 @@ func (uuo *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) 
 			Columns: []string{user.ChallengesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeUUID,
-					Column: challenge.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(challenge.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -1423,10 +1324,7 @@ func (uuo *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) 
 			Columns: []string{user.ChallengesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeUUID,
-					Column: challenge.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(challenge.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

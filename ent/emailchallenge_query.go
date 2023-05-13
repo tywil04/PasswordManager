@@ -307,7 +307,6 @@ func (ecq *EmailChallengeQuery) WithChallenge(opts ...func(*ChallengeQuery)) *Em
 //		GroupBy(emailchallenge.FieldCode).
 //		Aggregate(ent.Count()).
 //		Scan(ctx, &v)
-//
 func (ecq *EmailChallengeQuery) GroupBy(field string, fields ...string) *EmailChallengeGroupBy {
 	ecq.ctx.Fields = append([]string{field}, fields...)
 	grbuild := &EmailChallengeGroupBy{build: ecq}
@@ -329,7 +328,6 @@ func (ecq *EmailChallengeQuery) GroupBy(field string, fields ...string) *EmailCh
 //	client.EmailChallenge.Query().
 //		Select(emailchallenge.FieldCode).
 //		Scan(ctx, &v)
-//
 func (ecq *EmailChallengeQuery) Select(fields ...string) *EmailChallengeSelect {
 	ecq.ctx.Fields = append(ecq.ctx.Fields, fields...)
 	sbuild := &EmailChallengeSelect{EmailChallengeQuery: ecq}

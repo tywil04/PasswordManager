@@ -307,7 +307,6 @@ func (warcq *WebAuthnRegisterChallengeQuery) WithUser(opts ...func(*UserQuery)) 
 //		GroupBy(webauthnregisterchallenge.FieldSdChallenge).
 //		Aggregate(ent.Count()).
 //		Scan(ctx, &v)
-//
 func (warcq *WebAuthnRegisterChallengeQuery) GroupBy(field string, fields ...string) *WebAuthnRegisterChallengeGroupBy {
 	warcq.ctx.Fields = append([]string{field}, fields...)
 	grbuild := &WebAuthnRegisterChallengeGroupBy{build: warcq}
@@ -329,7 +328,6 @@ func (warcq *WebAuthnRegisterChallengeQuery) GroupBy(field string, fields ...str
 //	client.WebAuthnRegisterChallenge.Query().
 //		Select(webauthnregisterchallenge.FieldSdChallenge).
 //		Scan(ctx, &v)
-//
 func (warcq *WebAuthnRegisterChallengeQuery) Select(fields ...string) *WebAuthnRegisterChallengeSelect {
 	warcq.ctx.Fields = append(warcq.ctx.Fields, fields...)
 	sbuild := &WebAuthnRegisterChallengeSelect{WebAuthnRegisterChallengeQuery: warcq}

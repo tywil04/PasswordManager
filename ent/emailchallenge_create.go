@@ -149,10 +149,7 @@ func (ecc *EmailChallengeCreate) createSpec() (*EmailChallenge, *sqlgraph.Create
 			Columns: []string{emailchallenge.ChallengeColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeUUID,
-					Column: challenge.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(challenge.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

@@ -343,7 +343,6 @@ func (tcq *TotpCredentialQuery) WithChallenge(opts ...func(*ChallengeQuery)) *To
 //		GroupBy(totpcredential.FieldSecret).
 //		Aggregate(ent.Count()).
 //		Scan(ctx, &v)
-//
 func (tcq *TotpCredentialQuery) GroupBy(field string, fields ...string) *TotpCredentialGroupBy {
 	tcq.ctx.Fields = append([]string{field}, fields...)
 	grbuild := &TotpCredentialGroupBy{build: tcq}
@@ -365,7 +364,6 @@ func (tcq *TotpCredentialQuery) GroupBy(field string, fields ...string) *TotpCre
 //	client.TotpCredential.Query().
 //		Select(totpcredential.FieldSecret).
 //		Scan(ctx, &v)
-//
 func (tcq *TotpCredentialQuery) Select(fields ...string) *TotpCredentialSelect {
 	tcq.ctx.Fields = append(tcq.ctx.Fields, fields...)
 	sbuild := &TotpCredentialSelect{TotpCredentialQuery: tcq}

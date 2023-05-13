@@ -139,10 +139,7 @@ func (uu *URLUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{url.PasswordColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeUUID,
-					Column: password.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(password.FieldID, field.TypeUUID),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -155,10 +152,7 @@ func (uu *URLUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{url.PasswordColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeUUID,
-					Column: password.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(password.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -326,10 +320,7 @@ func (uuo *URLUpdateOne) sqlSave(ctx context.Context) (_node *Url, err error) {
 			Columns: []string{url.PasswordColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeUUID,
-					Column: password.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(password.FieldID, field.TypeUUID),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -342,10 +333,7 @@ func (uuo *URLUpdateOne) sqlSave(ctx context.Context) (_node *Url, err error) {
 			Columns: []string{url.PasswordColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeUUID,
-					Column: password.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(password.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

@@ -307,7 +307,6 @@ func (afq *AdditionalFieldQuery) WithPassword(opts ...func(*PasswordQuery)) *Add
 //		GroupBy(additionalfield.FieldKey).
 //		Aggregate(ent.Count()).
 //		Scan(ctx, &v)
-//
 func (afq *AdditionalFieldQuery) GroupBy(field string, fields ...string) *AdditionalFieldGroupBy {
 	afq.ctx.Fields = append([]string{field}, fields...)
 	grbuild := &AdditionalFieldGroupBy{build: afq}
@@ -329,7 +328,6 @@ func (afq *AdditionalFieldQuery) GroupBy(field string, fields ...string) *Additi
 //	client.AdditionalField.Query().
 //		Select(additionalfield.FieldKey).
 //		Scan(ctx, &v)
-//
 func (afq *AdditionalFieldQuery) Select(fields ...string) *AdditionalFieldSelect {
 	afq.ctx.Fields = append(afq.ctx.Fields, fields...)
 	sbuild := &AdditionalFieldSelect{AdditionalFieldQuery: afq}

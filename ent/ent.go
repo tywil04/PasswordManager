@@ -139,7 +139,6 @@ type AggregateFunc func(*sql.Selector) string
 //	GroupBy(field1, field2).
 //	Aggregate(ent.As(ent.Sum(field1), "sum_field1"), (ent.As(ent.Sum(field2), "sum_field2")).
 //	Scan(ctx, &v)
-//
 func As(fn AggregateFunc, end string) AggregateFunc {
 	return func(s *sql.Selector) string {
 		return sql.As(fn(s), end)
@@ -530,7 +529,7 @@ func withHooks[V Value, M any, PM interface {
 		return exec(ctx)
 	}
 	var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-		mutationT, ok := m.(PM)
+		mutationT, ok := any(m).(PM)
 		if !ok {
 			return nil, fmt.Errorf("unexpected mutation type %T", m)
 		}

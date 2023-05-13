@@ -284,10 +284,7 @@ func (nc *NoteCreate) createSpec() (*Note, *sqlgraph.CreateSpec) {
 			Columns: []string{note.VaultColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeUUID,
-					Column: vault.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(vault.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

@@ -307,7 +307,6 @@ func (wacq *WebAuthnCredentialQuery) WithUser(opts ...func(*UserQuery)) *WebAuth
 //		GroupBy(webauthncredential.FieldName).
 //		Aggregate(ent.Count()).
 //		Scan(ctx, &v)
-//
 func (wacq *WebAuthnCredentialQuery) GroupBy(field string, fields ...string) *WebAuthnCredentialGroupBy {
 	wacq.ctx.Fields = append([]string{field}, fields...)
 	grbuild := &WebAuthnCredentialGroupBy{build: wacq}
@@ -329,7 +328,6 @@ func (wacq *WebAuthnCredentialQuery) GroupBy(field string, fields ...string) *We
 //	client.WebAuthnCredential.Query().
 //		Select(webauthncredential.FieldName).
 //		Scan(ctx, &v)
-//
 func (wacq *WebAuthnCredentialQuery) Select(fields ...string) *WebAuthnCredentialSelect {
 	wacq.ctx.Fields = append(wacq.ctx.Fields, fields...)
 	sbuild := &WebAuthnCredentialSelect{WebAuthnCredentialQuery: wacq}

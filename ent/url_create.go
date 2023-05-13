@@ -176,10 +176,7 @@ func (uc *URLCreate) createSpec() (*Url, *sqlgraph.CreateSpec) {
 			Columns: []string{url.PasswordColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeUUID,
-					Column: password.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(password.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

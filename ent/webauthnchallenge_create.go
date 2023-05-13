@@ -205,10 +205,7 @@ func (wacc *WebAuthnChallengeCreate) createSpec() (*WebAuthnChallenge, *sqlgraph
 			Columns: []string{webauthnchallenge.ChallengeColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeUUID,
-					Column: challenge.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(challenge.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

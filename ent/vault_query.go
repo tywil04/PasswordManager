@@ -380,7 +380,6 @@ func (vq *VaultQuery) WithUser(opts ...func(*UserQuery)) *VaultQuery {
 //		GroupBy(vault.FieldCreatedAt).
 //		Aggregate(ent.Count()).
 //		Scan(ctx, &v)
-//
 func (vq *VaultQuery) GroupBy(field string, fields ...string) *VaultGroupBy {
 	vq.ctx.Fields = append([]string{field}, fields...)
 	grbuild := &VaultGroupBy{build: vq}
@@ -402,7 +401,6 @@ func (vq *VaultQuery) GroupBy(field string, fields ...string) *VaultGroupBy {
 //	client.Vault.Query().
 //		Select(vault.FieldCreatedAt).
 //		Scan(ctx, &v)
-//
 func (vq *VaultQuery) Select(fields ...string) *VaultSelect {
 	vq.ctx.Fields = append(vq.ctx.Fields, fields...)
 	sbuild := &VaultSelect{VaultQuery: vq}

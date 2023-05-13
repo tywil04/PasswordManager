@@ -221,10 +221,7 @@ func (cc *ChallengeCreate) createSpec() (*Challenge, *sqlgraph.CreateSpec) {
 			Columns: []string{challenge.UserColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeUUID,
-					Column: user.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -241,10 +238,7 @@ func (cc *ChallengeCreate) createSpec() (*Challenge, *sqlgraph.CreateSpec) {
 			Columns: []string{challenge.EmailChallengeColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeUUID,
-					Column: emailchallenge.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(emailchallenge.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -260,10 +254,7 @@ func (cc *ChallengeCreate) createSpec() (*Challenge, *sqlgraph.CreateSpec) {
 			Columns: []string{challenge.WebauthnChallengeColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeUUID,
-					Column: webauthnchallenge.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(webauthnchallenge.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -279,10 +270,7 @@ func (cc *ChallengeCreate) createSpec() (*Challenge, *sqlgraph.CreateSpec) {
 			Columns: []string{challenge.TotpCredentialColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeUUID,
-					Column: totpcredential.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(totpcredential.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

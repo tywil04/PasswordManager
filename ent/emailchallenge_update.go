@@ -121,10 +121,7 @@ func (ecu *EmailChallengeUpdate) sqlSave(ctx context.Context) (n int, err error)
 			Columns: []string{emailchallenge.ChallengeColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeUUID,
-					Column: challenge.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(challenge.FieldID, field.TypeUUID),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -137,10 +134,7 @@ func (ecu *EmailChallengeUpdate) sqlSave(ctx context.Context) (n int, err error)
 			Columns: []string{emailchallenge.ChallengeColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeUUID,
-					Column: challenge.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(challenge.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -290,10 +284,7 @@ func (ecuo *EmailChallengeUpdateOne) sqlSave(ctx context.Context) (_node *EmailC
 			Columns: []string{emailchallenge.ChallengeColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeUUID,
-					Column: challenge.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(challenge.FieldID, field.TypeUUID),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -306,10 +297,7 @@ func (ecuo *EmailChallengeUpdateOne) sqlSave(ctx context.Context) (_node *EmailC
 			Columns: []string{emailchallenge.ChallengeColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeUUID,
-					Column: challenge.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(challenge.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

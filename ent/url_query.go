@@ -307,7 +307,6 @@ func (uq *URLQuery) WithPassword(opts ...func(*PasswordQuery)) *URLQuery {
 //		GroupBy(url.FieldURL).
 //		Aggregate(ent.Count()).
 //		Scan(ctx, &v)
-//
 func (uq *URLQuery) GroupBy(field string, fields ...string) *URLGroupBy {
 	uq.ctx.Fields = append([]string{field}, fields...)
 	grbuild := &URLGroupBy{build: uq}
@@ -329,7 +328,6 @@ func (uq *URLQuery) GroupBy(field string, fields ...string) *URLGroupBy {
 //	client.URL.Query().
 //		Select(url.FieldURL).
 //		Scan(ctx, &v)
-//
 func (uq *URLQuery) Select(fields ...string) *URLSelect {
 	uq.ctx.Fields = append(uq.ctx.Fields, fields...)
 	sbuild := &URLSelect{URLQuery: uq}

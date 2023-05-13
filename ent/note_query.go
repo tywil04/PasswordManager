@@ -307,7 +307,6 @@ func (nq *NoteQuery) WithVault(opts ...func(*VaultQuery)) *NoteQuery {
 //		GroupBy(note.FieldName).
 //		Aggregate(ent.Count()).
 //		Scan(ctx, &v)
-//
 func (nq *NoteQuery) GroupBy(field string, fields ...string) *NoteGroupBy {
 	nq.ctx.Fields = append([]string{field}, fields...)
 	grbuild := &NoteGroupBy{build: nq}
@@ -329,7 +328,6 @@ func (nq *NoteQuery) GroupBy(field string, fields ...string) *NoteGroupBy {
 //	client.Note.Query().
 //		Select(note.FieldName).
 //		Scan(ctx, &v)
-//
 func (nq *NoteQuery) Select(fields ...string) *NoteSelect {
 	nq.ctx.Fields = append(nq.ctx.Fields, fields...)
 	sbuild := &NoteSelect{NoteQuery: nq}

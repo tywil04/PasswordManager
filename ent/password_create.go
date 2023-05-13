@@ -316,10 +316,7 @@ func (pc *PasswordCreate) createSpec() (*Password, *sqlgraph.CreateSpec) {
 			Columns: []string{password.AdditionalFieldsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeUUID,
-					Column: additionalfield.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(additionalfield.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -335,10 +332,7 @@ func (pc *PasswordCreate) createSpec() (*Password, *sqlgraph.CreateSpec) {
 			Columns: []string{password.UrlsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeUUID,
-					Column: url.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(url.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -354,10 +348,7 @@ func (pc *PasswordCreate) createSpec() (*Password, *sqlgraph.CreateSpec) {
 			Columns: []string{password.VaultColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeUUID,
-					Column: vault.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(vault.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

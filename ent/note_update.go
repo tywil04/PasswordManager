@@ -223,10 +223,7 @@ func (nu *NoteUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{note.VaultColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeUUID,
-					Column: vault.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(vault.FieldID, field.TypeUUID),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -239,10 +236,7 @@ func (nu *NoteUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Columns: []string{note.VaultColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeUUID,
-					Column: vault.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(vault.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -494,10 +488,7 @@ func (nuo *NoteUpdateOne) sqlSave(ctx context.Context) (_node *Note, err error) 
 			Columns: []string{note.VaultColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeUUID,
-					Column: vault.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(vault.FieldID, field.TypeUUID),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -510,10 +501,7 @@ func (nuo *NoteUpdateOne) sqlSave(ctx context.Context) (_node *Note, err error) 
 			Columns: []string{note.VaultColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeUUID,
-					Column: vault.FieldID,
-				},
+				IDSpec: sqlgraph.NewFieldSpec(vault.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

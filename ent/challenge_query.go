@@ -416,7 +416,6 @@ func (cq *ChallengeQuery) WithTotpCredential(opts ...func(*TotpCredentialQuery))
 //		GroupBy(challenge.FieldExpiry).
 //		Aggregate(ent.Count()).
 //		Scan(ctx, &v)
-//
 func (cq *ChallengeQuery) GroupBy(field string, fields ...string) *ChallengeGroupBy {
 	cq.ctx.Fields = append([]string{field}, fields...)
 	grbuild := &ChallengeGroupBy{build: cq}
@@ -438,7 +437,6 @@ func (cq *ChallengeQuery) GroupBy(field string, fields ...string) *ChallengeGrou
 //	client.Challenge.Query().
 //		Select(challenge.FieldExpiry).
 //		Scan(ctx, &v)
-//
 func (cq *ChallengeQuery) Select(fields ...string) *ChallengeSelect {
 	cq.ctx.Fields = append(cq.ctx.Fields, fields...)
 	sbuild := &ChallengeSelect{ChallengeQuery: cq}
